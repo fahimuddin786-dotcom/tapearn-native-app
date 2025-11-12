@@ -30,37 +30,39 @@
     justify-content: space-around;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 20px 20px 0 0;
-    padding: 12px 5px;
+    padding: 8px 3px !important; /* ✅ MORE COMPACT: Reduced padding */
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-bottom: none;
     flex-shrink: 0;
     margin: 0;
 }
 
-/* ✅ FIXED BUTTON HEIGHTS - BACK TO ORIGINAL SIZE */
+/* ✅ ULTRA COMPACT BUTTONS - LESS SPACE */
 .quick-actions-mini {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 25px;
+    gap: 5px !important; /* ✅ MORE COMPACT: Reduced gap */
+    margin-bottom: 20px;
 }
 
 .mini-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 8px 4px !important; /* ✅ FIXED: Reduced padding */
+    border-radius: 10px !important; /* ✅ MORE COMPACT: Smaller radius */
+    padding: 6px 2px !important; /* ✅ MORE COMPACT: Further reduced padding */
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 4px !important; /* ✅ FIXED: Reduced gap */
+    gap: 2px !important; /* ✅ MORE COMPACT: Minimal gap */
     backdrop-filter: blur(10px);
-    font-size: 10px;
-    height: auto !important; /* ✅ FIXED: Remove fixed height */
-    min-height: auto !important; /* ✅ FIXED: Remove min-height */
+    font-size: 9px;
+    height: auto !important;
+    min-height: auto !important;
+    min-width: 0 !important; /* ✅ FIXED: Allow shrinking */
+    flex-shrink: 1; /* ✅ FIXED: Allow shrinking */
 }
 
 .mini-btn:hover {
@@ -69,29 +71,35 @@
 }
 
 .mini-icon {
-    font-size: 16px;
+    font-size: 14px !important; /* ✅ MORE COMPACT: Smaller icon */
+    margin-bottom: -1px; /* ✅ MORE COMPACT: Negative margin to reduce space */
 }
 
 .mini-text {
-    font-size: 9px !important; /* ✅ FIXED: Smaller font */
+    font-size: 8px !important; /* ✅ MORE COMPACT: Even smaller font */
     font-weight: 600;
-    line-height: 1.1 !important; /* ✅ FIXED: Tighter line height */
+    line-height: 1 !important; /* ✅ MORE COMPACT: Minimal line height */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
-/* ✅ FIXED NAVIGATION BUTTONS */
+/* ✅ ULTRA COMPACT NAVIGATION BUTTONS */
 .nav-item {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px !important; /* ✅ FIXED: Reduced gap */
+    gap: 1px !important; /* ✅ MORE COMPACT: Minimal gap */
     cursor: pointer;
-    padding: 4px 6px !important; /* ✅ FIXED: Reduced padding */
-    border-radius: 8px;
+    padding: 3px 4px !important; /* ✅ MORE COMPACT: Further reduced padding */
+    border-radius: 6px !important; /* ✅ MORE COMPACT: Smaller radius */
     transition: all 0.3s ease;
     opacity: 0.7;
     flex: 1;
-    min-width: 50px;
-    height: auto !important; /* ✅ FIXED: Remove fixed height */
+    min-width: 40px !important; /* ✅ MORE COMPACT: Smaller min-width */
+    height: auto !important;
+    flex-shrink: 1; /* ✅ FIXED: Allow shrinking */
 }
 
 .nav-item.active {
@@ -104,13 +112,18 @@
 }
 
 .nav-icon {
-    font-size: 16px;
+    font-size: 14px !important; /* ✅ MORE COMPACT: Smaller icon */
+    margin-bottom: -1px; /* ✅ MORE COMPACT: Negative margin to reduce space */
 }
 
 .nav-text {
-    font-size: 8px !important; /* ✅ FIXED: Smaller font */
+    font-size: 7px !important; /* ✅ MORE COMPACT: Even smaller font */
     font-weight: 600;
-    line-height: 1.1 !important; /* ✅ FIXED: Tighter line height */
+    line-height: 1 !important; /* ✅ MORE COMPACT: Minimal line height */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 /* Page Transitions */
@@ -132,7 +145,7 @@
 /* Active Nav State */
 .nav-item.active {
     background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
+    transform: scale(1.05); /* ✅ MORE COMPACT: Smaller scale */
 }
 
 /* Telegram Mini App Specific */
@@ -143,6 +156,15 @@
     
     .content-area {
         padding: 15px;
+    }
+    
+    .quick-actions-mini {
+        gap: 4px !important; /* ✅ MORE COMPACT: Even smaller gap on small screens */
+        margin-bottom: 15px;
+    }
+    
+    .mini-btn {
+        padding: 5px 1px !important; /* ✅ MORE COMPACT: Even smaller padding */
     }
 }
 
@@ -573,36 +595,36 @@ body {
     
     .quick-actions-mini {
         grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
+        gap: 4px !important; /* ✅ MORE COMPACT: Even smaller on mobile */
     }
     
     .mini-btn {
-        padding: 6px 3px !important; /* ✅ FIXED: Even smaller on mobile */
+        padding: 4px 1px !important; /* ✅ MORE COMPACT: Minimal padding */
     }
     
     .mini-icon {
-        font-size: 14px;
+        font-size: 12px !important; /* ✅ MORE COMPACT: Smaller on mobile */
     }
     
     .mini-text {
-        font-size: 8px !important; /* ✅ FIXED: Smaller on mobile */
+        font-size: 7px !important; /* ✅ MORE COMPACT: Smallest on mobile */
     }
     
     .bottom-nav {
-        padding: 8px 3px;
+        padding: 6px 2px; /* ✅ MORE COMPACT: Smaller navigation */
     }
     
     .nav-item {
-        padding: 3px 4px !important; /* ✅ FIXED: Smaller on mobile */
-        min-width: 45px;
+        padding: 2px 3px !important; /* ✅ MORE COMPACT: Minimal padding */
+        min-width: 35px !important; /* ✅ MORE COMPACT: Smaller min-width */
     }
     
     .nav-icon {
-        font-size: 14px;
+        font-size: 12px !important; /* ✅ MORE COMPACT: Smaller on mobile */
     }
     
     .nav-text {
-        font-size: 7px !important; /* ✅ FIXED: Smaller on mobile */
+        font-size: 6px !important; /* ✅ MORE COMPACT: Smallest on mobile */
     }
 
     .videos-grid {
@@ -831,7 +853,7 @@ body {
 .content-area {
     -webkit-overflow-scrolling: touch;
     overflow-y: auto;
-    height: calc(100vh - 140px);
+    height: calc(100vh - 130px); /* ✅ ADJUSTED: Slightly less height due to compact buttons */
 }
 
 /* Bottom Nav Mobile Optimization */
@@ -844,8 +866,8 @@ body {
 
 /* ✅ FIXED: REMOVE HEIGHT CONSTRAINTS FROM BUTTONS */
 .mini-btn, .nav-item, .wallet, .back-btn {
-    min-height: auto !important; /* ✅ FIXED: Remove min-height */
-    height: auto !important; /* ✅ FIXED: Remove fixed height */
+    min-height: auto !important;
+    height: auto !important;
 }
 
 /* Prevent Text Selection on Interactive Elements */
@@ -863,7 +885,7 @@ body {
     }
     
     .content-area {
-        height: calc(100vh - 140px - env(safe-area-inset-bottom));
+        height: calc(100vh - 130px - env(safe-area-inset-bottom)); /* ✅ ADJUSTED */
     }
 }
 
@@ -876,9 +898,9 @@ body {
     }
     
     .bottom-nav-native {
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
-        padding-left: max(5px, env(safe-area-inset-left));
-        padding-right: max(5px, env(safe-area-inset-right));
+        padding-bottom: max(8px, env(safe-area-inset-bottom)); /* ✅ MORE COMPACT: Reduced bottom padding */
+        padding-left: max(3px, env(safe-area-inset-left));
+        padding-right: max(3px, env(safe-area-inset-right));
     }
 }
 
@@ -889,20 +911,20 @@ body {
     }
     
     .content-area {
-        height: calc(100vh - 120px);
+        height: calc(100vh - 110px); /* ✅ ADJUSTED: Less height in landscape */
         padding: 10px 20px;
     }
     
     .bottom-nav-native {
-        padding: 8px 5px;
+        padding: 6px 3px !important; /* ✅ MORE COMPACT: Even smaller in landscape */
     }
     
     .nav-icon {
-        font-size: 14px;
+        font-size: 12px !important;
     }
     
     .nav-text {
-        font-size: 7px !important; /* ✅ FIXED: Smaller in landscape */
+        font-size: 6px !important; /* ✅ MORE COMPACT: Smallest in landscape */
     }
 }
 
@@ -910,16 +932,16 @@ body {
 @media (max-width: 320px) {
     .quick-actions-mini {
         grid-template-columns: repeat(3, 1fr);
-        gap: 5px;
+        gap: 3px !important; /* ✅ MORE COMPACT: Minimal gap */
     }
     
     .mini-btn {
-        padding: 5px 2px !important; /* ✅ FIXED: Even smaller on very small devices */
-        font-size: 9px;
+        padding: 3px 0px !important; /* ✅ MORE COMPACT: Almost no padding */
+        font-size: 8px;
     }
     
     .mini-icon {
-        font-size: 12px;
+        font-size: 10px !important; /* ✅ MORE COMPACT: Smallest icon */
     }
     
     .stats-grid-mini {
@@ -952,7 +974,7 @@ body {
     
     .quick-actions-mini {
         grid-template-columns: repeat(6, 1fr);
-        gap: 12px;
+        gap: 8px; /* ✅ Slightly more gap on tablets but still compact */
     }
 }
 
