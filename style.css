@@ -1,197 +1,156 @@
-/* ✅ MOBILE RESPONSIVE FIXES - NO UI/LAYOUT CHANGES */
-/* Add these at the end of your existing CSS */
-
-/* Mobile Viewport Fix */
-html {
-    height: 100%;
-    -webkit-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
-}
-
-body {
-    min-height: 100%;
-    overflow-x: hidden;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* App Container Mobile Optimization */
+/* ✅ NATIVE APP STYLES - NO SCROLLER */
 .app-container {
-    min-height: 100vh;
-    height: 100%;
-    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
 }
 
-/* Header Mobile Fix */
 .header-section {
-    position: sticky;
-    top: 0;
-    z-index: 1000;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 0 0 20px 20px;
+    padding: 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: none;
     flex-shrink: 0;
 }
 
-/* Content Area Mobile Scroll Fix */
 .content-area {
-    -webkit-overflow-scrolling: touch;
+    flex: 1;
     overflow-y: auto;
-    height: calc(100vh - 140px);
+    padding: 20px;
+    background: transparent;
 }
 
-/* Bottom Nav Mobile Optimization */
 .bottom-nav-native {
-    position: sticky;
-    bottom: 0;
-    z-index: 1000;
+    display: flex;
+    justify-content: space-around;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px 20px 0 0;
+    padding: 12px 5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-bottom: none;
     flex-shrink: 0;
+    margin: 0;
 }
 
-/* Mobile Touch Targets Enhancement */
-.mini-btn, .nav-item, .wallet, .back-btn {
-    min-height: 44px;
-    min-width: 44px;
+/* ✅ FIXED BUTTON HEIGHTS - BACK TO ORIGINAL SIZE */
+.quick-actions-mini {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 25px;
 }
 
-/* Prevent Text Selection on Interactive Elements */
-.mini-btn, .nav-item, .wallet, .back-btn, .main-feature-card {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
+.mini-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 8px 4px !important; /* ✅ FIXED: Reduced padding */
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px !important; /* ✅ FIXED: Reduced gap */
+    backdrop-filter: blur(10px);
+    font-size: 10px;
+    height: auto !important; /* ✅ FIXED: Remove fixed height */
+    min-height: auto !important; /* ✅ FIXED: Remove min-height */
 }
 
-/* Mobile Safari Specific Fixes */
-@supports (-webkit-touch-callout: none) {
-    .app-container {
-        height: -webkit-fill-available;
+.mini-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.mini-icon {
+    font-size: 16px;
+}
+
+.mini-text {
+    font-size: 9px !important; /* ✅ FIXED: Smaller font */
+    font-weight: 600;
+    line-height: 1.1 !important; /* ✅ FIXED: Tighter line height */
+}
+
+/* ✅ FIXED NAVIGATION BUTTONS */
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px !important; /* ✅ FIXED: Reduced gap */
+    cursor: pointer;
+    padding: 4px 6px !important; /* ✅ FIXED: Reduced padding */
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    opacity: 0.7;
+    flex: 1;
+    min-width: 50px;
+    height: auto !important; /* ✅ FIXED: Remove fixed height */
+}
+
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    opacity: 1;
+}
+
+.nav-item:hover {
+    opacity: 1;
+}
+
+.nav-icon {
+    font-size: 16px;
+}
+
+.nav-text {
+    font-size: 8px !important; /* ✅ FIXED: Smaller font */
+    font-weight: 600;
+    line-height: 1.1 !important; /* ✅ FIXED: Tighter line height */
+}
+
+/* Page Transitions */
+.page {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
     }
-    
-    .content-area {
-        height: calc(100vh - 140px - env(safe-area-inset-bottom));
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
     }
 }
 
-/* Safe Area Insets for Notch Devices */
-@supports (padding: max(0px)) {
+/* Active Nav State */
+.nav-item.active {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+}
+
+/* Telegram Mini App Specific */
+@media (max-height: 700px) {
     .header-section {
-        padding-top: max(20px, env(safe-area-inset-top));
-        padding-left: max(20px, env(safe-area-inset-left));
-        padding-right: max(20px, env(safe-area-inset-right));
-    }
-    
-    .bottom-nav-native {
-        padding-bottom: max(12px, env(safe-area-inset-bottom));
-        padding-left: max(5px, env(safe-area-inset-left));
-        padding-right: max(5px, env(safe-area-inset-right));
-    }
-}
-
-/* Mobile Landscape Orientation */
-@media (max-height: 500px) and (orientation: landscape) {
-    .header-section {
-        padding: 10px 20px;
+        padding: 15px 20px;
     }
     
     .content-area {
-        height: calc(100vh - 120px);
-        padding: 10px 20px;
-    }
-    
-    .bottom-nav-native {
-        padding: 8px 5px;
-    }
-    
-    .nav-icon {
-        font-size: 14px;
-    }
-    
-    .nav-text {
-        font-size: 8px;
+        padding: 15px;
     }
 }
 
-/* Extra Small Mobile Devices */
-@media (max-width: 320px) {
-    .quick-actions-mini {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 5px;
-    }
-    
-    .mini-btn {
-        padding: 6px 3px;
-        font-size: 9px;
-    }
-    
-    .mini-icon {
-        font-size: 12px;
-    }
-    
-    .stats-grid-mini {
-        gap: 8px;
-    }
-    
-    .stat-card-mini {
-        padding: 10px 5px;
-    }
-    
-    .stat-number-mini {
-        font-size: 14px;
-    }
-    
-    .stat-label-mini {
-        font-size: 9px;
-    }
-}
-
-/* Tablet and Larger Mobile */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .app-container {
-        max-width: 768px;
-        margin: 0 auto;
-    }
-    
-    .content-area {
-        padding: 30px;
-    }
-    
-    .quick-actions-mini {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 12px;
-    }
-}
-
-/* High DPI Mobile Screens */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .main-feature-card, .boost-section, .community-section {
-        border-width: 0.5px;
-    }
-}
-
-/* Reduced Motion for Accessibility */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .app-container {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    }
-}
-
-/* Print Styles */
-@media print {
-    .bottom-nav-native, .header-section {
-        display: none;
-    }
-    
-    .content-area {
-        height: auto;
-        overflow: visible;
-    }
+/* Ensure no horizontal scroll */
+body {
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
 }
 
 /* ✅ YOUR EXISTING CSS STYLES BELOW - NO CHANGES */
@@ -348,45 +307,6 @@ h2 {
     opacity: 0.8;
 }
 
-/* Quick Actions Mini - Smaller Buttons */
-.quick-actions-mini {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 25px;
-}
-
-.mini-btn {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 12px;
-    padding: 10px 6px;
-    color: white;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    backdrop-filter: blur(10px);
-    font-size: 10px;
-}
-
-.mini-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-}
-
-.mini-icon {
-    font-size: 16px;
-}
-
-.mini-text {
-    font-size: 10px;
-    font-weight: 600;
-    line-height: 1.2;
-}
-
 /* Boost Section */
 .boost-section {
     background: rgba(255, 215, 0, 0.1);
@@ -500,38 +420,6 @@ h2 {
     border: 1px solid rgba(255, 255, 255, 0.1);
     flex-wrap: wrap;
     gap: 5px;
-}
-
-.nav-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    cursor: pointer;
-    padding: 6px 8px;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    opacity: 0.7;
-    flex: 1;
-    min-width: 50px;
-}
-
-.nav-item.active {
-    background: rgba(255, 255, 255, 0.1);
-    opacity: 1;
-}
-
-.nav-item:hover {
-    opacity: 1;
-}
-
-.nav-icon {
-    font-size: 16px;
-}
-
-.nav-text {
-    font-size: 9px;
-    font-weight: 600;
 }
 
 /* Stats Grid Mini */
@@ -689,7 +577,7 @@ body {
     }
     
     .mini-btn {
-        padding: 8px 4px;
+        padding: 6px 3px !important; /* ✅ FIXED: Even smaller on mobile */
     }
     
     .mini-icon {
@@ -697,7 +585,7 @@ body {
     }
     
     .mini-text {
-        font-size: 9px;
+        font-size: 8px !important; /* ✅ FIXED: Smaller on mobile */
     }
     
     .bottom-nav {
@@ -705,7 +593,7 @@ body {
     }
     
     .nav-item {
-        padding: 5px 6px;
+        padding: 3px 4px !important; /* ✅ FIXED: Smaller on mobile */
         min-width: 45px;
     }
     
@@ -714,7 +602,7 @@ body {
     }
     
     .nav-text {
-        font-size: 8px;
+        font-size: 7px !important; /* ✅ FIXED: Smaller on mobile */
     }
 
     .videos-grid {
@@ -904,5 +792,201 @@ body {
     
     .profile-avatar {
         align-self: center;
+    }
+}
+
+/* ✅ MOBILE RESPONSIVE FIXES - NO UI/LAYOUT CHANGES */
+/* Add these at the end of your existing CSS */
+
+/* Mobile Viewport Fix */
+html {
+    height: 100%;
+    -webkit-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+}
+
+body {
+    min-height: 100%;
+    overflow-x: hidden;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* App Container Mobile Optimization */
+.app-container {
+    min-height: 100vh;
+    height: 100%;
+    position: relative;
+}
+
+/* Header Mobile Fix */
+.header-section {
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    flex-shrink: 0;
+}
+
+/* Content Area Mobile Scroll Fix */
+.content-area {
+    -webkit-overflow-scrolling: touch;
+    overflow-y: auto;
+    height: calc(100vh - 140px);
+}
+
+/* Bottom Nav Mobile Optimization */
+.bottom-nav-native {
+    position: sticky;
+    bottom: 0;
+    z-index: 1000;
+    flex-shrink: 0;
+}
+
+/* ✅ FIXED: REMOVE HEIGHT CONSTRAINTS FROM BUTTONS */
+.mini-btn, .nav-item, .wallet, .back-btn {
+    min-height: auto !important; /* ✅ FIXED: Remove min-height */
+    height: auto !important; /* ✅ FIXED: Remove fixed height */
+}
+
+/* Prevent Text Selection on Interactive Elements */
+.mini-btn, .nav-item, .wallet, .back-btn, .main-feature-card {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* Mobile Safari Specific Fixes */
+@supports (-webkit-touch-callout: none) {
+    .app-container {
+        height: -webkit-fill-available;
+    }
+    
+    .content-area {
+        height: calc(100vh - 140px - env(safe-area-inset-bottom));
+    }
+}
+
+/* Safe Area Insets for Notch Devices */
+@supports (padding: max(0px)) {
+    .header-section {
+        padding-top: max(20px, env(safe-area-inset-top));
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+    }
+    
+    .bottom-nav-native {
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+        padding-left: max(5px, env(safe-area-inset-left));
+        padding-right: max(5px, env(safe-area-inset-right));
+    }
+}
+
+/* Mobile Landscape Orientation */
+@media (max-height: 500px) and (orientation: landscape) {
+    .header-section {
+        padding: 10px 20px;
+    }
+    
+    .content-area {
+        height: calc(100vh - 120px);
+        padding: 10px 20px;
+    }
+    
+    .bottom-nav-native {
+        padding: 8px 5px;
+    }
+    
+    .nav-icon {
+        font-size: 14px;
+    }
+    
+    .nav-text {
+        font-size: 7px !important; /* ✅ FIXED: Smaller in landscape */
+    }
+}
+
+/* Extra Small Mobile Devices */
+@media (max-width: 320px) {
+    .quick-actions-mini {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 5px;
+    }
+    
+    .mini-btn {
+        padding: 5px 2px !important; /* ✅ FIXED: Even smaller on very small devices */
+        font-size: 9px;
+    }
+    
+    .mini-icon {
+        font-size: 12px;
+    }
+    
+    .stats-grid-mini {
+        gap: 8px;
+    }
+    
+    .stat-card-mini {
+        padding: 10px 5px;
+    }
+    
+    .stat-number-mini {
+        font-size: 14px;
+    }
+    
+    .stat-label-mini {
+        font-size: 9px;
+    }
+}
+
+/* Tablet and Larger Mobile */
+@media (min-width: 768px) and (max-width: 1024px) {
+    .app-container {
+        max-width: 768px;
+        margin: 0 auto;
+    }
+    
+    .content-area {
+        padding: 30px;
+    }
+    
+    .quick-actions-mini {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+    }
+}
+
+/* High DPI Mobile Screens */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .main-feature-card, .boost-section, .community-section {
+        border-width: 0.5px;
+    }
+}
+
+/* Reduced Motion for Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .app-container {
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    }
+}
+
+/* Print Styles */
+@media print {
+    .bottom-nav-native, .header-section {
+        display: none;
+    }
+    
+    .content-area {
+        height: auto;
+        overflow: visible;
     }
 }
