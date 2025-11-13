@@ -39,7 +39,7 @@ let currentVideoTimer = null;
 let currentVideoTimeLeft = 0;
 let currentVideoData = null;
 
-// New Systems State
+// New Tasks Systems State
 let completedFollowTasks = [];
 let completedDailyTasks = [];
 let completedSocialTasks = [];
@@ -172,7 +172,7 @@ function loadMiningState() {
     todayEarnings = savedTodayEarnings ? parseInt(savedTodayEarnings) : 0;
     lastEarningDate = savedLastEarningDate || null;
     
-    // Load new systems state
+    // Load new tasks systems state
     completedFollowTasks = getFromStorage('completedFollowTasks', []);
     completedDailyTasks = getFromStorage('completedDailyTasks', []);
     completedSocialTasks = getFromStorage('completedSocialTasks', []);
@@ -247,7 +247,7 @@ function saveMiningState() {
     localStorage.setItem('todayEarnings', todayEarnings);
     localStorage.setItem('lastEarningDate', lastEarningDate);
     
-    // Save new systems state
+    // Save new tasks systems state
     saveToStorage('completedFollowTasks', completedFollowTasks);
     saveToStorage('completedDailyTasks', completedDailyTasks);
     saveToStorage('completedSocialTasks', completedSocialTasks);
@@ -334,6 +334,9 @@ function updateUI() {
     
     // Update Earning UI
     updateEarningUI();
+    
+    // Update Tasks UI
+    updateTasksUI();
 }
 
 // Update Level UI
@@ -430,6 +433,13 @@ function updateEarningUI() {
     document.getElementById('totalEarnings').textContent = userPoints;
     document.getElementById('totalTasks').textContent = totalTasksCompleted;
     document.getElementById('todayEarnings').textContent = todayEarnings;
+}
+
+// Update Tasks UI
+function updateTasksUI() {
+    document.getElementById('tasksTotalPoints').textContent = userPoints;
+    document.getElementById('tasksCompleted').textContent = totalTasksCompleted;
+    document.getElementById('tasksToday').textContent = completedDailyTasks.length;
 }
 
 // Format Time
@@ -706,7 +716,15 @@ function switchTab(tabName) {
     });
     
     document.getElementById(tabName + 'Content').classList.add('active');
-    document.querySelector(`.nav-btn:nth-child(${tabName === 'mining' ? 1 : 2})`).classList.add('active');
+    
+    // Set active nav button based on tab name
+    if (tabName === 'mining') {
+        document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
+    } else if (tabName === 'earn') {
+        document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
+    } else if (tabName === 'tasks') {
+        document.querySelector('.nav-btn:nth-child(3)').classList.add('active');
+    }
     
     updateUI();
 }
@@ -1095,12 +1113,111 @@ function showTwitterSection() {
     `;
 }
 
+function showHomePage() {
+    document.getElementById('earnAppContent').innerHTML = `
+        <div class="welcome-section">
+            <div class="welcome-icon">🚀</div>
+            <h3>Welcome to TapEarn!</h3>
+            <p>Click any platform to start earning points instantly</p>
+            
+            <div class="platforms-grid">
+                <div class="platform-card" onclick="showVideoSection()">
+                    <span class="platform-icon">🎬</span>
+                    <span class="platform-name">YouTube Videos</span>
+                    <span class="platform-points">+10-20 points</span>
+                    <span class="platform-time">⏱️ 1 min watch</span>
+                </div>
+                <div class="platform-card" onclick="showTelegramSection()">
+                    <span class="platform-icon">📱</span>
+                    <span class="platform-name">Telegram Tasks</span>
+                    <span class="platform-points">+15-30 points</span>
+                    <span class="platform-time">⚡ Instant</span>
+                </div>
+                <div class="platform-card" onclick="showInstagramSection()">
+                    <span class="platform-icon">📷</span>
+                    <span class="platform-name">Instagram Reels</span>
+                    <span class="platform-points">+12-25 points</span>
+                    <span class="platform-time">⏱️ 1 min watch</span>
+                </div>
+                <div class="platform-card" onclick="showTwitterSection()">
+                    <span class="platform-icon">🐦</span>
+                    <span class="platform-name">Twitter Tasks</span>
+                    <span class="platform-points">+8-20 points</span>
+                    <span class="platform-time">⚡ Instant</span>
+                </div>
+            </div>
+
+            <div class="earn-stats">
+                <div class="earn-stat">
+                    <div class="stat-number" id="totalEarnings">${userPoints}</div>
+                    <div class="stat-label">Total Points</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="totalTasks">${totalTasksCompleted}</div>
+                    <div class="stat-label">Tasks Done</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="todayEarnings">${todayEarnings}</div>
+                    <div class="stat-label">Today's Points</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Tasks Section Functions
+function showTasksHomePage() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="welcome-section">
+            <div class="welcome-icon">📋</div>
+            <h3>Task Center</h3>
+            <p>Complete different types of tasks to maximize your earnings</p>
+            
+            <div class="platforms-grid">
+                <div class="platform-card" onclick="showFollowSection()">
+                    <span class="platform-icon">👥</span>
+                    <span class="platform-name">Follow & Earn</span>
+                    <span class="platform-points">+20-35 points</span>
+                    <span class="platform-time">⚡ Instant</span>
+                </div>
+                <div class="platform-card" onclick="showDailyTasksSection()">
+                    <span class="platform-icon">📅</span>
+                    <span class="platform-name">Daily Tasks</span>
+                    <span class="platform-points">+15-50 points</span>
+                    <span class="platform-time">📅 Daily</span>
+                </div>
+                <div class="platform-card" onclick="showSocialTasksSection()">
+                    <span class="platform-icon">🌐</span>
+                    <span class="platform-name">Social Tasks</span>
+                    <span class="platform-points">+20-50 points</span>
+                    <span class="platform-time">⚡ Instant</span>
+                </div>
+            </div>
+
+            <div class="earn-stats">
+                <div class="earn-stat">
+                    <div class="stat-number" id="tasksTotalPoints">${userPoints}</div>
+                    <div class="stat-label">Total Points</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="tasksCompleted">${totalTasksCompleted}</div>
+                    <div class="stat-label">Tasks Done</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="tasksToday">${completedDailyTasks.length}</div>
+                    <div class="stat-label">Today's Tasks</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
 // 👥 6. FOLLOW & EARN SYSTEM
 function showFollowSection() {
-    document.getElementById('earnAppContent').innerHTML = `
+    document.getElementById('tasksAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
                 <div class="platform-header-icon">👥</div>
                 <h3>Follow & Earn</h3>
             </div>
@@ -1309,12 +1426,12 @@ function completeFollowTask(taskId, points, username, platform) {
 }
 
 // 📋 7. DAILY TASKS SYSTEM
-function showTasks() {
-    document.getElementById('earnAppContent').innerHTML = `
+function showDailyTasksSection() {
+    document.getElementById('tasksAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showHomePage()" class="back-btn">← Back</button>
-                <div class="platform-header-icon">📋</div>
+                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">📅</div>
                 <h3>Daily Tasks</h3>
             </div>
             
@@ -1457,13 +1574,13 @@ function claimTaskReward(taskId, points, title) {
     showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
     updateUI();
     saveMiningState();
-    showTasks();
+    showDailyTasksSection();
 }
 
 function showTaskHelp(taskType) {
     switch(taskType) {
         case 'videos':
-            showVideoSection();
+            showNotification('💡 Watch videos from the Earn section to complete this task!', 'info');
             break;
         case 'mining':
             showNotification('💡 Start mining from the main screen to complete this task!', 'info');
@@ -1472,10 +1589,10 @@ function showTaskHelp(taskType) {
             showFollowSection();
             break;
         case 'telegram':
-            showTelegramSection();
+            showNotification('💡 Complete Telegram tasks from the Earn section!', 'info');
             break;
         case 'x':
-            showTwitterSection();
+            showNotification('💡 Complete Twitter tasks from the Earn section!', 'info');
             break;
     }
 }
@@ -1499,11 +1616,11 @@ function getTaskById(taskId) {
 }
 
 // 🌐 8. SOCIAL TASKS SYSTEM
-function showSocialTasks() {
-    document.getElementById('earnAppContent').innerHTML = `
+function showSocialTasksSection() {
+    document.getElementById('tasksAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
                 <div class="platform-header-icon">🌐</div>
                 <h3>Social Tasks</h3>
             </div>
@@ -1674,7 +1791,7 @@ function completeSocialTask(taskId, points, title, platform) {
     showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
     updateUI();
     saveMiningState();
-    showSocialTasks();
+    showSocialTasksSection();
 }
 
 function calculateSocialPoints() {
@@ -1696,76 +1813,6 @@ function getSocialTaskById(taskId) {
         { id: 'social8', points: 30 }
     ];
     return tasks.find(task => task.id === taskId);
-}
-
-function showHomePage() {
-    document.getElementById('earnAppContent').innerHTML = `
-        <div class="welcome-section">
-            <div class="welcome-icon">🚀</div>
-            <h3>Welcome to TapEarn!</h3>
-            <p>Click any platform to start earning points instantly</p>
-            
-            <div class="platforms-grid">
-                <div class="platform-card" onclick="showVideoSection()">
-                    <span class="platform-icon">🎬</span>
-                    <span class="platform-name">YouTube Videos</span>
-                    <span class="platform-points">+10-20 points</span>
-                    <span class="platform-time">⏱️ 1 min watch</span>
-                </div>
-                <div class="platform-card" onclick="showTelegramSection()">
-                    <span class="platform-icon">📱</span>
-                    <span class="platform-name">Telegram Tasks</span>
-                    <span class="platform-points">+15-30 points</span>
-                    <span class="platform-time">⚡ Instant</span>
-                </div>
-                <div class="platform-card" onclick="showInstagramSection()">
-                    <span class="platform-icon">📷</span>
-                    <span class="platform-name">Instagram Reels</span>
-                    <span class="platform-points">+12-25 points</span>
-                    <span class="platform-time">⏱️ 1 min watch</span>
-                </div>
-                <div class="platform-card" onclick="showTwitterSection()">
-                    <span class="platform-icon">🐦</span>
-                    <span class="platform-name">Twitter Tasks</span>
-                    <span class="platform-points">+8-20 points</span>
-                    <span class="platform-time">⚡ Instant</span>
-                </div>
-                <div class="platform-card" onclick="showFollowSection()">
-                    <span class="platform-icon">👥</span>
-                    <span class="platform-name">Follow & Earn</span>
-                    <span class="platform-points">+20-35 points</span>
-                    <span class="platform-time">⚡ Instant</span>
-                </div>
-                <div class="platform-card" onclick="showTasks()">
-                    <span class="platform-icon">📋</span>
-                    <span class="platform-name">Daily Tasks</span>
-                    <span class="platform-points">+15-50 points</span>
-                    <span class="platform-time">📅 Daily</span>
-                </div>
-                <div class="platform-card" onclick="showSocialTasks()">
-                    <span class="platform-icon">🌐</span>
-                    <span class="platform-name">Social Tasks</span>
-                    <span class="platform-points">+20-50 points</span>
-                    <span class="platform-time">⚡ Instant</span>
-                </div>
-            </div>
-
-            <div class="earn-stats">
-                <div class="earn-stat">
-                    <div class="stat-number" id="totalEarnings">${userPoints}</div>
-                    <div class="stat-label">Total Points</div>
-                </div>
-                <div class="earn-stat">
-                    <div class="stat-number" id="totalTasks">${totalTasksCompleted}</div>
-                    <div class="stat-label">Tasks Done</div>
-                </div>
-                <div class="earn-stat">
-                    <div class="stat-number" id="todayEarnings">${todayEarnings}</div>
-                    <div class="stat-label">Today's Points</div>
-                </div>
-            </div>
-        </div>
-    `;
 }
 
 // YouTube Video Search Function
