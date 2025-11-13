@@ -1,4 +1,4 @@
-/* ✅ NATIVE APP STYLES - NO SCROLLER */
+/* ✅ MINING FOCUSED APP STYLES */
 .app-container {
     height: 100vh;
     display: flex;
@@ -30,39 +30,334 @@
     justify-content: space-around;
     background: rgba(255, 255, 255, 0.05);
     border-radius: 20px 20px 0 0;
-    padding: 8px 3px !important; /* ✅ MORE COMPACT: Reduced padding */
+    padding: 8px 3px !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-bottom: none;
     flex-shrink: 0;
     margin: 0;
 }
 
-/* ✅ ULTRA COMPACT BUTTONS - LESS SPACE */
-.quick-actions-mini {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 5px !important; /* ✅ MORE COMPACT: Reduced gap */
+/* Mining Page Specific Styles */
+.mining-main-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 20px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
     margin-bottom: 20px;
 }
 
-.mini-btn {
+.mining-main-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
+}
+
+.mining-main-card.mining-active {
+    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3) !important;
+}
+
+.mining-main-icon {
+    font-size: 64px;
+    margin-bottom: 15px;
+    display: block;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.mining-main-title {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 10px;
+    color: white;
+}
+
+.mining-main-desc {
+    font-size: 16px;
+    opacity: 0.9;
+    margin-bottom: 25px;
+}
+
+.mining-main-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.mining-main-stat {
+    text-align: center;
+}
+
+.mining-main-value {
+    display: block;
+    font-size: 20px;
+    font-weight: bold;
+    color: #FFD700;
+    margin-bottom: 5px;
+}
+
+.mining-main-label {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Mining Controls */
+.mining-controls {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.control-btn {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.control-btn.primary {
+    background: linear-gradient(135deg, #FFD700, #FFA726);
+    color: #1a1a2e;
+}
+
+/* Mining Details Section */
+.mining-details {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mining-details h4 {
+    margin-bottom: 15px;
+    color: #FFA726;
+    font-size: 18px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.stat-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px 10px;
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stat-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4CAF50;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+/* Quick Mining Actions */
+.quick-mining-actions {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.quick-mining-btn {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 10px !important; /* ✅ MORE COMPACT: Smaller radius */
-    padding: 6px 2px !important; /* ✅ MORE COMPACT: Further reduced padding */
+    border-radius: 12px;
+    padding: 15px 10px;
     color: white;
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px !important; /* ✅ MORE COMPACT: Minimal gap */
+    gap: 5px;
+    backdrop-filter: blur(10px);
+}
+
+.quick-mining-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+.quick-mining-icon {
+    font-size: 20px;
+}
+
+.quick-mining-text {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+/* Mining Progress */
+.mining-progress {
+    margin: 20px 0;
+}
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.progress-bar {
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Level Badges */
+.level-badges {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px 0;
+}
+
+.level-badge {
+    text-align: center;
+    opacity: 0.5;
+    transition: all 0.3s ease;
+}
+
+.level-badge.active {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.level-icon {
+    font-size: 24px;
+    margin-bottom: 5px;
+}
+
+.level-name {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+/* Boost Section */
+.boost-section {
+    background: rgba(255, 215, 0, 0.1);
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    border-radius: 15px;
+    padding: 18px;
+    margin: 20px 0;
+}
+
+.boost-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.boost-title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFD700;
+}
+
+.boost-progress {
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+.boost-bar {
+    background: rgba(255, 255, 255, 0.1);
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 15px;
+}
+
+.boost-fill {
+    background: linear-gradient(90deg, #FFD700, #FFA726);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.boost-btn {
+    background: linear-gradient(135deg, #FFD700, #FFA726);
+    color: #1a1a2e;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    transition: transform 0.3s ease;
+    font-size: 14px;
+}
+
+.boost-btn:hover {
+    transform: translateY(-2px);
+}
+
+/* ✅ ULTRA COMPACT BUTTONS */
+.quick-actions-mini {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 5px !important;
+    margin-bottom: 20px;
+}
+
+.mini-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px !important;
+    padding: 6px 2px !important;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px !important;
     backdrop-filter: blur(10px);
     font-size: 9px;
     height: auto !important;
     min-height: auto !important;
-    min-width: 0 !important; /* ✅ FIXED: Allow shrinking */
-    flex-shrink: 1; /* ✅ FIXED: Allow shrinking */
+    min-width: 0 !important;
+    flex-shrink: 1;
 }
 
 .mini-btn:hover {
@@ -71,14 +366,14 @@
 }
 
 .mini-icon {
-    font-size: 14px !important; /* ✅ MORE COMPACT: Smaller icon */
-    margin-bottom: -1px; /* ✅ MORE COMPACT: Negative margin to reduce space */
+    font-size: 14px !important;
+    margin-bottom: -1px;
 }
 
 .mini-text {
-    font-size: 8px !important; /* ✅ MORE COMPACT: Even smaller font */
+    font-size: 8px !important;
     font-weight: 600;
-    line-height: 1 !important; /* ✅ MORE COMPACT: Minimal line height */
+    line-height: 1 !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -90,16 +385,16 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1px !important; /* ✅ MORE COMPACT: Minimal gap */
+    gap: 1px !important;
     cursor: pointer;
-    padding: 3px 4px !important; /* ✅ MORE COMPACT: Further reduced padding */
-    border-radius: 6px !important; /* ✅ MORE COMPACT: Smaller radius */
+    padding: 3px 4px !important;
+    border-radius: 6px !important;
     transition: all 0.3s ease;
     opacity: 0.7;
     flex: 1;
-    min-width: 40px !important; /* ✅ MORE COMPACT: Smaller min-width */
+    min-width: 40px !important;
     height: auto !important;
-    flex-shrink: 1; /* ✅ FIXED: Allow shrinking */
+    flex-shrink: 1;
 }
 
 .nav-item.active {
@@ -112,14 +407,14 @@
 }
 
 .nav-icon {
-    font-size: 14px !important; /* ✅ MORE COMPACT: Smaller icon */
-    margin-bottom: -1px; /* ✅ MORE COMPACT: Negative margin to reduce space */
+    font-size: 14px !important;
+    margin-bottom: -1px;
 }
 
 .nav-text {
-    font-size: 7px !important; /* ✅ MORE COMPACT: Even smaller font */
+    font-size: 7px !important;
     font-weight: 600;
-    line-height: 1 !important; /* ✅ MORE COMPACT: Minimal line height */
+    line-height: 1 !important;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -145,37 +440,9 @@
 /* Active Nav State */
 .nav-item.active {
     background: rgba(255, 255, 255, 0.1);
-    transform: scale(1.05); /* ✅ MORE COMPACT: Smaller scale */
+    transform: scale(1.05);
 }
 
-/* Telegram Mini App Specific */
-@media (max-height: 700px) {
-    .header-section {
-        padding: 15px 20px;
-    }
-    
-    .content-area {
-        padding: 15px;
-    }
-    
-    .quick-actions-mini {
-        gap: 4px !important; /* ✅ MORE COMPACT: Even smaller gap on small screens */
-        margin-bottom: 15px;
-    }
-    
-    .mini-btn {
-        padding: 5px 1px !important; /* ✅ MORE COMPACT: Even smaller padding */
-    }
-}
-
-/* Ensure no horizontal scroll */
-body {
-    overflow-x: hidden;
-    margin: 0;
-    padding: 0;
-}
-
-/* ✅ YOUR EXISTING CSS STYLES BELOW - NO CHANGES */
 /* Global Styles */
 * {
     margin: 0;
@@ -266,246 +533,6 @@ h2 {
     -webkit-text-fill-color: transparent;
 }
 
-/* Main Mining Feature */
-.main-features {
-    margin-bottom: 25px;
-}
-
-.main-feature-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    padding: 25px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
-}
-
-.main-feature-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 35px rgba(102, 126, 234, 0.4);
-}
-
-.feature-main-icon {
-    font-size: 48px;
-    margin-bottom: 10px;
-    display: block;
-}
-
-.feature-main-title {
-    font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 5px;
-    color: white;
-}
-
-.feature-main-desc {
-    font-size: 14px;
-    opacity: 0.9;
-    margin-bottom: 20px;
-}
-
-.mining-stats {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 15px;
-}
-
-.mining-stat {
-    text-align: center;
-}
-
-.mining-value {
-    display: block;
-    font-size: 16px;
-    font-weight: bold;
-    color: #FFD700;
-    margin-bottom: 2px;
-}
-
-.mining-label {
-    font-size: 12px;
-    opacity: 0.8;
-}
-
-/* Boost Section */
-.boost-section {
-    background: rgba(255, 215, 0, 0.1);
-    border: 1px solid rgba(255, 215, 0, 0.3);
-    border-radius: 15px;
-    padding: 18px;
-    margin-bottom: 20px;
-}
-
-.boost-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 12px;
-}
-
-.boost-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: #FFD700;
-}
-
-.boost-progress {
-    font-size: 14px;
-    opacity: 0.8;
-}
-
-.boost-bar {
-    background: rgba(255, 255, 255, 0.1);
-    height: 8px;
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 15px;
-}
-
-.boost-fill {
-    background: linear-gradient(90deg, #FFD700, #FFA726);
-    height: 100%;
-    border-radius: 4px;
-    transition: width 0.3s ease;
-}
-
-.boost-btn {
-    background: linear-gradient(135deg, #FFD700, #FFA726);
-    color: #1a1a2e;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 12px;
-    cursor: pointer;
-    font-weight: bold;
-    width: 100%;
-    transition: transform 0.3s ease;
-    font-size: 14px;
-}
-
-.boost-btn:hover {
-    transform: translateY(-2px);
-}
-
-/* Community Section */
-.community-section {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-    padding: 18px;
-    margin-bottom: 25px;
-    text-align: center;
-}
-
-.community-header {
-    margin-bottom: 12px;
-}
-
-.community-title {
-    font-size: 12px;
-    font-weight: bold;
-    opacity: 0.7;
-    letter-spacing: 1px;
-}
-
-.community-stats {
-    display: flex;
-    justify-content: space-around;
-}
-
-.community-stat {
-    text-align: center;
-}
-
-.community-value {
-    display: block;
-    font-size: 16px;
-    font-weight: bold;
-    color: #4CAF50;
-    margin-bottom: 2px;
-}
-
-.community-label {
-    font-size: 11px;
-    opacity: 0.7;
-}
-
-/* Bottom Navigation - More Items */
-.bottom-nav {
-    display: flex;
-    justify-content: space-around;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    padding: 10px 5px;
-    margin-bottom: 20px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    flex-wrap: wrap;
-    gap: 5px;
-}
-
-/* Stats Grid Mini */
-.stats-grid-mini {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin: 20px 0;
-}
-
-.stat-card-mini {
-    background: rgba(255, 255, 255, 0.05);
-    padding: 15px 10px;
-    border-radius: 12px;
-    text-align: center;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.stat-number-mini {
-    font-size: 18px;
-    font-weight: bold;
-    color: #4CAF50;
-    display: block;
-    margin-bottom: 4px;
-}
-
-.stat-label-mini {
-    font-size: 11px;
-    opacity: 0.7;
-}
-
-/* Welcome Message */
-.welcome-message {
-    text-align: center;
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 15px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.welcome-message h3 {
-    margin-bottom: 15px;
-    color: #FFA726;
-    font-size: 18px;
-}
-
-.welcome-note {
-    opacity: 0.7;
-    font-style: italic;
-    margin-top: 15px;
-    font-size: 14px;
-}
-
-/* Mining Active State */
-.mining-active {
-    background: linear-gradient(135deg, #4CAF50, #45a049) !important;
-    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3) !important;
-}
-
-.mining-active .feature-main-desc {
-    color: #FFD700 !important;
-    font-weight: bold;
-}
-
 /* Section Headers */
 .section-header {
     display: flex;
@@ -529,61 +556,43 @@ h2 {
     background: rgba(255, 255, 255, 0.2);
 }
 
-.section-title {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.section-title h3 {
-    margin-bottom: 5px;
-    color: #FFA726;
-}
-
-.section-subtitle {
-    font-size: 12px;
-    opacity: 0.7;
-}
-
-/* Video Platform Tabs */
-.video-platform-tabs {
-    display: flex;
+/* Notification System */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
     background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 6px;
-    margin-bottom: 20px;
-}
-
-.platform-tab {
-    flex: 1;
-    padding: 12px 15px;
-    border: none;
-    background: transparent;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    padding: 15px;
     color: white;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.3s ease;
-    font-weight: bold;
-    font-size: 14px;
+    z-index: 1000;
+    animation: slideInRight 0.3s ease-out;
+    max-width: 300px;
 }
 
-.platform-tab.active {
-    background: rgba(255, 255, 255, 0.2);
-    color: #FFD700;
+.notification.success {
+    border-left: 4px solid #4CAF50;
 }
 
-/* ... (YOUR EXISTING ALL OTHER CSS STYLES CONTINUE EXACTLY AS THEY ARE) ... */
-
-/* Telegram Theme Variables */
-:root {
-    --tg-theme-bg-color: #1a1a2e;
-    --tg-theme-text-color: #ffffff;
-    --tg-theme-button-color: #4CAF50;
+.notification.warning {
+    border-left: 4px solid #FF9800;
 }
 
-/* Apply Telegram theme if available */
-body {
-    background: var(--tg-theme-bg-color, linear-gradient(135deg, #1a1a2e 0%, #16213e 100%));
-    color: var(--tg-theme-text-color, white);
+.notification.info {
+    border-left: 4px solid #2196F3;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
 }
 
 /* Responsive Design */
@@ -593,233 +602,26 @@ body {
         margin: 5px;
     }
     
-    .quick-actions-mini {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 4px !important; /* ✅ MORE COMPACT: Even smaller gap on small screens */
-        margin-bottom: 15px;
+    .mining-main-card {
+        padding: 20px 15px;
     }
     
-    .mini-btn {
-        padding: 5px 1px !important; /* ✅ MORE COMPACT: Even smaller padding */
+    .mining-main-icon {
+        font-size: 48px;
     }
     
-    .mini-icon {
-        font-size: 12px !important; /* ✅ MORE COMPACT: Smaller on mobile */
-    }
-    
-    .mini-text {
-        font-size: 7px !important; /* ✅ MORE COMPACT: Smallest on mobile */
-    }
-    
-    .bottom-nav {
-        padding: 6px 2px; /* ✅ MORE COMPACT: Smaller navigation */
-    }
-    
-    .nav-item {
-        padding: 2px 3px !important; /* ✅ MORE COMPACT: Minimal padding */
-        min-width: 35px !important; /* ✅ MORE COMPACT: Smaller min-width */
-    }
-    
-    .nav-icon {
-        font-size: 12px !important; /* ✅ MORE COMPACT: Smaller on mobile */
-    }
-    
-    .nav-text {
-        font-size: 6px !important; /* ✅ MORE COMPACT: Smallest on mobile */
-    }
-
-    .videos-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .search-container input {
-        padding: 12px 15px;
-    }
-
-    .search-container button {
-        padding: 12px 15px;
-    }
-
-    .sharing-options {
-        grid-template-columns: 1fr;
-    }
-
-    .youtube-iframe-container {
-        height: 200px;
-    }
-
-    .telegram-videos-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .telegram-stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-    
-    .telegram-stat {
-        padding: 10px 5px;
-    }
-    
-    .stat-value {
-        font-size: 14px;
-    }
-    
-    .stat-label {
-        font-size: 9px;
-    }
-
-    .x-stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-    
-    .x-stat {
-        padding: 10px 5px;
-    }
-    
-    .x-action-buttons {
-        flex-direction: column;
-    }
-
-    .follow-platform-tabs {
-        padding: 4px;
-    }
-    
-    .follow-stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-    
-    .follow-stat {
-        padding: 10px 5px;
-    }
-    
-    .follow-task-content {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .task-avatar {
-        margin: 0 auto;
-    }
-    
-    .follow-account-card {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .account-avatar {
-        margin: 0 auto;
-    }
-    
-    .follow-channel-card {
-        flex-direction: column;
-        text-align: center;
-    }
-    
-    .channel-avatar {
-        margin: 0 auto;
-    }
-    
-    .referral-stats {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
-    }
-    
-    .referral-stat {
-        padding: 10px 5px;
-    }
-    
-    .support-cards {
-        grid-template-columns: 1fr;
-    }
-    
-    .wallet-actions {
-        grid-template-columns: 1fr;
-    }
-    
-    .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .wallet-earnings-breakdown {
-        margin: 15px 0;
-    }
-    
-    .earning-item {
-        padding: 12px 0;
-    }
-    
-    .earning-icon {
+    .mining-main-title {
         font-size: 20px;
     }
     
-    .user-rank-info {
-        flex-direction: column;
-        text-align: center;
-        gap: 10px;
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
     
-    .user-details {
-        margin: 10px 0;
-    }
-    
-    .leaderboard-item {
-        padding: 12px 10px;
-    }
-    
-    .contact-form, .report-form {
-        padding: 15px;
-    }
-    
-    .form-group input, .form-group select, .form-group textarea {
-        padding: 10px 12px;
-    }
-    
-    .terms-content {
-        padding: 15px;
-        max-height: 350px;
-    }
-
-    /* Enhanced Referral Responsive */
-    .steps {
-        gap: 12px;
-    }
-    
-    .step {
-        flex-direction: column;
-        text-align: center;
-        gap: 10px;
-    }
-    
-    .step-number {
-        align-self: center;
-    }
-    
-    .history-item {
-        flex-direction: column;
-        gap: 8px;
-        text-align: center;
-    }
-    
-    .history-details {
-        align-items: center;
-    }
-    
-    .user-profile-card {
-        flex-direction: column;
-        text-align: center;
-        gap: 12px;
-    }
-    
-    .profile-avatar {
-        align-self: center;
+    .quick-mining-actions {
+        grid-template-columns: 1fr;
     }
 }
-
-/* ✅ MOBILE RESPONSIVE FIXES - NO UI/LAYOUT CHANGES */
-/* Add these at the end of your existing CSS */
 
 /* Mobile Viewport Fix */
 html {
@@ -854,7 +656,7 @@ body {
 .content-area {
     -webkit-overflow-scrolling: touch;
     overflow-y: auto;
-    height: calc(100vh - 130px); /* ✅ ADJUSTED: Slightly less height due to compact buttons */
+    height: calc(100vh - 130px);
 }
 
 /* Bottom Nav Mobile Optimization */
@@ -863,31 +665,6 @@ body {
     bottom: 0;
     z-index: 1000;
     flex-shrink: 0;
-}
-
-/* ✅ FIXED: REMOVE HEIGHT CONSTRAINTS FROM BUTTONS */
-.mini-btn, .nav-item, .wallet, .back-btn {
-    min-height: auto !important;
-    height: auto !important;
-}
-
-/* Prevent Text Selection on Interactive Elements */
-.mini-btn, .nav-item, .wallet, .back-btn, .main-feature-card {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-
-/* Mobile Safari Specific Fixes */
-@supports (-webkit-touch-callout: none) {
-    .app-container {
-        height: -webkit-fill-available;
-    }
-    
-    .content-area {
-        height: calc(100vh - 130px - env(safe-area-inset-bottom)); /* ✅ ADJUSTED */
-    }
 }
 
 /* Safe Area Insets for Notch Devices */
@@ -899,7 +676,7 @@ body {
     }
     
     .bottom-nav-native {
-        padding-bottom: max(8px, env(safe-area-inset-bottom)); /* ✅ MORE COMPACT: Reduced bottom padding */
+        padding-bottom: max(8px, env(safe-area-inset-bottom));
         padding-left: max(3px, env(safe-area-inset-left));
         padding-right: max(3px, env(safe-area-inset-right));
     }
@@ -912,20 +689,12 @@ body {
     }
     
     .content-area {
-        height: calc(100vh - 110px); /* ✅ ADJUSTED: Less height in landscape */
+        height: calc(100vh - 110px);
         padding: 10px 20px;
     }
     
     .bottom-nav-native {
-        padding: 6px 3px !important; /* ✅ MORE COMPACT: Even smaller in landscape */
-    }
-    
-    .nav-icon {
-        font-size: 12px !important;
-    }
-    
-    .nav-text {
-        font-size: 6px !important; /* ✅ MORE COMPACT: Smallest in landscape */
+        padding: 6px 3px !important;
     }
 }
 
@@ -933,83 +702,15 @@ body {
 @media (max-width: 320px) {
     .quick-actions-mini {
         grid-template-columns: repeat(3, 1fr);
-        gap: 3px !important; /* ✅ MORE COMPACT: Minimal gap */
+        gap: 3px !important;
     }
     
     .mini-btn {
-        padding: 3px 0px !important; /* ✅ MORE COMPACT: Almost no padding */
+        padding: 3px 0px !important;
         font-size: 8px;
     }
     
     .mini-icon {
-        font-size: 10px !important; /* ✅ MORE COMPACT: Smallest icon */
-    }
-    
-    .stats-grid-mini {
-        gap: 8px;
-    }
-    
-    .stat-card-mini {
-        padding: 10px 5px;
-    }
-    
-    .stat-number-mini {
-        font-size: 14px;
-    }
-    
-    .stat-label-mini {
-        font-size: 9px;
-    }
-}
-
-/* Tablet and Larger Mobile */
-@media (min-width: 768px) and (max-width: 1024px) {
-    .app-container {
-        max-width: 768px;
-        margin: 0 auto;
-    }
-    
-    .content-area {
-        padding: 30px;
-    }
-    
-    .quick-actions-mini {
-        grid-template-columns: repeat(6, 1fr);
-        gap: 8px; /* ✅ Slightly more gap on tablets but still compact */
-    }
-}
-
-/* High DPI Mobile Screens */
-@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-    .main-feature-card, .boost-section, .community-section {
-        border-width: 0.5px;
-    }
-}
-
-/* Reduced Motion for Accessibility */
-@media (prefers-reduced-motion: reduce) {
-    * {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-    }
-}
-
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .app-container {
-        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-    }
-}
-
-/* Print Styles */
-@media print {
-    .bottom-nav-native, .header-section {
-        display: none;
-    }
-    
-    .content-area {
-        height: auto;
-        overflow: visible;
+        font-size: 10px !important;
     }
 }
