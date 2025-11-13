@@ -39,6 +39,14 @@ let currentVideoTimer = null;
 let currentVideoTimeLeft = 0;
 let currentVideoData = null;
 
+// New Systems State
+let completedFollowTasks = [];
+let completedDailyTasks = [];
+let completedSocialTasks = [];
+let watchedTelegramVideoIds = [];
+let joinedTelegramChannels = [];
+let completedXTasks = [];
+
 // YouTube API Configuration
 const YOUTUBE_API_KEYS = [
     'AIzaSyBATxf5D7ZDeiQ61dbEdzEd4Tq72N713Y8',
@@ -164,6 +172,14 @@ function loadMiningState() {
     todayEarnings = savedTodayEarnings ? parseInt(savedTodayEarnings) : 0;
     lastEarningDate = savedLastEarningDate || null;
     
+    // Load new systems state
+    completedFollowTasks = getFromStorage('completedFollowTasks', []);
+    completedDailyTasks = getFromStorage('completedDailyTasks', []);
+    completedSocialTasks = getFromStorage('completedSocialTasks', []);
+    watchedTelegramVideoIds = getFromStorage('watchedTelegramVideoIds', []);
+    joinedTelegramChannels = getFromStorage('joinedTelegramChannels', []);
+    completedXTasks = getFromStorage('completedXTasks', []);
+    
     // Check daily reset for earnings
     checkDailyEarningsReset();
     
@@ -230,6 +246,14 @@ function saveMiningState() {
     localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
     localStorage.setItem('todayEarnings', todayEarnings);
     localStorage.setItem('lastEarningDate', lastEarningDate);
+    
+    // Save new systems state
+    saveToStorage('completedFollowTasks', completedFollowTasks);
+    saveToStorage('completedDailyTasks', completedDailyTasks);
+    saveToStorage('completedSocialTasks', completedSocialTasks);
+    saveToStorage('watchedTelegramVideoIds', watchedTelegramVideoIds);
+    saveToStorage('joinedTelegramChannels', joinedTelegramChannels);
+    saveToStorage('completedXTasks', completedXTasks);
 }
 
 // Check Daily Reset for Earnings
@@ -238,7 +262,9 @@ function checkDailyEarningsReset() {
     if (lastEarningDate !== today) {
         todayEarnings = 0;
         lastEarningDate = today;
-        console.log('📅 New day - earnings reset');
+        // Reset daily tasks
+        completedDailyTasks = [];
+        console.log('📅 New day - earnings and daily tasks reset');
         saveMiningState();
     }
 }
@@ -1069,6 +1095,609 @@ function showTwitterSection() {
     `;
 }
 
+// 👥 6. FOLLOW & EARN SYSTEM
+function showFollowSection() {
+    document.getElementById('earnAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">👥</div>
+                <h3>Follow & Earn</h3>
+            </div>
+            
+            <div class="follow-platform-tabs">
+                <button class="platform-tab active" onclick="showAllFollowTasks()">All</button>
+                <button class="platform-tab" onclick="showInstagramFollow()">Instagram</button>
+                <button class="platform-tab" onclick="showYouTubeFollow()">YouTube</button>
+                <button class="platform-tab" onclick="showTikTokFollow()">TikTok</button>
+            </div>
+            
+            <div id="followResultsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading follow tasks...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    showAllFollowTasks();
+}
+
+function showAllFollowTasks() {
+    document.querySelectorAll('.platform-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const allTasks = [
+        {
+            id: 'follow1',
+            platform: 'instagram',
+            username: 'fashion.ista',
+            followers: '2.5M',
+            points: 25,
+            description: 'Follow for fashion tips'
+        },
+        {
+            id: 'follow2',
+            platform: 'youtube',
+            username: 'TechReview',
+            subscribers: '1.8M',
+            points: 30,
+            description: 'Subscribe for tech reviews'
+        },
+        {
+            id: 'follow3',
+            platform: 'tiktok',
+            username: 'dance.king',
+            followers: '5.2M',
+            points: 20,
+            description: 'Follow for dance videos'
+        }
+    ];
+    
+    displayFollowTasks(allTasks, 'All Follow Tasks');
+}
+
+function showInstagramFollow() {
+    document.querySelectorAll('.platform-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const instagramTasks = [
+        {
+            id: 'ig_follow1',
+            platform: 'instagram',
+            username: 'travel.world',
+            followers: '3.2M',
+            points: 28,
+            description: 'Travel photography account'
+        },
+        {
+            id: 'ig_follow2',
+            platform: 'instagram',
+            username: 'food.delight',
+            followers: '1.5M',
+            points: 22,
+            description: 'Food recipes and tips'
+        }
+    ];
+    
+    displayFollowTasks(instagramTasks, 'Instagram Follow');
+}
+
+function showYouTubeFollow() {
+    document.querySelectorAll('.platform-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const youtubeTasks = [
+        {
+            id: 'yt_follow1',
+            platform: 'youtube',
+            username: 'GamingPro',
+            subscribers: '2.1M',
+            points: 35,
+            description: 'Gaming content and streams'
+        },
+        {
+            id: 'yt_follow2',
+            platform: 'youtube',
+            username: 'CookingMaster',
+            subscribers: '1.2M',
+            points: 25,
+            description: 'Cooking tutorials'
+        }
+    ];
+    
+    displayFollowTasks(youtubeTasks, 'YouTube Subscribe');
+}
+
+function showTikTokFollow() {
+    document.querySelectorAll('.platform-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const tiktokTasks = [
+        {
+            id: 'tt_follow1',
+            platform: 'tiktok',
+            username: 'comedy.king',
+            followers: '8.5M',
+            points: 18,
+            description: 'Funny comedy sketches'
+        },
+        {
+            id: 'tt_follow2',
+            platform: 'tiktok',
+            username: 'fitness.coach',
+            followers: '3.8M',
+            points: 20,
+            description: 'Fitness and workout tips'
+        }
+    ];
+    
+    displayFollowTasks(tiktokTasks, 'TikTok Follow');
+}
+
+function displayFollowTasks(tasks, title) {
+    const container = document.getElementById('followResultsContainer');
+    
+    let html = `
+        <div class="section-title">
+            <h3>👥 ${title}</h3>
+            <p class="section-subtitle">Follow accounts and earn points</p>
+        </div>
+        <div class="follow-tasks-grid">
+    `;
+    
+    tasks.forEach(task => {
+        const isCompleted = completedFollowTasks.includes(task.id);
+        const platformIcon = getPlatformIcon(task.platform);
+        
+        html += `
+            <div class="follow-task-card ${task.platform}-card">
+                <div class="follow-task-header">
+                    <div class="platform-icon">${platformIcon}</div>
+                    <div class="task-platform">${task.platform.charAt(0).toUpperCase() + task.platform.slice(1)}</div>
+                    <div class="task-points">+${task.points}</div>
+                </div>
+                <div class="follow-task-content">
+                    <div class="task-username">@${task.username}</div>
+                    <div class="task-stats">${task.followers || task.subscribers} ${task.platform === 'youtube' ? 'subscribers' : 'followers'}</div>
+                    <div class="task-description">${task.description}</div>
+                </div>
+                <div class="follow-task-actions">
+                    ${isCompleted ? 
+                        '<button class="btn-completed">✅ Completed</button>' : 
+                        `<button class="btn-follow" onclick="completeFollowTask('${task.id}', ${task.points}, '${task.username}', '${task.platform}')">Follow +${task.points}</button>`
+                    }
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function getPlatformIcon(platform) {
+    switch(platform) {
+        case 'instagram': return '📷';
+        case 'youtube': return '🎬';
+        case 'tiktok': return '🎵';
+        default: return '👤';
+    }
+}
+
+function completeFollowTask(taskId, points, username, platform) {
+    if (completedFollowTasks.includes(taskId)) {
+        showNotification('❌ You have already completed this task!', 'warning');
+        return;
+    }
+    
+    userPoints += points;
+    completedFollowTasks.push(taskId);
+    totalTasksCompleted++;
+    todayEarnings += points;
+    totalPointsEarned += points;
+    
+    showNotification(`✅ +${points} Points! Followed @${username} on ${platform}`, 'success');
+    updateUI();
+    saveMiningState();
+    
+    // Refresh current view
+    const activeTab = document.querySelector('.platform-tab.active');
+    if (activeTab) {
+        activeTab.click();
+    }
+}
+
+// 📋 7. DAILY TASKS SYSTEM
+function showTasks() {
+    document.getElementById('earnAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">📋</div>
+                <h3>Daily Tasks</h3>
+            </div>
+            
+            <div class="tasks-stats">
+                <div class="task-stat">
+                    <div class="stat-number">${completedDailyTasks.length}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="task-stat">
+                    <div class="stat-number">5</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="task-stat">
+                    <div class="stat-number">${calculateTaskPoints()}</div>
+                    <div class="stat-label">Earned</div>
+                </div>
+            </div>
+            
+            <div id="tasksContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading daily tasks...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    loadDailyTasks();
+}
+
+function loadDailyTasks() {
+    const dailyTasks = [
+        {
+            id: 'daily1',
+            title: 'Watch 5 Videos',
+            description: 'Watch any 5 videos to earn bonus points',
+            points: 25,
+            type: 'videos',
+            progress: watchedVideos.length,
+            target: 5
+        },
+        {
+            id: 'daily2',
+            title: 'Mine for 1 Hour',
+            description: 'Keep mining active for 1 hour',
+            points: 50,
+            type: 'mining',
+            progress: Math.floor(miningSeconds / 3600),
+            target: 1
+        },
+        {
+            id: 'daily3',
+            title: 'Follow 3 Accounts',
+            description: 'Follow accounts on any platform',
+            points: 40,
+            type: 'follow',
+            progress: completedFollowTasks.length,
+            target: 3
+        },
+        {
+            id: 'daily4',
+            title: 'Complete Telegram Task',
+            description: 'Complete any Telegram task',
+            points: 30,
+            type: 'telegram',
+            progress: completedTasks.filter(task => task.startsWith('telegram')).length,
+            target: 1
+        },
+        {
+            id: 'daily5',
+            title: 'Like X Tweet',
+            description: 'Like any tweet on X',
+            points: 15,
+            type: 'x',
+            progress: completedXTasks.length,
+            target: 1
+        }
+    ];
+    
+    displayDailyTasks(dailyTasks);
+}
+
+function displayDailyTasks(tasks) {
+    const container = document.getElementById('tasksContainer');
+    
+    let html = `
+        <div class="section-title">
+            <h3>📋 Today's Tasks</h3>
+            <p class="section-subtitle">Complete tasks for bonus points</p>
+        </div>
+        <div class="tasks-list">
+    `;
+    
+    tasks.forEach(task => {
+        const isCompleted = completedDailyTasks.includes(task.id);
+        const progress = Math.min(task.progress, task.target);
+        const percentage = (progress / task.target) * 100;
+        
+        html += `
+            <div class="task-item ${isCompleted ? 'completed' : ''}">
+                <div class="task-header">
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-points">+${task.points}</div>
+                </div>
+                <div class="task-description">${task.description}</div>
+                <div class="task-progress">
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${percentage}%"></div>
+                    </div>
+                    <div class="progress-text">${progress}/${task.target}</div>
+                </div>
+                <div class="task-actions">
+                    ${isCompleted ? 
+                        '<button class="btn-completed">✅ Completed</button>' : 
+                        (progress >= task.target ? 
+                            `<button class="btn-claim" onclick="claimTaskReward('${task.id}', ${task.points}, '${task.title}')">Claim +${task.points}</button>` :
+                            `<button class="btn-incomplete" onclick="showTaskHelp('${task.type}')">Complete Task</button>`
+                        )
+                    }
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function claimTaskReward(taskId, points, title) {
+    if (completedDailyTasks.includes(taskId)) {
+        showNotification('❌ You have already claimed this reward!', 'warning');
+        return;
+    }
+    
+    userPoints += points;
+    completedDailyTasks.push(taskId);
+    totalTasksCompleted++;
+    todayEarnings += points;
+    totalPointsEarned += points;
+    
+    showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
+    updateUI();
+    saveMiningState();
+    showTasks();
+}
+
+function showTaskHelp(taskType) {
+    switch(taskType) {
+        case 'videos':
+            showVideoSection();
+            break;
+        case 'mining':
+            showNotification('💡 Start mining from the main screen to complete this task!', 'info');
+            break;
+        case 'follow':
+            showFollowSection();
+            break;
+        case 'telegram':
+            showTelegramSection();
+            break;
+        case 'x':
+            showTwitterSection();
+            break;
+    }
+}
+
+function calculateTaskPoints() {
+    return completedDailyTasks.reduce((total, taskId) => {
+        const task = getTaskById(taskId);
+        return total + (task ? task.points : 0);
+    }, 0);
+}
+
+function getTaskById(taskId) {
+    const tasks = [
+        { id: 'daily1', points: 25 },
+        { id: 'daily2', points: 50 },
+        { id: 'daily3', points: 40 },
+        { id: 'daily4', points: 30 },
+        { id: 'daily5', points: 15 }
+    ];
+    return tasks.find(task => task.id === taskId);
+}
+
+// 🌐 8. SOCIAL TASKS SYSTEM
+function showSocialTasks() {
+    document.getElementById('earnAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">🌐</div>
+                <h3>Social Tasks</h3>
+            </div>
+            
+            <div class="social-stats">
+                <div class="social-stat">
+                    <div class="stat-number">${completedSocialTasks.length}</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+                <div class="social-stat">
+                    <div class="stat-number">8</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="social-stat">
+                    <div class="stat-number">${calculateSocialPoints()}</div>
+                    <div class="stat-label">Earned</div>
+                </div>
+            </div>
+            
+            <div id="socialTasksContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading social tasks...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    loadSocialTasks();
+}
+
+function loadSocialTasks() {
+    const socialTasks = [
+        {
+            id: 'social1',
+            title: 'Share App Link',
+            description: 'Share TapEarn with friends on social media',
+            points: 50,
+            platform: 'all',
+            type: 'share'
+        },
+        {
+            id: 'social2',
+            title: 'Join Telegram Group',
+            description: 'Join our official Telegram community',
+            points: 30,
+            platform: 'telegram',
+            type: 'join'
+        },
+        {
+            id: 'social3',
+            title: 'Follow on Instagram',
+            description: 'Follow our Instagram page for updates',
+            points: 25,
+            platform: 'instagram',
+            type: 'follow'
+        },
+        {
+            id: 'social4',
+            title: 'Subscribe YouTube',
+            description: 'Subscribe to our YouTube channel',
+            points: 35,
+            platform: 'youtube',
+            type: 'subscribe'
+        },
+        {
+            id: 'social5',
+            title: 'Like Facebook Page',
+            description: 'Like our official Facebook page',
+            points: 20,
+            platform: 'facebook',
+            type: 'like'
+        },
+        {
+            id: 'social6',
+            title: 'Join Discord Server',
+            description: 'Join our Discord community',
+            points: 40,
+            platform: 'discord',
+            type: 'join'
+        },
+        {
+            id: 'social7',
+            title: 'Follow on X',
+            description: 'Follow us on X for news',
+            points: 25,
+            platform: 'x',
+            type: 'follow'
+        },
+        {
+            id: 'social8',
+            title: 'Join Reddit Community',
+            description: 'Join our subreddit',
+            points: 30,
+            platform: 'reddit',
+            type: 'join'
+        }
+    ];
+    
+    displaySocialTasks(socialTasks);
+}
+
+function displaySocialTasks(tasks) {
+    const container = document.getElementById('socialTasksContainer');
+    
+    let html = `
+        <div class="section-title">
+            <h3>🌐 Social Media Tasks</h3>
+            <p class="section-subtitle">Connect with us on social media</p>
+        </div>
+        <div class="social-tasks-grid">
+    `;
+    
+    tasks.forEach(task => {
+        const isCompleted = completedSocialTasks.includes(task.id);
+        const platformIcon = getSocialPlatformIcon(task.platform);
+        
+        html += `
+            <div class="social-task-card ${task.platform}-card">
+                <div class="social-task-header">
+                    <div class="platform-icon">${platformIcon}</div>
+                    <div class="task-platform">${task.platform.charAt(0).toUpperCase() + task.platform.slice(1)}</div>
+                    <div class="task-points">+${task.points}</div>
+                </div>
+                <div class="social-task-content">
+                    <div class="task-title">${task.title}</div>
+                    <div class="task-description">${task.description}</div>
+                </div>
+                <div class="social-task-actions">
+                    ${isCompleted ? 
+                        '<button class="btn-completed">✅ Completed</button>' : 
+                        `<button class="btn-complete" onclick="completeSocialTask('${task.id}', ${task.points}, '${task.title}', '${task.platform}')">Complete</button>`
+                    }
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function getSocialPlatformIcon(platform) {
+    switch(platform) {
+        case 'telegram': return '📱';
+        case 'instagram': return '📷';
+        case 'youtube': return '🎬';
+        case 'facebook': return '👥';
+        case 'discord': return '💬';
+        case 'x': return '🐦';
+        case 'reddit': return '📱';
+        case 'all': return '🌐';
+        default: return '📱';
+    }
+}
+
+function completeSocialTask(taskId, points, title, platform) {
+    if (completedSocialTasks.includes(taskId)) {
+        showNotification('❌ You have already completed this task!', 'warning');
+        return;
+    }
+    
+    userPoints += points;
+    completedSocialTasks.push(taskId);
+    totalTasksCompleted++;
+    todayEarnings += points;
+    totalPointsEarned += points;
+    
+    showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
+    updateUI();
+    saveMiningState();
+    showSocialTasks();
+}
+
+function calculateSocialPoints() {
+    return completedSocialTasks.reduce((total, taskId) => {
+        const task = getSocialTaskById(taskId);
+        return total + (task ? task.points : 0);
+    }, 0);
+}
+
+function getSocialTaskById(taskId) {
+    const tasks = [
+        { id: 'social1', points: 50 },
+        { id: 'social2', points: 30 },
+        { id: 'social3', points: 25 },
+        { id: 'social4', points: 35 },
+        { id: 'social5', points: 20 },
+        { id: 'social6', points: 40 },
+        { id: 'social7', points: 25 },
+        { id: 'social8', points: 30 }
+    ];
+    return tasks.find(task => task.id === taskId);
+}
+
 function showHomePage() {
     document.getElementById('earnAppContent').innerHTML = `
         <div class="welcome-section">
@@ -1099,6 +1728,24 @@ function showHomePage() {
                     <span class="platform-icon">🐦</span>
                     <span class="platform-name">Twitter Tasks</span>
                     <span class="platform-points">+8-20 points</span>
+                    <span class="platform-time">⚡ Instant</span>
+                </div>
+                <div class="platform-card" onclick="showFollowSection()">
+                    <span class="platform-icon">👥</span>
+                    <span class="platform-name">Follow & Earn</span>
+                    <span class="platform-points">+20-35 points</span>
+                    <span class="platform-time">⚡ Instant</span>
+                </div>
+                <div class="platform-card" onclick="showTasks()">
+                    <span class="platform-icon">📋</span>
+                    <span class="platform-name">Daily Tasks</span>
+                    <span class="platform-points">+15-50 points</span>
+                    <span class="platform-time">📅 Daily</span>
+                </div>
+                <div class="platform-card" onclick="showSocialTasks()">
+                    <span class="platform-icon">🌐</span>
+                    <span class="platform-name">Social Tasks</span>
+                    <span class="platform-points">+20-50 points</span>
                     <span class="platform-time">⚡ Instant</span>
                 </div>
             </div>
