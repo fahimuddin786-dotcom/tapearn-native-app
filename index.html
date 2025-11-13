@@ -3,72 +3,223 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TapEarn - Points Mining App</title>
+    <title>TapEarn - Mining & Earning</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="container">
-        <!-- Header with Wallet -->
-        <div class="header">
-            <div class="wallet" onclick="showWalletDetails()">
-                <span class="wallet-icon">💰</span>
-                <span class="wallet-amount" id="walletPoints">0</span>
-                <span class="wallet-label">Points</span>
+    <!-- Main App Container -->
+    <div class="app-container">
+        <!-- Header -->
+        <div class="app-header">
+            <div class="header-content">
+                <div class="wallet" onclick="showWalletDetails()">
+                    <span class="wallet-icon">💰</span>
+                    <span class="wallet-amount" id="walletPoints">0</span>
+                    <span class="wallet-label">Points</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-level" id="userLevel">Bronze</div>
+                    <div class="user-stats" id="userStats">0/500</div>
+                </div>
             </div>
-            <div class="user-info">
-                <div class="user-level">Bronze</div>
-                <div class="user-stats">0/500</div>
+            
+            <div class="level-progress">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="levelProgress"></div>
+                </div>
             </div>
         </div>
 
-        <h2>🎯 TapEarn</h2>
+        <!-- Main Content Area -->
+        <div class="app-content">
+            <!-- Mining Content (Default) -->
+            <div id="miningContent" class="content-page active">
+                <div class="page-header">
+                    <h2>⛏️ Mining</h2>
+                    <p class="page-subtitle">Passive income generator</p>
+                </div>
 
-        <!-- Main Mining Feature -->
-        <div class="main-features">
-            <div class="main-feature-card mining-feature" onclick="toggleMining()">
-                <div class="feature-main-icon">⛏️</div>
-                <div class="feature-main-title">Points Mining</div>
-                <div class="feature-main-desc" id="miningStatusText">Click to start mining</div>
-                <div class="mining-stats">
-                    <div class="mining-stat">
-                        <span class="mining-value" id="miningTime">00:00:00</span>
-                        <span class="mining-label">Time</span>
+                <!-- Main Mining Card -->
+                <div class="main-mining-card" onclick="toggleMining()">
+                    <div class="mining-icon">⛏️</div>
+                    <div class="mining-title" id="miningTitle">Bronze Mining</div>
+                    <div class="mining-status" id="miningStatusText">Click to start mining</div>
+                    
+                    <div class="mining-stats">
+                        <div class="mining-stat">
+                            <div class="stat-value" id="miningTime">00:00:00</div>
+                            <div class="stat-label">Time</div>
+                        </div>
+                        <div class="mining-stat">
+                            <div class="stat-value" id="miningRate">5/min</div>
+                            <div class="stat-label">Rate</div>
+                        </div>
+                        <div class="mining-stat">
+                            <div class="stat-value" id="miningMultiplier">1x</div>
+                            <div class="stat-label">Multiplier</div>
+                        </div>
                     </div>
-                    <div class="mining-stat">
-                        <span class="mining-value" id="miningRate">300/hr</span>
-                        <span class="mining-label">Rate</span>
+
+                    <!-- Turbo Indicator -->
+                    <div class="turbo-indicator" id="turboIndicator" style="display: none;">
+                        🚀 TURBO ACTIVE: <span id="turboTime">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Mining Controls -->
+                <div class="mining-controls">
+                    <button class="control-btn boost" onclick="claimBoost()">
+                        <span class="btn-icon">🎁</span>
+                        <span class="btn-text">Daily Boost</span>
+                    </button>
+                    <button class="control-btn turbo" onclick="activateTurbo()" id="turboBtn">
+                        <span class="btn-icon">🚀</span>
+                        <span class="btn-text">Turbo</span>
+                    </button>
+                </div>
+
+                <!-- Quick Stats -->
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPoints">0</div>
+                        <div class="stat-label">Total Points</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="miningHours">0</div>
+                        <div class="stat-label">Mining Hours</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="pointsEarned">0</div>
+                        <div class="stat-label">Points Earned</div>
+                    </div>
+                </div>
+
+                <!-- Upgrades Section -->
+                <div class="upgrades-section">
+                    <h3>⚡ Upgrades</h3>
+                    
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Mining Speed</div>
+                            <div class="upgrade-level">Level <span id="speedLevel">1</span></div>
+                        </div>
+                        <button class="upgrade-btn" onclick="upgradeSpeed()" id="speedUpgradeBtn">
+                            <span class="btn-cost" id="speedCost">100</span>
+                        </button>
+                    </div>
+
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Point Multiplier</div>
+                            <div class="upgrade-level">Level <span id="multiplierLevel">1</span></div>
+                        </div>
+                        <button class="upgrade-btn" onclick="upgradeMultiplier()" id="multiplierUpgradeBtn">
+                            <span class="btn-cost" id="multiplierCost">200</span>
+                        </button>
+                    </div>
+
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Mining Level</div>
+                            <div class="upgrade-level" id="levelName">Bronze</div>
+                        </div>
+                        <button class="upgrade-btn level-up" onclick="upgradeLevel()" id="levelUpgradeBtn">
+                            <span class="btn-cost" id="levelCost">500</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bonuses Section -->
+                <div class="bonuses-section">
+                    <h3>🎁 Daily Bonuses</h3>
+                    <div class="bonus-cards">
+                        <div class="bonus-card" onclick="claimDailyBonus()">
+                            <div class="bonus-icon">📅</div>
+                            <div class="bonus-amount">+100</div>
+                            <div class="bonus-status" id="dailyBonusStatus">Available</div>
+                        </div>
+                        <div class="bonus-card" onclick="claimHourlyBonus()">
+                            <div class="bonus-icon">⏰</div>
+                            <div class="bonus-amount">+25</div>
+                            <div class="bonus-status" id="hourlyBonusStatus">Available</div>
+                        </div>
+                        <div class="bonus-card" onclick="claimStreakBonus()">
+                            <div class="bonus-icon">🔥</div>
+                            <div class="bonus-amount">+50</div>
+                            <div class="bonus-status" id="streakBonusStatus">Day 1</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earn Content -->
+            <div id="earnContent" class="content-page">
+                <div class="page-header">
+                    <h2>💰 Earn</h2>
+                    <p class="page-subtitle">Complete tasks to earn points</p>
+                </div>
+
+                <!-- Main Earn Button -->
+                <div class="earn-main-section">
+                    <button class="earn-main-btn" onclick="showEarnPage()">
+                        <span class="earn-main-icon">💰</span>
+                        <span class="earn-main-text">EARN POINTS</span>
+                        <span class="earn-main-subtext">Tap to start earning from all platforms</span>
+                    </button>
+                </div>
+
+                <!-- Earning Content Area -->
+                <div id="earnAppContent">
+                    <!-- Default Home Content -->
+                    <div class="welcome-section">
+                        <div class="welcome-icon">🚀</div>
+                        <h3>Welcome to TapEarn!</h3>
+                        <p>Click the EARN POINTS button to start earning from:</p>
+                        
+                        <div class="platforms-grid">
+                            <div class="platform-card">
+                                <span class="platform-icon">🎬</span>
+                                <span class="platform-name">YouTube</span>
+                            </div>
+                            <div class="platform-card">
+                                <span class="platform-icon">📱</span>
+                                <span class="platform-name">Telegram</span>
+                            </div>
+                            <div class="platform-card">
+                                <span class="platform-icon">📷</span>
+                                <span class="platform-name">Instagram</span>
+                            </div>
+                            <div class="platform-card">
+                                <span class="platform-icon">🐦</span>
+                                <span class="platform-name">Twitter</span>
+                            </div>
+                        </div>
+
+                        <div class="earn-stats">
+                            <div class="earn-stat">
+                                <div class="stat-number" id="totalEarnings">0</div>
+                                <div class="stat-label">Total Points</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="totalTasks">0</div>
+                                <div class="stat-label">Tasks Done</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Stats Section -->
-        <div class="stats-grid-mini">
-            <div class="stat-card-mini">
-                <span class="stat-number-mini" id="totalPoints">0</span>
-                <span class="stat-label-mini">Total Points</span>
-            </div>
-            <div class="stat-card-mini">
-                <span class="stat-number-mini" id="miningHours">0</span>
-                <span class="stat-label-mini">Mining Hours</span>
-            </div>
-            <div class="stat-card-mini">
-                <span class="stat-number-mini" id="pointsEarned">0</span>
-                <span class="stat-label-mini">Points Earned</span>
-            </div>
-        </div>
-
-        <!-- Mining Controls -->
-        <div class="mining-controls">
-            <button class="mining-btn" onclick="claimBoost()">🚀 Claim Daily Boost</button>
-            <button class="mining-btn secondary" onclick="showMiningHistory()">📊 Mining History</button>
-        </div>
-
-        <!-- Debug Info (Testing के लिए) -->
-        <div class="debug-info">
-            <button onclick="debugStorage()" class="debug-btn">🐛 Debug Storage</button>
-            <button onclick="resetMining()" class="debug-btn">🔄 Reset Mining</button>
-            <button onclick="addTestPoints()" class="debug-btn">💰 Add 1000 Points</button>
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <button class="nav-btn active" onclick="switchTab('mining')">
+                <span class="nav-icon">⛏️</span>
+                <span class="nav-label">Mining</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('earn')">
+                <span class="nav-icon">💰</span>
+                <span class="nav-label">Earn</span>
+            </button>
         </div>
     </div>
 
