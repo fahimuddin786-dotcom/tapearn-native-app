@@ -595,11 +595,12 @@ body {
     
     .quick-actions-mini {
         grid-template-columns: repeat(4, 1fr);
-        gap: 4px !important; /* ✅ MORE COMPACT: Even smaller on mobile */
+        gap: 4px !important; /* ✅ MORE COMPACT: Even smaller gap on small screens */
+        margin-bottom: 15px;
     }
     
     .mini-btn {
-        padding: 4px 1px !important; /* ✅ MORE COMPACT: Minimal padding */
+        padding: 5px 1px !important; /* ✅ MORE COMPACT: Even smaller padding */
     }
     
     .mini-icon {
