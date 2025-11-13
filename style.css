@@ -520,6 +520,13 @@ body {
     padding: 15px 10px;
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.platform-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-3px);
 }
 
 .platform-icon {
@@ -531,18 +538,30 @@ body {
 .platform-name {
     font-size: 12px;
     font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.platform-points {
+    font-size: 10px;
+    color: #4CAF50;
+    font-weight: bold;
 }
 
 .earn-stats {
-    display: flex;
-    justify-content: space-around;
-    margin-top: 25px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .earn-stat {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px 10px;
+    border-radius: 10px;
     text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Earn Page Sections */
@@ -586,6 +605,90 @@ body {
 .section-subtitle {
     font-size: 12px;
     opacity: 0.7;
+}
+
+/* Platform Header */
+.platform-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.platform-header-icon {
+    font-size: 24px;
+}
+
+/* Video Search */
+.video-search {
+    margin: 15px 0;
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.search-input::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.search-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.search-info {
+    text-align: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.search-info p {
+    margin-bottom: 8px;
+    font-size: 14px;
+    opacity: 0.8;
+}
+
+/* Refresh Button */
+.refresh-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    margin: 10px 0;
+    transition: all 0.3s ease;
+}
+
+.refresh-btn:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #764ba2, #667eea);
 }
 
 /* Earn Sections Grid */
@@ -703,6 +806,30 @@ body {
     font-size: 9px;
 }
 
+.video-duration {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 9px;
+}
+
+.video-completed-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
 .video-info {
     padding: 10px;
 }
@@ -738,6 +865,12 @@ body {
     align-items: center;
     gap: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.task-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
 }
 
 .task-icon {
@@ -778,16 +911,65 @@ body {
     font-size: 11px;
     font-weight: bold;
     transition: background 0.3s;
+    min-width: 60px;
 }
 
-.task-btn:hover {
+.task-btn:hover:not(:disabled) {
     background: #45a049;
+}
+
+.task-btn:disabled {
+    background: #666;
+    cursor: not-allowed;
+}
+
+/* Task Categories */
+.task-category {
+    margin: 20px 0;
+}
+
+.task-category h4 {
+    color: #FFA726;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+/* Task Completion States */
+.task-completed {
+    background: rgba(76, 175, 80, 0.1) !important;
+    border-color: #4CAF50 !important;
+}
+
+.task-completed .task-btn {
+    background: #666 !important;
+    cursor: not-allowed;
+}
+
+/* Video Completion States */
+.video-completed {
+    opacity: 0.7;
+    background: rgba(76, 175, 80, 0.1) !important;
+    cursor: default !important;
+}
+
+.video-completed .points-badge {
+    background: #666 !important;
+}
+
+.video-completed:hover {
+    transform: none !important;
 }
 
 /* Loading Spinner */
 .loading {
     text-align: center;
     padding: 40px 20px;
+}
+
+.loading-text {
+    text-align: center;
+    padding: 20px;
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .spinner {
@@ -975,6 +1157,15 @@ body {
         width: 40px;
     }
     
+    .earn-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .earn-stat {
+        padding: 12px 8px;
+    }
+    
     .bottom-nav {
         padding: 8px 15px;
     }
@@ -989,5 +1180,121 @@ body {
     
     .nav-label {
         font-size: 10px;
+    }
+    
+    .task-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .task-btn {
+        width: 100%;
+    }
+    
+    .search-input {
+        font-size: 16px; /* Better for mobile */
+    }
+}
+
+/* Additional Mobile Optimizations */
+@media (max-width: 380px) {
+    .app-header {
+        padding: 12px 15px;
+    }
+    
+    .wallet {
+        padding: 8px 12px;
+    }
+    
+    .wallet-amount {
+        font-size: 16px;
+    }
+    
+    .page-header h2 {
+        font-size: 24px;
+    }
+    
+    .mining-icon {
+        font-size: 40px;
+    }
+    
+    .mining-title {
+        font-size: 18px;
+    }
+    
+    .earn-main-icon {
+        font-size: 40px;
+    }
+    
+    .earn-main-text {
+        font-size: 22px;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .notification {
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+    }
+    
+    .notification.success {
+        border-left-color: #4CAF50;
+    }
+    
+    .notification.info {
+        border-left-color: #2196F3;
+    }
+    
+    .notification.warning {
+        border-left-color: #FFA726;
+    }
+}
+
+/* High contrast support */
+@media (prefers-contrast: high) {
+    .wallet {
+        border: 2px solid #FFD700;
+    }
+    
+    .main-mining-card {
+        border: 2px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .stat-card, .bonus-card, .platform-card, .task-card, .video-card {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .upgrade-btn, .task-btn, .search-btn, .refresh-btn {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .main-mining-card:hover,
+    .control-btn:hover:not(:disabled),
+    .stat-card:hover,
+    .bonus-card:hover,
+    .platform-card:hover,
+    .earn-section-card:hover,
+    .video-card:hover,
+    .task-card:hover,
+    .upgrade-btn:hover:not(:disabled),
+    .task-btn:hover:not(:disabled),
+    .search-btn:hover,
+    .refresh-btn:hover {
+        transform: none;
+    }
+    
+    .turbo-indicator {
+        animation: none;
     }
 }
