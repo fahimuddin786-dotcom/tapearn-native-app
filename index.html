@@ -2,57 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TapEarn - Points Mining App</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- ✅ MINING FOCUSED APP STRUCTURE -->
-    <div class="app-container">
-        <!-- Header Section - Fixed -->
-        <div class="header-section">
-            <div class="header">
-                <div class="wallet" onclick="showPage('wallet')">
-                    <span class="wallet-icon">💰</span>
-                    <span class="wallet-amount" id="walletPoints">0</span>
-                    <span class="wallet-label">Points</span>
-                </div>
-                <div class="user-info">
-                    <div class="user-level" id="userLevel">Bronze</div>
-                    <div class="user-stats" id="miningStats">Ready to mine</div>
-                </div>
+    <div class="container">
+        <!-- Header with Wallet -->
+        <div class="header">
+            <div class="wallet" onclick="showWalletDetails()">
+                <span class="wallet-icon">💰</span>
+                <span class="wallet-amount" id="walletPoints">0</span>
+                <span class="wallet-label">Points</span>
             </div>
-
-            <h2>⛏️ TapEarn Mining</h2>
+            <div class="user-info">
+                <div class="user-level">Bronze</div>
+                <div class="user-stats">0/500</div>
+            </div>
         </div>
 
-        <!-- Content Area - Scrollable Only Content -->
-        <div id="currentPage" class="content-area">
-            <!-- Mining Page Content will be loaded here by default -->
+        <h2>🎯 TapEarn</h2>
+
+        <!-- Main Mining Feature -->
+        <div class="main-features">
+            <div class="main-feature-card mining-feature" onclick="toggleMining()">
+                <div class="feature-main-icon">⛏️</div>
+                <div class="feature-main-title">Points Mining</div>
+                <div class="feature-main-desc" id="miningStatusText">Click to start mining</div>
+                <div class="mining-stats">
+                    <div class="mining-stat">
+                        <span class="mining-value" id="miningTime">00:00:00</span>
+                        <span class="mining-label">Time</span>
+                    </div>
+                    <div class="mining-stat">
+                        <span class="mining-value" id="miningRate">300/hr</span>
+                        <span class="mining-label">Rate</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Bottom Navigation - Fixed -->
-        <div class="bottom-nav-native">
-            <div class="nav-item active" onclick="showPage('mining')">
-                <span class="nav-icon">⛏️</span>
-                <span class="nav-text">Mining</span>
+        <!-- Stats Section -->
+        <div class="stats-grid-mini">
+            <div class="stat-card-mini">
+                <span class="stat-number-mini" id="totalPoints">0</span>
+                <span class="stat-label-mini">Total Points</span>
             </div>
-            <div class="nav-item" onclick="showPage('videos')">
-                <span class="nav-icon">🎬</span>
-                <span class="nav-text">Videos</span>
+            <div class="stat-card-mini">
+                <span class="stat-number-mini" id="miningHours">0</span>
+                <span class="stat-label-mini">Mining Hours</span>
             </div>
-            <div class="nav-item" onclick="showPage('tasks')">
-                <span class="nav-icon">📋</span>
-                <span class="nav-text">Tasks</span>
+            <div class="stat-card-mini">
+                <span class="stat-number-mini" id="pointsEarned">0</span>
+                <span class="stat-label-mini">Points Earned</span>
             </div>
-            <div class="nav-item" onclick="showPage('referral')">
-                <span class="nav-icon">👥</span>
-                <span class="nav-text">Referral</span>
-            </div>
-            <div class="nav-item" onclick="showPage('wallet')">
-                <span class="nav-icon">💰</span>
-                <span class="nav-text">Wallet</span>
-            </div>
+        </div>
+
+        <!-- Mining Controls -->
+        <div class="mining-controls">
+            <button class="mining-btn" onclick="claimBoost()">🚀 Claim Daily Boost</button>
+            <button class="mining-btn secondary" onclick="showMiningHistory()">📊 Mining History</button>
+        </div>
+
+        <!-- Debug Info (Testing के लिए) -->
+        <div class="debug-info">
+            <button onclick="debugStorage()" class="debug-btn">🐛 Debug Storage</button>
+            <button onclick="resetMining()" class="debug-btn">🔄 Reset Mining</button>
         </div>
     </div>
 
