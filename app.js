@@ -7,7 +7,7 @@ let totalMiningHours = 0;
 let totalPointsEarned = 0;
 
 // Mining Upgrades
-let miningLevel = 1; // 1: Bronze, 2: Silver, 3: Gold, 4: Platinum, 5: Diamond
+let miningLevel = 1;
 let speedLevel = 1;
 let multiplierLevel = 1;
 let turboActive = false;
@@ -29,10 +29,18 @@ let currentSessionStart = 0;
 
 // Earning App State
 let totalTasksCompleted = 0;
+let todayEarnings = 0;
+let lastEarningDate = null;
 let watchedVideos = [];
+let completedTasks = [];
 
 // YouTube API Configuration
-const YOUTUBE_API_KEY = 'AIzaSyBATxf5D7ZDeiQ61dbEdzEd4Tq72N713Y8';
+const YOUTUBE_API_KEYS = [
+    'AIzaSyBATxf5D7ZDeiQ61dbEdzEd4Tq72N713Y8',
+    'AIzaSyA4piVRV_2w4t6Y7-3nPo3Qp1TZ2xXq7Xw',
+    'AIzaSyD7LQcA4jY4Y4Y4Y4Y4Y4Y4Y4Y4Y4Y4Y4Y4'
+];
+let currentApiKeyIndex = 0;
 
 // Mining Rates and Costs
 const LEVEL_DATA = {
@@ -94,9 +102,9 @@ function getFromStorage(key, defaultValue = null) {
     }
 }
 
-// Load Complete Mining State
+// Load Complete State
 function loadMiningState() {
-    console.log('🔄 Loading complete mining state...');
+    console.log('🔄 Loading complete state...');
     
     const savedState = getFromStorage('miningState');
     const savedUpgrades = getFromStorage('miningUpgrades');
@@ -141,17 +149,23 @@ function loadMiningState() {
     // Load earning state
     const savedTasks = localStorage.getItem('totalTasksCompleted');
     const savedVideos = localStorage.getItem('watchedVideos');
+    const savedCompletedTasks = localStorage.getItem('completedTasks');
+    const savedTodayEarnings = localStorage.getItem('todayEarnings');
+    const savedLastEarningDate = localStorage.getItem('lastEarningDate');
     
     totalTasksCompleted = savedTasks ? parseInt(savedTasks) : 0;
     watchedVideos = savedVideos ? JSON.parse(savedVideos) : [];
+    completedTasks = savedCompletedTasks ? JSON.parse(savedCompletedTasks) : [];
+    todayEarnings = savedTodayEarnings ? parseInt(savedTodayEarnings) : 0;
+    lastEarningDate = savedLastEarningDate || null;
+    
+    // Check daily reset for earnings
+    checkDailyEarningsReset();
     
     // Check daily login
     checkDailyLogin();
     
-    console.log('✅ Complete state loaded:', {
-        isMining, miningLevel, speedLevel, multiplierLevel,
-        userPoints, turboActive, loginStreak
-    });
+    console.log('✅ Complete state loaded');
     
     if (isMining) {
         console.log('⛏️ Resuming mining session...');
@@ -166,7 +180,7 @@ function loadMiningState() {
     updateUI();
 }
 
-// Save Complete Mining State
+// Save Complete State
 function saveMiningState() {
     const miningState = {
         isMining: isMining,
@@ -208,17 +222,29 @@ function saveMiningState() {
     // Save earning state
     localStorage.setItem('totalTasksCompleted', totalTasksCompleted);
     localStorage.setItem('watchedVideos', JSON.stringify(watchedVideos));
+    localStorage.setItem('completedTasks', JSON.stringify(completedTasks));
+    localStorage.setItem('todayEarnings', todayEarnings);
+    localStorage.setItem('lastEarningDate', lastEarningDate);
+}
+
+// Check Daily Reset for Earnings
+function checkDailyEarningsReset() {
+    const today = new Date().toDateString();
+    if (lastEarningDate !== today) {
+        todayEarnings = 0;
+        lastEarningDate = today;
+        console.log('📅 New day - earnings reset');
+        saveMiningState();
+    }
 }
 
 // Check Daily Login
 function checkDailyLogin() {
     const today = new Date().toDateString();
     if (lastLoginDate !== today) {
-        // New day
         dailyBonusClaimed = false;
         lastLoginDate = today;
         
-        // Check streak
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
         if (lastLoginDate === yesterday.toDateString()) {
@@ -285,13 +311,11 @@ function updateLevelUI() {
     document.getElementById('userLevel').textContent = levelData.name;
     document.getElementById('userLevel').style.color = levelData.color;
     
-    // Update progress to next level
     const nextLevel = miningLevel + 1;
     const progress = nextLevel <= 5 ? userPoints / LEVEL_DATA[nextLevel].cost * 100 : 100;
     document.getElementById('levelProgress').style.width = `${Math.min(progress, 100)}%`;
     document.getElementById('userStats').textContent = `${userPoints}/${LEVEL_DATA[nextLevel]?.cost || 'MAX'}`;
     
-    // Update mining title based on level
     document.getElementById('miningTitle').textContent = `${levelData.name} Mining`;
 }
 
@@ -340,17 +364,14 @@ function updateUpgradesUI() {
 
 // Update Bonuses UI
 function updateBonusesUI() {
-    // Daily Bonus
     const dailyStatus = document.getElementById('dailyBonusStatus');
     dailyStatus.textContent = dailyBonusClaimed ? 'Claimed' : 'Available';
     dailyStatus.style.color = dailyBonusClaimed ? '#FF6B6B' : '#4CAF50';
     
-    // Hourly Bonus
     const hourlyStatus = document.getElementById('hourlyBonusStatus');
     hourlyStatus.textContent = hourlyBonusAvailable ? 'Available' : 'Coming Soon';
     hourlyStatus.style.color = hourlyBonusAvailable ? '#4CAF50' : '#FFA726';
     
-    // Streak Bonus
     const streakStatus = document.getElementById('streakBonusStatus');
     streakStatus.textContent = `Day ${loginStreak}`;
     streakStatus.style.color = '#FFD700';
@@ -377,6 +398,7 @@ function updateTurboUI() {
 function updateEarningUI() {
     document.getElementById('totalEarnings').textContent = userPoints;
     document.getElementById('totalTasks').textContent = totalTasksCompleted;
+    document.getElementById('todayEarnings').textContent = todayEarnings;
 }
 
 // Format Time
@@ -420,7 +442,6 @@ function startMining() {
     currentSessionStart = miningSeconds;
     sessionCount++;
     
-    // Clear existing interval
     if (miningInterval) {
         clearInterval(miningInterval);
     }
@@ -432,25 +453,22 @@ function startMining() {
         miningSeconds++;
         totalMiningTime++;
         
-        // Update timer display
         updateMiningTimerDisplay();
         
         const currentMinute = Math.floor(miningSeconds / 60);
         const currentHour = Math.floor(miningSeconds / 3600);
         
-        // Add points based on mining rate
         if (currentMinute > lastMinuteCheck) {
             const pointsToAdd = getMiningRate();
             userPoints += pointsToAdd;
             totalPointsEarned += pointsToAdd;
+            todayEarnings += pointsToAdd;
             lastMinuteCheck = currentMinute;
             
-            console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining! Total:`, userPoints);
-            showNotification(`⛏️ +${pointsToAdd.toFixed(1)} Points from Mining!`, 'success');
+            console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining!`);
             updateUI();
         }
         
-        // Add hourly bonus
         if (currentHour > lastHourCheck) {
             totalMiningHours++;
             lastHourCheck = currentHour;
@@ -461,13 +479,11 @@ function startMining() {
             updateUI();
         }
         
-        // Update best session
         const currentSessionTime = miningSeconds - currentSessionStart;
         if (currentSessionTime > bestSessionTime) {
             bestSessionTime = currentSessionTime;
         }
         
-        // Save state every 30 seconds
         if (miningSeconds % 30 === 0) {
             saveMiningState();
         }
@@ -557,7 +573,7 @@ function activateTurbo() {
     if (userPoints >= turboCost) {
         userPoints -= turboCost;
         turboActive = true;
-        turboTimeLeft = 300; // 5 minutes
+        turboTimeLeft = 300;
         
         console.log('🚀 Turbo activated!');
         showNotification('🚀 TURBO MODE ACTIVATED! 2x points for 5 minutes!', 'success');
@@ -593,10 +609,11 @@ function claimDailyBonus() {
         return;
     }
     
-    const bonusAmount = 100 + (loginStreak * 10); // Base 100 + streak bonus
+    const bonusAmount = 100 + (loginStreak * 10);
     
     userPoints += bonusAmount;
     totalPointsEarned += bonusAmount;
+    todayEarnings += bonusAmount;
     dailyBonusClaimed = true;
     lastBonusClaim = Date.now();
     
@@ -616,6 +633,7 @@ function claimHourlyBonus() {
     const bonusAmount = 25;
     userPoints += bonusAmount;
     totalPointsEarned += bonusAmount;
+    todayEarnings += bonusAmount;
     hourlyBonusAvailable = false;
     lastHourlyBonus = Date.now();
     
@@ -630,6 +648,7 @@ function claimStreakBonus() {
     const bonusAmount = loginStreak * 10;
     userPoints += bonusAmount;
     totalPointsEarned += bonusAmount;
+    todayEarnings += bonusAmount;
     
     console.log('🔥 Streak bonus claimed:', bonusAmount);
     showNotification(`🔥 Streak Bonus! +${bonusAmount} Points (Day ${loginStreak})`, 'success');
@@ -642,6 +661,7 @@ function claimBoost() {
     const boostAmount = 50;
     userPoints += boostAmount;
     totalPointsEarned += boostAmount;
+    todayEarnings += boostAmount;
     
     console.log('🎯 Boost claimed:', boostAmount);
     showNotification(`🎯 Boost! +${boostAmount} Points`, 'success');
@@ -652,77 +672,282 @@ function claimBoost() {
 
 // Tab Switching Function
 function switchTab(tabName) {
-    // Hide all content pages
     document.querySelectorAll('.content-page').forEach(page => {
         page.classList.remove('active');
     });
     
-    // Remove active class from all nav buttons
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    // Show selected content and activate corresponding nav button
     document.getElementById(tabName + 'Content').classList.add('active');
     document.querySelector(`.nav-btn:nth-child(${tabName === 'mining' ? 1 : 2})`).classList.add('active');
     
-    // Update UI for the active tab
     updateUI();
 }
 
-// Earning App Functions
-function showEarnPage() {
+// Earning Section Functions
+function showVideoSection() {
     document.getElementById('earnAppContent').innerHTML = `
         <div class="earn-page">
-            <div class="section-header">
+            <div class="platform-header">
                 <button onclick="showHomePage()" class="back-btn">← Back</button>
-                <h3>💰 Earn Points</h3>
+                <div class="platform-header-icon">🎬</div>
+                <h3>YouTube Videos</h3>
             </div>
             
             <div class="section-title">
-                <h3>Choose Earning Method</h3>
-                <p class="section-subtitle">Select any platform to start earning points</p>
+                <h3>Watch & Earn</h3>
+                <p class="section-subtitle">Watch videos to earn points instantly</p>
+            </div>
+
+            <div class="video-search">
+                <input type="text" class="search-input" id="videoSearch" placeholder="Search for videos (music, gaming, comedy, etc.)" value="trending shorts">
+                <button class="search-btn" onclick="searchVideos()">🔍 Search Videos</button>
             </div>
             
-            <div class="earn-sections-grid">
-                <div class="earn-section-card" onclick="showVideoSection()">
-                    <div class="earn-card-icon">🎬</div>
-                    <div class="earn-card-content">
-                        <div class="earn-card-title">Watch Videos</div>
-                        <div class="earn-card-desc">YouTube shorts & videos</div>
-                        <div class="earn-card-points">10-20 points per video</div>
+            <div id="videoResultsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading trending videos...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Auto-load videos
+    setTimeout(() => {
+        searchVideos();
+    }, 1000);
+}
+
+function showTelegramSection() {
+    document.getElementById('earnAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">📱</div>
+                <h3>Telegram Tasks</h3>
+            </div>
+            
+            <div class="section-title">
+                <h3>Telegram Channels</h3>
+                <p class="section-subtitle">Join channels to earn points</p>
+            </div>
+            
+            <div class="task-category">
+                <h4>🤖 Crypto & Tech</h4>
+                <div class="tasks-grid">
+                    <div class="task-card ${completedTasks.includes('telegram1') ? 'task-completed' : ''}">
+                        <div class="task-icon">💰</div>
+                        <div class="task-content">
+                            <div class="task-title">Crypto News Channel</div>
+                            <div class="task-desc">Join our crypto updates channel</div>
+                            <div class="task-points">+25 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('telegram1', 25, 'Crypto Channel')" 
+                                ${completedTasks.includes('telegram1') ? 'disabled' : ''}>
+                            ${completedTasks.includes('telegram1') ? 'Joined ✓' : 'Join'}
+                        </button>
                     </div>
-                    <div class="earn-card-arrow">→</div>
+                    
+                    <div class="task-card ${completedTasks.includes('telegram2') ? 'task-completed' : ''}">
+                        <div class="task-icon">💻</div>
+                        <div class="task-content">
+                            <div class="task-title">Tech Updates</div>
+                            <div class="task-desc">Latest technology news</div>
+                            <div class="task-points">+20 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('telegram2', 20, 'Tech Channel')"
+                                ${completedTasks.includes('telegram2') ? 'disabled' : ''}>
+                            ${completedTasks.includes('telegram2') ? 'Joined ✓' : 'Join'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-category">
+                <h4>🎮 Entertainment</h4>
+                <div class="tasks-grid">
+                    <div class="task-card ${completedTasks.includes('telegram3') ? 'task-completed' : ''}">
+                        <div class="task-icon">🎮</div>
+                        <div class="task-content">
+                            <div class="task-title">Gaming Community</div>
+                            <div class="task-desc">Join gaming discussions</div>
+                            <div class="task-points">+18 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('telegram3', 18, 'Gaming Channel')"
+                                ${completedTasks.includes('telegram3') ? 'disabled' : ''}>
+                            ${completedTasks.includes('telegram3') ? 'Joined ✓' : 'Join'}
+                        </button>
+                    </div>
+                    
+                    <div class="task-card ${completedTasks.includes('telegram4') ? 'task-completed' : ''}">
+                        <div class="task-icon">🎬</div>
+                        <div class="task-content">
+                            <div class="task-title">Movie Reviews</div>
+                            <div class="task-desc">Latest movie discussions</div>
+                            <div class="task-points">+15 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('telegram4', 15, 'Movie Channel')"
+                                ${completedTasks.includes('telegram4') ? 'disabled' : ''}>
+                            ${completedTasks.includes('telegram4') ? 'Joined ✓' : 'Join'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showInstagramSection() {
+    document.getElementById('earnAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">📷</div>
+                <h3>Instagram Reels</h3>
+            </div>
+            
+            <div class="section-title">
+                <h3>Watch Reels</h3>
+                <p class="section-subtitle">Watch reels to earn points</p>
+            </div>
+            
+            <div class="videos-grid">
+                <div class="video-card ${completedTasks.includes('instagram1') ? 'video-completed' : ''}" 
+                     onclick="${completedTasks.includes('instagram1') ? '' : 'completeTask(\'instagram1\', 15, \'Fashion Reel\')'}">
+                    <div class="video-thumbnail">
+                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop" alt="Instagram Reel">
+                        <div class="points-badge">+15</div>
+                        <div class="platform-badge">Instagram</div>
+                        <div class="video-duration">0:30</div>
+                    </div>
+                    <div class="video-info">
+                        <div class="video-title">Fashion Trends Reel 2024</div>
+                        <div class="video-channel">@fashion.world • 2.4M views</div>
+                    </div>
                 </div>
                 
-                <div class="earn-section-card" onclick="showTelegramSection()">
-                    <div class="earn-card-icon">📱</div>
-                    <div class="earn-card-content">
-                        <div class="earn-card-title">Telegram Tasks</div>
-                        <div class="earn-card-desc">Join channels & groups</div>
-                        <div class="earn-card-points">15-30 points per task</div>
+                <div class="video-card ${completedTasks.includes('instagram2') ? 'video-completed' : ''}" 
+                     onclick="${completedTasks.includes('instagram2') ? '' : 'completeTask(\'instagram2\', 12, \'Travel Reel\')'}">
+                    <div class="video-thumbnail">
+                        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop" alt="Instagram Reel">
+                        <div class="points-badge">+12</div>
+                        <div class="platform-badge">Instagram</div>
+                        <div class="video-duration">0:45</div>
                     </div>
-                    <div class="earn-card-arrow">→</div>
+                    <div class="video-info">
+                        <div class="video-title">Travel Adventures Reel</div>
+                        <div class="video-channel">@travel.diary • 1.8M views</div>
+                    </div>
                 </div>
-                
-                <div class="earn-section-card" onclick="showInstagramSection()">
-                    <div class="earn-card-icon">📷</div>
-                    <div class="earn-card-content">
-                        <div class="earn-card-title">Instagram Reels</div>
-                        <div class="earn-card-desc">Watch trending reels</div>
-                        <div class="earn-card-points">12-25 points per reel</div>
+
+                <div class="video-card ${completedTasks.includes('instagram3') ? 'video-completed' : ''}" 
+                     onclick="${completedTasks.includes('instagram3') ? '' : 'completeTask(\'instagram3\', 18, \'Cooking Reel\')'}">
+                    <div class="video-thumbnail">
+                        <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop" alt="Instagram Reel">
+                        <div class="points-badge">+18</div>
+                        <div class="platform-badge">Instagram</div>
+                        <div class="video-duration">1:15</div>
                     </div>
-                    <div class="earn-card-arrow">→</div>
+                    <div class="video-info">
+                        <div class="video-title">Quick Cooking Recipes</div>
+                        <div class="video-channel">@cooking.master • 3.1M views</div>
+                    </div>
                 </div>
-                
-                <div class="earn-section-card" onclick="showTwitterSection()">
-                    <div class="earn-card-icon">🐦</div>
-                    <div class="earn-card-content">
-                        <div class="earn-card-title">Twitter Tasks</div>
-                        <div class="earn-card-desc">Like, retweet & follow</div>
-                        <div class="earn-card-points">8-20 points per task</div>
+
+                <div class="video-card ${completedTasks.includes('instagram4') ? 'video-completed' : ''}" 
+                     onclick="${completedTasks.includes('instagram4') ? '' : 'completeTask(\'instagram4\', 14, \'Fitness Reel\')'}">
+                    <div class="video-thumbnail">
+                        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop" alt="Instagram Reel">
+                        <div class="points-badge">+14</div>
+                        <div class="platform-badge">Instagram</div>
+                        <div class="video-duration">0:55</div>
                     </div>
-                    <div class="earn-card-arrow">→</div>
+                    <div class="video-info">
+                        <div class="video-title">Daily Fitness Challenge</div>
+                        <div class="video-channel">@fitness.coach • 2.7M views</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showTwitterSection() {
+    document.getElementById('earnAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">🐦</div>
+                <h3>Twitter Tasks</h3>
+            </div>
+            
+            <div class="section-title">
+                <h3>Twitter Engagement</h3>
+                <p class="section-subtitle">Complete tasks to earn points</p>
+            </div>
+            
+            <div class="task-category">
+                <h4>📱 Basic Tasks</h4>
+                <div class="tasks-grid">
+                    <div class="task-card ${completedTasks.includes('twitter1') ? 'task-completed' : ''}">
+                        <div class="task-icon">❤️</div>
+                        <div class="task-content">
+                            <div class="task-title">Like Our Tweet</div>
+                            <div class="task-desc">Like our latest tweet</div>
+                            <div class="task-points">+8 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('twitter1', 8, 'Like Tweet')"
+                                ${completedTasks.includes('twitter1') ? 'disabled' : ''}>
+                            ${completedTasks.includes('twitter1') ? 'Liked ✓' : 'Like'}
+                        </button>
+                    </div>
+                    
+                    <div class="task-card ${completedTasks.includes('twitter2') ? 'task-completed' : ''}">
+                        <div class="task-icon">🔄</div>
+                        <div class="task-content">
+                            <div class="task-title">Retweet Post</div>
+                            <div class="task-desc">Retweet to your followers</div>
+                            <div class="task-points">+12 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('twitter2', 12, 'Retweet')"
+                                ${completedTasks.includes('twitter2') ? 'disabled' : ''}>
+                            ${completedTasks.includes('twitter2') ? 'Retweeted ✓' : 'Retweet'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="task-category">
+                <h4>👤 Follow Tasks</h4>
+                <div class="tasks-grid">
+                    <div class="task-card ${completedTasks.includes('twitter3') ? 'task-completed' : ''}">
+                        <div class="task-icon">👤</div>
+                        <div class="task-content">
+                            <div class="task-title">Follow Our Account</div>
+                            <div class="task-desc">Follow our Twitter account</div>
+                            <div class="task-points">+15 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('twitter3', 15, 'Follow Twitter')"
+                                ${completedTasks.includes('twitter3') ? 'disabled' : ''}>
+                            ${completedTasks.includes('twitter3') ? 'Following ✓' : 'Follow'}
+                        </button>
+                    </div>
+                    
+                    <div class="task-card ${completedTasks.includes('twitter4') ? 'task-completed' : ''}">
+                        <div class="task-icon">💬</div>
+                        <div class="task-content">
+                            <div class="task-title">Reply to Tweet</div>
+                            <div class="task-desc">Comment on our tweet</div>
+                            <div class="task-points">+10 points</div>
+                        </div>
+                        <button class="task-btn" onclick="completeTask('twitter4', 10, 'Reply Tweet')"
+                                ${completedTasks.includes('twitter4') ? 'disabled' : ''}>
+                            ${completedTasks.includes('twitter4') ? 'Replied ✓' : 'Reply'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -734,24 +959,28 @@ function showHomePage() {
         <div class="welcome-section">
             <div class="welcome-icon">🚀</div>
             <h3>Welcome to TapEarn!</h3>
-            <p>Click the EARN POINTS button to start earning from:</p>
+            <p>Click any platform to start earning points instantly</p>
             
             <div class="platforms-grid">
-                <div class="platform-card">
+                <div class="platform-card" onclick="showVideoSection()">
                     <span class="platform-icon">🎬</span>
-                    <span class="platform-name">YouTube</span>
+                    <span class="platform-name">YouTube Videos</span>
+                    <span class="platform-points">+10-20 points</span>
                 </div>
-                <div class="platform-card">
+                <div class="platform-card" onclick="showTelegramSection()">
                     <span class="platform-icon">📱</span>
-                    <span class="platform-name">Telegram</span>
+                    <span class="platform-name">Telegram Tasks</span>
+                    <span class="platform-points">+15-30 points</span>
                 </div>
-                <div class="platform-card">
+                <div class="platform-card" onclick="showInstagramSection()">
                     <span class="platform-icon">📷</span>
-                    <span class="platform-name">Instagram</span>
+                    <span class="platform-name">Instagram Reels</span>
+                    <span class="platform-points">+12-25 points</span>
                 </div>
-                <div class="platform-card">
+                <div class="platform-card" onclick="showTwitterSection()">
                     <span class="platform-icon">🐦</span>
-                    <span class="platform-name">Twitter</span>
+                    <span class="platform-name">Twitter Tasks</span>
+                    <span class="platform-points">+8-20 points</span>
                 </div>
             </div>
 
@@ -764,83 +993,97 @@ function showHomePage() {
                     <div class="stat-number" id="totalTasks">${totalTasksCompleted}</div>
                     <div class="stat-label">Tasks Done</div>
                 </div>
-            </div>
-        </div>
-    `;
-}
-
-function showVideoSection() {
-    document.getElementById('earnAppContent').innerHTML = `
-        <div class="earn-page">
-            <div class="section-header">
-                <button onclick="showEarnPage()" class="back-btn">← Back</button>
-                <h3>🎬 Watch Videos</h3>
-            </div>
-            
-            <div class="section-title">
-                <h3>YouTube Videos</h3>
-                <p class="section-subtitle">Watch videos to earn points</p>
-            </div>
-            
-            <div id="videoResultsContainer">
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading videos...</p>
+                <div class="earn-stat">
+                    <div class="stat-number" id="todayEarnings">${todayEarnings}</div>
+                    <div class="stat-label">Today's Points</div>
                 </div>
             </div>
         </div>
     `;
-    
-    loadYouTubeVideos();
 }
 
-async function loadYouTubeVideos() {
+// YouTube Video Search Function
+async function searchVideos() {
+    const searchQuery = document.getElementById('videoSearch').value || 'trending shorts';
+    const container = document.getElementById('videoResultsContainer');
+    
+    container.innerHTML = `
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>Searching for "${searchQuery}"...</p>
+        </div>
+    `;
+    
     try {
-        const videos = await searchYouTubeVideos('trending shorts');
-        displayYouTubeVideos(videos);
+        const videos = await searchYouTubeVideos(searchQuery);
+        displayYouTubeVideos(videos, searchQuery);
     } catch (error) {
-        showDemoVideos();
+        console.error('YouTube API error:', error);
+        showDemoVideos(searchQuery);
     }
 }
 
 async function searchYouTubeVideos(query) {
+    const apiKey = YOUTUBE_API_KEYS[currentApiKeyIndex];
+    
     try {
         const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoDuration=short&q=${encodeURIComponent(query)}&maxResults=6&key=${YOUTUBE_API_KEY}`
+            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(query)}&maxResults=8&key=${apiKey}`
         );
         
-        if (!response.ok) throw new Error('API error');
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status}`);
+        }
+        
         const data = await response.json();
         return data.items || [];
     } catch (error) {
-        throw error;
+        // Try next API key
+        currentApiKeyIndex = (currentApiKeyIndex + 1) % YOUTUBE_API_KEYS.length;
+        if (currentApiKeyIndex === 0) {
+            throw error; // All keys failed
+        }
+        return searchYouTubeVideos(query); // Retry with next key
     }
 }
 
-function displayYouTubeVideos(videos) {
+function displayYouTubeVideos(videos, searchQuery) {
     const container = document.getElementById('videoResultsContainer');
     
     if (videos.length === 0) {
-        showDemoVideos();
+        container.innerHTML = `
+            <div class="loading-text">
+                <p>No videos found for "${searchQuery}"</p>
+                <button class="refresh-btn" onclick="searchVideos()">🔄 Try Again</button>
+            </div>
+        `;
         return;
     }
     
-    let html = '<div class="videos-grid">';
+    let html = `
+        <div class="search-info">
+            <p>Found ${videos.length} videos for "${searchQuery}"</p>
+            <button class="refresh-btn" onclick="searchVideos()">🔄 Refresh</button>
+        </div>
+        <div class="videos-grid">
+    `;
     
-    videos.forEach((video) => {
+    videos.forEach((video, index) => {
         const videoId = video.id.videoId;
         const thumbnail = video.snippet.thumbnails.medium?.url || video.snippet.thumbnails.default.url;
         const title = video.snippet.title;
         const channel = video.snippet.channelTitle;
-        const points = 10 + Math.floor(Math.random() * 10);
+        const points = 10 + Math.floor(Math.random() * 11); // 10-20 points
         const isWatched = watchedVideos.includes(videoId);
         
         html += `
-            <div class="video-card" onclick="watchVideo('${videoId}', ${points}, '${title.replace(/'/g, "\\'")}')">
+            <div class="video-card ${isWatched ? 'video-completed' : ''}" 
+                 onclick="${isWatched ? '' : `watchVideo('${videoId}', ${points}, '${title.replace(/'/g, "\\'")}')`}">
                 <div class="video-thumbnail">
-                    <img src="${thumbnail}" alt="${title}">
+                    <img src="${thumbnail}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop'">
                     <div class="points-badge">+${points}</div>
                     <div class="platform-badge">YouTube</div>
+                    ${isWatched ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
                 </div>
                 <div class="video-info">
                     <div class="video-title">${title}</div>
@@ -854,23 +1097,23 @@ function displayYouTubeVideos(videos) {
     container.innerHTML = html;
 }
 
-function showDemoVideos() {
+function showDemoVideos(searchQuery) {
     const container = document.getElementById('videoResultsContainer');
     const demoVideos = [
         {
             id: { videoId: 'demo1' },
             snippet: {
-                title: 'Trending Music Short 2024',
+                title: 'Trending Music Shorts 2024 🎵',
                 thumbnails: { 
                     medium: { url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&h=200&fit=crop' }
                 },
-                channelTitle: 'Music Channel'
+                channelTitle: 'Music Vibes'
             }
         },
         {
             id: { videoId: 'demo2' },
             snippet: {
-                title: 'Funny Comedy Skit Video',
+                title: 'Funny Comedy Skits 😂',
                 thumbnails: { 
                     medium: { url: 'https://images.unsplash.com/photo-1551818255-e6e10975bc17?w=300&h=200&fit=crop' }
                 },
@@ -880,17 +1123,17 @@ function showDemoVideos() {
         {
             id: { videoId: 'demo3' },
             snippet: {
-                title: 'Dance Challenge Viral Short',
+                title: 'Gaming Highlights 🎮',
                 thumbnails: { 
-                    medium: { url: 'https://images.unsplash.com/photo-1508700929628-666bc8bd84ea?w=300&h=200&fit=crop' }
+                    medium: { url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&h=200&fit=crop' }
                 },
-                channelTitle: 'Dance World'
+                channelTitle: 'Gaming World'
             }
         },
         {
             id: { videoId: 'demo4' },
             snippet: {
-                title: 'Cooking Recipe Short Video',
+                title: 'Cooking Recipes 👨‍🍳',
                 thumbnails: { 
                     medium: { url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop' }
                 },
@@ -899,7 +1142,7 @@ function showDemoVideos() {
         }
     ];
     
-    displayYouTubeVideos(demoVideos);
+    displayYouTubeVideos(demoVideos, searchQuery);
 }
 
 function watchVideo(videoId, points, title) {
@@ -908,174 +1151,56 @@ function watchVideo(videoId, points, title) {
         return;
     }
     
-    // Simulate video watching
     showNotification('⏳ Playing video...', 'info');
     
+    // Simulate video watching with progress
     setTimeout(() => {
         watchedVideos.push(videoId);
         userPoints += points;
         totalPointsEarned += points;
+        todayEarnings += points;
         totalTasksCompleted++;
         
         saveMiningState();
         updateUI();
         
-        showNotification(`✅ +${points} Points! Video: ${title.substring(0, 30)}...`, 'success');
-    }, 2000);
-}
-
-function showTelegramSection() {
-    document.getElementById('earnAppContent').innerHTML = `
-        <div class="earn-page">
-            <div class="section-header">
-                <button onclick="showEarnPage()" class="back-btn">← Back</button>
-                <h3>📱 Telegram Tasks</h3>
-            </div>
-            
-            <div class="section-title">
-                <h3>Telegram Channels</h3>
-                <p class="section-subtitle">Join channels to earn points</p>
-            </div>
-            
-            <div class="tasks-grid">
-                <div class="task-card">
-                    <div class="task-icon">📰</div>
-                    <div class="task-content">
-                        <div class="task-title">Crypto News Channel</div>
-                        <div class="task-desc">Join our crypto updates channel</div>
-                        <div class="task-points">+25 points</div>
-                    </div>
-                    <button class="task-btn" onclick="completeTask('telegram1', 25, 'Crypto Channel')">Join</button>
-                </div>
-                
-                <div class="task-card">
-                    <div class="task-icon">💻</div>
-                    <div class="task-content">
-                        <div class="task-title">Tech Updates</div>
-                        <div class="task-desc">Latest technology news</div>
-                        <div class="task-points">+20 points</div>
-                    </div>
-                    <button class="task-btn" onclick="completeTask('telegram2', 20, 'Tech Channel')">Join</button>
-                </div>
-                
-                <div class="task-card">
-                    <div class="task-icon">🎮</div>
-                    <div class="task-content">
-                        <div class="task-title">Gaming Community</div>
-                        <div class="task-desc">Join gaming discussions</div>
-                        <div class="task-points">+18 points</div>
-                    </div>
-                    <button class="task-btn" onclick="completeTask('telegram3', 18, 'Gaming Channel')">Join</button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function showInstagramSection() {
-    document.getElementById('earnAppContent').innerHTML = `
-        <div class="earn-page">
-            <div class="section-header">
-                <button onclick="showEarnPage()" class="back-btn">← Back</button>
-                <h3>📷 Instagram Reels</h3>
-            </div>
-            
-            <div class="section-title">
-                <h3>Instagram Reels</h3>
-                <p class="section-subtitle">Watch reels to earn points</p>
-            </div>
-            
-            <div class="videos-grid">
-                <div class="video-card" onclick="completeTask('instagram1', 15, 'Fashion Reel')">
-                    <div class="video-thumbnail">
-                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop" alt="Instagram Reel">
-                        <div class="points-badge">+15</div>
-                        <div class="platform-badge">Instagram</div>
-                    </div>
-                    <div class="video-info">
-                        <div class="video-title">Fashion Trends Reel</div>
-                        <div class="video-channel">@fashion.world</div>
-                    </div>
-                </div>
-                
-                <div class="video-card" onclick="completeTask('instagram2', 12, 'Travel Reel')">
-                    <div class="video-thumbnail">
-                        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop" alt="Instagram Reel">
-                        <div class="points-badge">+12</div>
-                        <div class="platform-badge">Instagram</div>
-                    </div>
-                    <div class="video-info">
-                        <div class="video-title">Travel Adventures</div>
-                        <div class="video-channel">@travel.diary</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function showTwitterSection() {
-    document.getElementById('earnAppContent').innerHTML = `
-        <div class="earn-page">
-            <div class="section-header">
-                <button onclick="showEarnPage()" class="back-btn">← Back</button>
-                <h3>🐦 Twitter Tasks</h3>
-            </div>
-            
-            <div class="section-title">
-                <h3>Twitter Tasks</h3>
-                <p class="section-subtitle">Complete tasks to earn points</p>
-            </div>
-            
-            <div class="tasks-grid">
-                <div class="task-card">
-                    <div class="task-icon">❤️</div>
-                    <div class="task-content">
-                        <div class="task-title">Like Tweet</div>
-                        <div class="task-desc">Like our latest tweet</div>
-                        <div class="task-points">+8 points</div>
-                    </div>
-                    <button class="task-btn" onclick="completeTask('twitter1', 8, 'Like Tweet')">Like</button>
-                </div>
-                
-                <div class="task-card">
-                    <div class="task-icon">🔄</div>
-                    <div class="task-content">
-                        <div class="task-title">Retweet Post</div>
-                        <div class="task-desc">Retweet to your followers</div>
-                        <div class="task-points">+12 points</div>
-                    </div>
-                    <button class="task-btn" onclick="completeTask('twitter2', 12, 'Retweet')">Retweet</button>
-                </div>
-                
-                <div class="task-card">
-                    <div class="task-icon">👤</div>
-                    <div class="task-content">
-                        <div class="task-title">Follow Account</div>
-                        <div class="task-desc">Follow our Twitter account</div>
-                        <div class="task-points">+15 points</div>
-                    </div>
-                    <button class="task-btn" onclick="completeTask('twitter3', 15, 'Follow Twitter')">Follow</button>
-                </div>
-            </div>
-        </div>
-    `;
+        showNotification(`✅ +${points} Points! "${title.substring(0, 30)}..."`, 'success');
+        
+        // Refresh the video display to show completed state
+        if (document.getElementById('videoResultsContainer')) {
+            const currentSearch = document.getElementById('videoSearch').value;
+            setTimeout(() => searchVideos(), 500);
+        }
+    }, 3000);
 }
 
 function completeTask(taskId, points, taskName) {
+    if (completedTasks.includes(taskId)) {
+        showNotification('❌ You already completed this task!', 'warning');
+        return;
+    }
+    
+    completedTasks.push(taskId);
     userPoints += points;
     totalPointsEarned += points;
+    todayEarnings += points;
     totalTasksCompleted++;
     
     saveMiningState();
     updateUI();
     
     showNotification(`✅ +${points} Points! ${taskName}`, 'success');
+    
+    // Refresh the current section to update task states
+    setTimeout(() => {
+        if (taskId.startsWith('telegram')) showTelegramSection();
+        else if (taskId.startsWith('twitter')) showTwitterSection();
+        else if (taskId.startsWith('instagram')) showInstagramSection();
+    }, 500);
 }
 
 // Show Notification
 function showNotification(message, type = 'info') {
-    // Remove existing notifications
     document.querySelectorAll('.notification').forEach(notif => notif.remove());
     
     const notification = document.createElement('div');
@@ -1094,20 +1219,23 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 TapEarn App Initialized');
     loadMiningState();
-    showHomePage();
     
     // Auto-save every minute
     setInterval(() => {
         saveMiningState();
-        console.log('💾 Auto-save completed');
     }, 60000);
     
     // Check hourly bonus every minute
     setInterval(() => {
         const now = Date.now();
-        if (now - lastHourlyBonus >= 3600000) { // 1 hour
+        if (now - lastHourlyBonus >= 3600000) {
             hourlyBonusAvailable = true;
             updateUI();
         }
     }, 60000);
+    
+    // Check daily reset every hour
+    setInterval(() => {
+        checkDailyEarningsReset();
+    }, 3600000);
 });
