@@ -281,6 +281,42 @@
                                 <span class="platform-points">+20-50 points</span>
                                 <span class="platform-time">⚡ Instant</span>
                             </div>
+                        </div>
+
+                        <div class="earn-stats">
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksTotalPoints">0</div>
+                                <div class="stat-label">Total Points</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksCompleted">0</div>
+                                <div class="stat-label">Tasks Done</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksToday">0</div>
+                                <div class="stat-label">Today's Tasks</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div id="profileContent" class="content-page">
+                <div class="page-header">
+                    <h2>👤 Profile</h2>
+                    <p class="page-subtitle">Manage your account and rewards</p>
+                </div>
+
+                <!-- Profile Content Area -->
+                <div id="profileAppContent">
+                    <!-- Default Profile Home Content -->
+                    <div class="welcome-section">
+                        <div class="welcome-icon">👤</div>
+                        <h3>Your Profile</h3>
+                        <p>Manage your account, rewards, and settings</p>
+                        
+                        <div class="platforms-grid">
                             <div class="platform-card" onclick="showCashier()">
                                 <span class="platform-icon">💰</span>
                                 <span class="platform-name">Rewards Center</span>
@@ -309,16 +345,16 @@
 
                         <div class="earn-stats">
                             <div class="earn-stat">
-                                <div class="stat-number" id="tasksTotalPoints">0</div>
+                                <div class="stat-number" id="profileTotalPoints">0</div>
                                 <div class="stat-label">Total Points</div>
                             </div>
                             <div class="earn-stat">
-                                <div class="stat-number" id="tasksCompleted">0</div>
-                                <div class="stat-label">Tasks Done</div>
+                                <div class="stat-number" id="profileReferrals">0</div>
+                                <div class="stat-label">Referrals</div>
                             </div>
                             <div class="earn-stat">
-                                <div class="stat-number" id="tasksToday">0</div>
-                                <div class="stat-label">Today's Tasks</div>
+                                <div class="stat-number" id="profileRewards">0</div>
+                                <div class="stat-label">Rewards</div>
                             </div>
                         </div>
                     </div>
@@ -339,6 +375,10 @@
             <button class="nav-btn" onclick="switchTab('tasks')">
                 <span class="nav-icon">📋</span>
                 <span class="nav-label">Tasks</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('profile')">
+                <span class="nav-icon">👤</span>
+                <span class="nav-label">Profile</span>
             </button>
         </div>
     </div>
