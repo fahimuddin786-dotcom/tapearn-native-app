@@ -1234,6 +1234,361 @@ body {
     margin-left: 10px;
 }
 
+/* NEW STYLES FOR FOLLOW & EARN, DAILY TASKS, SOCIAL TASKS */
+
+/* Follow Platform Tabs */
+.follow-platform-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 5px;
+}
+
+.platform-tab {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 10px 15px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.platform-tab.active {
+    background: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.platform-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Follow Tasks Grid */
+.follow-tasks-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.follow-task-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.follow-task-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+}
+
+.follow-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.follow-task-header .platform-icon {
+    font-size: 20px;
+}
+
+.follow-task-header .task-platform {
+    font-size: 12px;
+    opacity: 0.8;
+    flex: 1;
+    margin-left: 10px;
+}
+
+.follow-task-header .task-points {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.follow-task-content {
+    margin-bottom: 15px;
+}
+
+.task-username {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.task-stats {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 6px;
+}
+
+.task-description {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.follow-task-actions {
+    text-align: center;
+}
+
+.btn-follow {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.btn-follow:hover {
+    background: #45a049;
+}
+
+.btn-completed {
+    background: #666;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: bold;
+    width: 100%;
+    cursor: not-allowed;
+}
+
+/* Tasks Stats */
+.tasks-stats, .social-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.task-stat, .social-stat {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px 10px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.task-stat .stat-number, .social-stat .stat-number {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4CAF50;
+    margin-bottom: 4px;
+}
+
+.task-stat .stat-label, .social-stat .stat-label {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* Tasks List */
+.tasks-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+    margin: 15px 0;
+}
+
+.task-item {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.task-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.task-item.completed {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: #4CAF50;
+}
+
+.task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.task-title {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.task-points {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.task-description {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 12px;
+}
+
+.task-progress {
+    margin-bottom: 12px;
+}
+
+.task-progress .progress-bar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.task-progress .progress-fill {
+    height: 100%;
+    background: #4CAF50;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    font-size: 11px;
+    opacity: 0.7;
+    text-align: center;
+}
+
+.task-actions {
+    text-align: center;
+}
+
+.btn-claim {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.btn-claim:hover {
+    background: #45a049;
+}
+
+.btn-incomplete {
+    background: #FFA726;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.btn-incomplete:hover {
+    background: #FF9800;
+}
+
+/* Social Tasks Grid */
+.social-tasks-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin: 15px 0;
+}
+
+.social-task-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.social-task-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+}
+
+.social-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.social-task-header .platform-icon {
+    font-size: 20px;
+}
+
+.social-task-header .task-platform {
+    font-size: 12px;
+    opacity: 0.8;
+    flex: 1;
+    margin-left: 10px;
+}
+
+.social-task-header .task-points {
+    font-size: 14px;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.social-task-content {
+    margin-bottom: 15px;
+}
+
+.social-task-content .task-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 6px;
+}
+
+.social-task-content .task-description {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.social-task-actions {
+    text-align: center;
+}
+
+.btn-complete {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    width: 100%;
+    transition: background 0.3s;
+}
+
+.btn-complete:hover {
+    background: #45a049;
+}
+
 /* Animations */
 @keyframes slideIn {
     from {
@@ -1373,6 +1728,29 @@ body {
     .timer-text {
         font-size: 14px;
     }
+    
+    /* New responsive styles */
+    .follow-platform-tabs {
+        gap: 6px;
+    }
+    
+    .platform-tab {
+        padding: 8px 12px;
+        font-size: 11px;
+    }
+    
+    .social-tasks-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tasks-stats, .social-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .task-stat, .social-stat {
+        padding: 12px 8px;
+    }
 }
 
 /* Additional Mobile Optimizations */
@@ -1427,6 +1805,15 @@ body {
     .modal-content {
         border: 2px solid rgba(255, 255, 255, 0.3);
     }
+    
+    /* New high contrast styles */
+    .follow-task-card, .task-item, .social-task-card {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .btn-follow, .btn-claim, .btn-incomplete, .btn-complete {
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
 }
 
 /* Reduced motion support */
@@ -1454,5 +1841,12 @@ body {
     
     .turbo-indicator {
         animation: none;
+    }
+    
+    /* New reduced motion styles */
+    .follow-task-card:hover,
+    .task-item:hover,
+    .social-task-card:hover {
+        transform: none;
     }
 }
