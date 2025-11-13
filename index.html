@@ -227,24 +227,6 @@
                                 <span class="platform-points">+8-20 points</span>
                                 <span class="platform-time">⚡ Instant</span>
                             </div>
-                            <div class="platform-card" onclick="showFollowSection()">
-                                <span class="platform-icon">👥</span>
-                                <span class="platform-name">Follow & Earn</span>
-                                <span class="platform-points">+20-35 points</span>
-                                <span class="platform-time">⚡ Instant</span>
-                            </div>
-                            <div class="platform-card" onclick="showTasks()">
-                                <span class="platform-icon">📋</span>
-                                <span class="platform-name">Daily Tasks</span>
-                                <span class="platform-points">+15-50 points</span>
-                                <span class="platform-time">📅 Daily</span>
-                            </div>
-                            <div class="platform-card" onclick="showSocialTasks()">
-                                <span class="platform-icon">🌐</span>
-                                <span class="platform-name">Social Tasks</span>
-                                <span class="platform-points">+20-50 points</span>
-                                <span class="platform-time">⚡ Instant</span>
-                            </div>
                         </div>
 
                         <div class="earn-stats">
@@ -264,6 +246,60 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Tasks Content -->
+            <div id="tasksContent" class="content-page">
+                <div class="page-header">
+                    <h2>📋 Tasks</h2>
+                    <p class="page-subtitle">Complete various tasks to earn more points</p>
+                </div>
+
+                <!-- Tasks Content Area -->
+                <div id="tasksAppContent">
+                    <!-- Default Tasks Home Content -->
+                    <div class="welcome-section">
+                        <div class="welcome-icon">📋</div>
+                        <h3>Task Center</h3>
+                        <p>Complete different types of tasks to maximize your earnings</p>
+                        
+                        <div class="platforms-grid">
+                            <div class="platform-card" onclick="showFollowSection()">
+                                <span class="platform-icon">👥</span>
+                                <span class="platform-name">Follow & Earn</span>
+                                <span class="platform-points">+20-35 points</span>
+                                <span class="platform-time">⚡ Instant</span>
+                            </div>
+                            <div class="platform-card" onclick="showDailyTasksSection()">
+                                <span class="platform-icon">📅</span>
+                                <span class="platform-name">Daily Tasks</span>
+                                <span class="platform-points">+15-50 points</span>
+                                <span class="platform-time">📅 Daily</span>
+                            </div>
+                            <div class="platform-card" onclick="showSocialTasksSection()">
+                                <span class="platform-icon">🌐</span>
+                                <span class="platform-name">Social Tasks</span>
+                                <span class="platform-points">+20-50 points</span>
+                                <span class="platform-time">⚡ Instant</span>
+                            </div>
+                        </div>
+
+                        <div class="earn-stats">
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksTotalPoints">0</div>
+                                <div class="stat-label">Total Points</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksCompleted">0</div>
+                                <div class="stat-label">Tasks Done</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksToday">0</div>
+                                <div class="stat-label">Today's Tasks</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Bottom Navigation -->
@@ -275,6 +311,10 @@
             <button class="nav-btn" onclick="switchTab('earn')">
                 <span class="nav-icon">💰</span>
                 <span class="nav-label">Earn</span>
+            </button>
+            <button class="nav-btn" onclick="switchTab('tasks')">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Tasks</span>
             </button>
         </div>
     </div>
