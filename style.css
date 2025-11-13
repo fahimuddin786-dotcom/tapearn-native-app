@@ -1589,7 +1589,33 @@ body {
     background: #45a049;
 }
 
-/* NEW STYLES FOR REWARDS, REFERRAL, SUPPORT, TERMS */
+/* Profile Section Styles */
+.profile-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 20px 0;
+}
+
+.profile-stat {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px 10px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-stat .stat-number {
+    font-size: 18px;
+    font-weight: bold;
+    color: #4CAF50;
+    margin-bottom: 4px;
+}
+
+.profile-stat .stat-label {
+    font-size: 11px;
+    opacity: 0.7;
+}
 
 /* Rewards System */
 .rewards-stats {
