@@ -47,6 +47,14 @@ let watchedTelegramVideoIds = [];
 let joinedTelegramChannels = [];
 let completedXTasks = [];
 
+// New Systems State
+let redeemedRewards = [];
+let referralData = {
+    referralCode: generateReferralCode(),
+    referredUsers: [],
+    totalEarned: 0
+};
+
 // YouTube API Configuration
 const YOUTUBE_API_KEYS = [
     'AIzaSyBATxf5D7ZDeiQ61dbEdzEd4Tq72N713Y8',
@@ -180,6 +188,14 @@ function loadMiningState() {
     joinedTelegramChannels = getFromStorage('joinedTelegramChannels', []);
     completedXTasks = getFromStorage('completedXTasks', []);
     
+    // Load new systems state
+    redeemedRewards = getFromStorage('redeemedRewards', []);
+    referralData = getFromStorage('referralData', {
+        referralCode: generateReferralCode(),
+        referredUsers: [],
+        totalEarned: 0
+    });
+    
     // Check daily reset for earnings
     checkDailyEarningsReset();
     
@@ -254,6 +270,10 @@ function saveMiningState() {
     saveToStorage('watchedTelegramVideoIds', watchedTelegramVideoIds);
     saveToStorage('joinedTelegramChannels', joinedTelegramChannels);
     saveToStorage('completedXTasks', completedXTasks);
+    
+    // Save new systems state
+    saveToStorage('redeemedRewards', redeemedRewards);
+    saveToStorage('referralData', referralData);
 }
 
 // Check Daily Reset for Earnings
@@ -1192,6 +1212,30 @@ function showTasksHomePage() {
                     <span class="platform-points">+20-50 points</span>
                     <span class="platform-time">⚡ Instant</span>
                 </div>
+                <div class="platform-card" onclick="showCashier()">
+                    <span class="platform-icon">💰</span>
+                    <span class="platform-name">Rewards Center</span>
+                    <span class="platform-points">+Gift Cards</span>
+                    <span class="platform-time">🎁 Redeem</span>
+                </div>
+                <div class="platform-card" onclick="showReferralSystem()">
+                    <span class="platform-icon">👥</span>
+                    <span class="platform-name">Refer & Earn</span>
+                    <span class="platform-points">+50 points</span>
+                    <span class="platform-time">⚡ Per Referral</span>
+                </div>
+                <div class="platform-card" onclick="showSupport()">
+                    <span class="platform-icon">💬</span>
+                    <span class="platform-name">Support</span>
+                    <span class="platform-points">Help Center</span>
+                    <span class="platform-time">📞 24/7</span>
+                </div>
+                <div class="platform-card" onclick="showTerms()">
+                    <span class="platform-icon">📄</span>
+                    <span class="platform-name">Terms</span>
+                    <span class="platform-points">Legal</span>
+                    <span class="platform-time">⚖️ Info</span>
+                </div>
             </div>
 
             <div class="earn-stats">
@@ -1813,6 +1857,636 @@ function getSocialTaskById(taskId) {
         { id: 'social8', points: 30 }
     ];
     return tasks.find(task => task.id === taskId);
+}
+
+// 💰 10. REWARDS & CASHIER SYSTEM
+function showCashier() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">💰</div>
+                <h3>Rewards Center</h3>
+            </div>
+            
+            <div class="rewards-stats">
+                <div class="reward-stat">
+                    <div class="stat-number">${userPoints}</div>
+                    <div class="stat-label">Available</div>
+                </div>
+                <div class="reward-stat">
+                    <div class="stat-number">${redeemedRewards.length}</div>
+                    <div class="stat-label">Redeemed</div>
+                </div>
+                <div class="reward-stat">
+                    <div class="stat-number">${calculateRedeemedValue()}</div>
+                    <div class="stat-label">Total Value</div>
+                </div>
+            </div>
+            
+            <div id="rewardsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading rewards...</p>
+                </div>
+            </div>
+        </div>
+    `;
+    loadRewards();
+}
+
+function loadRewards() {
+    const rewards = [
+        {
+            id: 'reward1',
+            name: 'Amazon Gift Card',
+            description: '$5 Amazon gift card',
+            cost: 1000,
+            type: 'giftcard',
+            icon: '🛍️',
+            category: 'popular'
+        },
+        {
+            id: 'reward2',
+            name: 'PayPal Cash',
+            description: '$2 PayPal transfer',
+            cost: 2000,
+            type: 'cash',
+            icon: '💸',
+            category: 'cash'
+        },
+        {
+            id: 'reward3',
+            name: 'Google Play Card',
+            description: '$10 Google Play credit',
+            cost: 1500,
+            type: 'giftcard',
+            icon: '📱',
+            category: 'entertainment'
+        },
+        {
+            id: 'reward4',
+            name: 'Starbucks Card',
+            description: '$5 Starbucks gift card',
+            cost: 800,
+            type: 'giftcard',
+            icon: '☕',
+            category: 'food'
+        },
+        {
+            id: 'reward5',
+            name: 'Netflix Subscription',
+            description: '1 Month Netflix basic',
+            cost: 3000,
+            type: 'subscription',
+            icon: '🎬',
+            category: 'entertainment'
+        },
+        {
+            id: 'reward6',
+            name: 'Uber Voucher',
+            description: '$10 Uber ride credit',
+            cost: 1200,
+            type: 'voucher',
+            icon: '🚗',
+            category: 'travel'
+        }
+    ];
+    
+    displayRewards(rewards);
+}
+
+function displayRewards(rewards) {
+    const container = document.getElementById('rewardsContainer');
+    
+    let html = `
+        <div class="section-title">
+            <h3>💰 Available Rewards</h3>
+            <p class="section-subtitle">Redeem your points for amazing rewards</p>
+        </div>
+        
+        <div class="rewards-categories">
+            <button class="category-btn active" onclick="filterRewards('all')">All</button>
+            <button class="category-btn" onclick="filterRewards('popular')">Popular</button>
+            <button class="category-btn" onclick="filterRewards('cash')">Cash</button>
+            <button class="category-btn" onclick="filterRewards('giftcard')">Gift Cards</button>
+        </div>
+        
+        <div class="rewards-grid">
+    `;
+    
+    rewards.forEach(reward => {
+        const isRedeemed = redeemedRewards.includes(reward.id);
+        const canAfford = userPoints >= reward.cost;
+        
+        html += `
+            <div class="reward-card ${reward.category}-card">
+                <div class="reward-header">
+                    <div class="reward-icon">${reward.icon}</div>
+                    <div class="reward-info">
+                        <div class="reward-name">${reward.name}</div>
+                        <div class="reward-description">${reward.description}</div>
+                    </div>
+                    <div class="reward-cost">${reward.cost}</div>
+                </div>
+                <div class="reward-actions">
+                    ${isRedeemed ? 
+                        '<button class="btn-redeemed">✅ Redeemed</button>' :
+                        (canAfford ? 
+                            `<button class="btn-redeem" onclick="redeemReward('${reward.id}', ${reward.cost}, '${reward.name}')">Redeem Now</button>` :
+                            `<button class="btn-cant-afford" disabled>Need ${reward.cost - userPoints} more</button>`
+                        )
+                    }
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    container.innerHTML = html;
+}
+
+function filterRewards(category) {
+    document.querySelectorAll('.category-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    // In a real app, you would filter the rewards array here
+    loadRewards(); // Reload for demo
+}
+
+function redeemReward(rewardId, cost, rewardName) {
+    if (redeemedRewards.includes(rewardId)) {
+        showNotification('❌ You have already redeemed this reward!', 'warning');
+        return;
+    }
+    
+    if (userPoints < cost) {
+        showNotification(`❌ You need ${cost - userPoints} more points!`, 'warning');
+        return;
+    }
+    
+    userPoints -= cost;
+    redeemedRewards.push(rewardId);
+    
+    showNotification(`🎉 Congratulations! You redeemed ${rewardName}`, 'success');
+    updateUI();
+    saveMiningState();
+    showCashier();
+}
+
+function calculateRedeemedValue() {
+    const rewards = [
+        { id: 'reward1', value: 5 },
+        { id: 'reward2', value: 2 },
+        { id: 'reward3', value: 10 },
+        { id: 'reward4', value: 5 },
+        { id: 'reward5', value: 15 },
+        { id: 'reward6', value: 10 }
+    ];
+    
+    return redeemedRewards.reduce((total, rewardId) => {
+        const reward = rewards.find(r => r.id === rewardId);
+        return total + (reward ? reward.value : 0);
+    }, 0);
+}
+
+// 👥 11. REFERRAL SYSTEM
+function showReferralSystem() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">👥</div>
+                <h3>Refer & Earn</h3>
+            </div>
+            
+            <div class="referral-stats">
+                <div class="referral-stat">
+                    <div class="stat-number">${referralData.referredUsers.length}</div>
+                    <div class="stat-label">Referred</div>
+                </div>
+                <div class="referral-stat">
+                    <div class="stat-number">${referralData.totalEarned}</div>
+                    <div class="stat-label">Earned</div>
+                </div>
+                <div class="referral-stat">
+                    <div class="stat-number">50</div>
+                    <div class="stat-label">Per Referral</div>
+                </div>
+            </div>
+            
+            <div class="referral-main-card">
+                <div class="referral-code">${referralData.referralCode}</div>
+                <p class="referral-note">Your unique referral code</p>
+                
+                <div class="referral-actions">
+                    <button class="btn-share" onclick="shareReferral()">📱 Share</button>
+                    <button class="btn-copy" onclick="copyReferralCode()">📋 Copy Code</button>
+                </div>
+            </div>
+            
+            <div class="referral-benefits">
+                <h4>🎁 How It Works</h4>
+                <ul>
+                    <li>✅ Share your referral code with friends</li>
+                    <li>✅ Friends join using YOUR code</li>
+                    <li>✅ You get <strong>50 points</strong> instantly</li>
+                    <li>✅ Your friend gets <strong>25 bonus points</strong></li>
+                    <li>✅ No limit on referrals - earn unlimited!</li>
+                </ul>
+            </div>
+            
+            <div class="referral-history">
+                <h4>📊 Referral History</h4>
+                ${referralData.referredUsers.length > 0 ? 
+                    displayReferralHistory() : 
+                    '<p class="no-referrals">No referrals yet. Share your code to start earning!</p>'
+                }
+            </div>
+        </div>
+    `;
+}
+
+function generateReferralCode() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for (let i = 0; i < 8; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return 'TAPEARN-' + code;
+}
+
+function shareReferral() {
+    const referralText = `Join TapEarn and earn free points! Use my referral code: ${referralData.referralCode}\n\nGet 25 bonus points when you sign up! 🎉`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Join TapEarn',
+            text: referralText,
+            url: window.location.href
+        });
+    } else {
+        copyReferralCode();
+    }
+}
+
+function copyReferralCode() {
+    navigator.clipboard.writeText(referralData.referralCode)
+        .then(() => showNotification('✅ Referral code copied!', 'success'))
+        .catch(() => showNotification('❌ Failed to copy', 'warning'));
+}
+
+function displayReferralHistory() {
+    let html = '<div class="referral-list">';
+    
+    referralData.referredUsers.forEach((user, index) => {
+        html += `
+            <div class="referral-item">
+                <div class="referral-user">
+                    <span class="user-avatar">👤</span>
+                    <span class="user-name">Friend ${index + 1}</span>
+                </div>
+                <div class="referral-details">
+                    <span class="referral-points">+50 pts</span>
+                    <span class="referral-date">${new Date().toLocaleDateString()}</span>
+                </div>
+            </div>
+        `;
+    });
+    
+    html += '</div>';
+    return html;
+}
+
+function addReferral() {
+    referralData.referredUsers.push({
+        id: Date.now(),
+        date: new Date().toISOString(),
+        points: 50
+    });
+    
+    referralData.totalEarned += 50;
+    userPoints += 50;
+    
+    showNotification('🎉 +50 Points! New referral added!', 'success');
+    updateUI();
+    saveMiningState();
+    showReferralSystem();
+}
+
+// Demo function to simulate referral
+function simulateReferral() {
+    addReferral();
+}
+
+// 💬 13. SUPPORT SYSTEM
+function showSupport() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <div class="platform-header-icon">💬</div>
+                <h3>Support Center</h3>
+            </div>
+            
+            <div class="support-quick-actions">
+                <div class="support-card" onclick="showFAQ()">
+                    <div class="support-icon">❓</div>
+                    <div class="support-title">FAQ</div>
+                    <div class="support-desc">Common questions</div>
+                </div>
+                
+                <div class="support-card" onclick="showContactForm()">
+                    <div class="support-icon">📧</div>
+                    <div class="support-title">Contact</div>
+                    <div class="support-desc">Get help</div>
+                </div>
+                
+                <div class="support-card" onclick="showReportForm()">
+                    <div class="support-icon">🐛</div>
+                    <div class="support-title">Report</div>
+                    <div class="support-desc">Report issues</div>
+                </div>
+                
+                <div class="support-card" onclick="showTerms()">
+                    <div class="support-icon">📄</div>
+                    <div class="support-title">Terms</div>
+                    <div class="support-desc">Terms & conditions</div>
+                </div>
+            </div>
+            
+            <div class="support-help-section">
+                <h4>🚀 Quick Help</h4>
+                <div class="help-items">
+                    <div class="help-item" onclick="showVideoSection()">
+                        <span class="help-icon">🎬</span>
+                        <span class="help-text">How to earn from videos?</span>
+                    </div>
+                    <div class="help-item" onclick="showReferralSystem()">
+                        <span class="help-icon">👥</span>
+                        <span class="help-text">How referrals work?</span>
+                    </div>
+                    <div class="help-item" onclick="showCashier()">
+                        <span class="help-icon">💰</span>
+                        <span class="help-text">How to redeem rewards?</span>
+                    </div>
+                    <div class="help-item" onclick="showMiningHelp()">
+                        <span class="help-icon">⛏️</span>
+                        <span class="help-text">Mining not working?</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="support-contact-info">
+                <h4>📞 Contact Information</h4>
+                <div class="contact-methods">
+                    <div class="contact-method">
+                        <span class="method-icon">📧</span>
+                        <span class="method-text">support@tapearn.com</span>
+                    </div>
+                    <div class="contact-method">
+                        <span class="method-icon">💬</span>
+                        <span class="method-text">Live Chat (24/7)</span>
+                    </div>
+                    <div class="contact-method">
+                        <span class="method-icon">📱</span>
+                        <span class="method-text">Telegram: @tapearnsupport</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showFAQ() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showSupport()" class="back-btn">← Back</button>
+                <h3>❓ Frequently Asked Questions</h3>
+            </div>
+            
+            <div class="faq-list">
+                <div class="faq-item">
+                    <div class="faq-question">How do I earn points?</div>
+                    <div class="faq-answer">You can earn points by mining, watching videos, completing tasks, referring friends, and following social accounts.</div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">When can I redeem my points?</div>
+                    <div class="faq-answer">You can redeem points once you reach the minimum threshold for each reward. Most rewards require at least 1000 points.</div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Is there a daily limit?</div>
+                    <div class="faq-answer">No, you can earn unlimited points by completing various tasks and watching videos throughout the day.</div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">How do referrals work?</div>
+                    <div class="faq-answer">You get 50 points for each friend who joins using your referral code, and they get 25 bonus points when they sign up.</div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Are my points safe?</div>
+                    <div class="faq-answer">Yes, all points are stored securely and backed up regularly. We never reset points without notice.</div>
+                </div>
+                
+                <div class="faq-item">
+                    <div class="faq-question">Why is my mining not working?</div>
+                    <div class="faq-answer">Make sure you have stable internet connection and the app is open. Mining works only when the app is active.</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showContactForm() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showSupport()" class="back-btn">← Back</button>
+                <h3>📧 Contact Support</h3>
+            </div>
+            
+            <div class="contact-form">
+                <div class="form-group">
+                    <label for="contactName">Your Name</label>
+                    <input type="text" id="contactName" placeholder="Enter your name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactEmail">Email Address</label>
+                    <input type="email" id="contactEmail" placeholder="Enter your email">
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactSubject">Subject</label>
+                    <select id="contactSubject">
+                        <option value="">Select a subject</option>
+                        <option value="technical">Technical Issue</option>
+                        <option value="account">Account Problem</option>
+                        <option value="payment">Rewards Issue</option>
+                        <option value="suggestion">Suggestion</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="contactMessage">Message</label>
+                    <textarea id="contactMessage" placeholder="Describe your issue or question..." rows="5"></textarea>
+                </div>
+                
+                <button class="submit-btn" onclick="submitContactForm()">Send Message</button>
+            </div>
+        </div>
+    `;
+}
+
+function showReportForm() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showSupport()" class="back-btn">← Back</button>
+                <h3>🐛 Report an Issue</h3>
+            </div>
+            
+            <div class="report-form">
+                <div class="form-group">
+                    <label for="issueType">Issue Type</label>
+                    <select id="issueType">
+                        <option value="">Select issue type</option>
+                        <option value="video">Video Not Playing</option>
+                        <option value="points">Points Not Added</option>
+                        <option value="mining">Mining Problem</option>
+                        <option value="app">App Crash/Freeze</option>
+                        <option value="reward">Reward Not Received</option>
+                        <option value="other">Other Issue</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="issueDescription">Description</label>
+                    <textarea id="issueDescription" placeholder="Please describe the issue in detail..." rows="5"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="issueSteps">Steps to Reproduce</label>
+                    <textarea id="issueSteps" placeholder="What were you doing when the issue occurred?" rows="3"></textarea>
+                </div>
+                
+                <button class="submit-btn" onclick="submitReport()">Submit Report</button>
+            </div>
+        </div>
+    `;
+}
+
+function submitContactForm() {
+    const name = document.getElementById('contactName').value;
+    const email = document.getElementById('contactEmail').value;
+    const subject = document.getElementById('contactSubject').value;
+    const message = document.getElementById('contactMessage').value;
+    
+    if (!name || !email || !subject || !message) {
+        showNotification('❌ Please fill all fields!', 'warning');
+        return;
+    }
+    
+    showNotification('✅ Message sent successfully! We will respond within 24 hours.', 'success');
+    setTimeout(() => showSupport(), 2000);
+}
+
+function submitReport() {
+    const issueType = document.getElementById('issueType').value;
+    const description = document.getElementById('issueDescription').value;
+    
+    if (!issueType || !description) {
+        showNotification('❌ Please fill all required fields!', 'warning');
+        return;
+    }
+    
+    showNotification('✅ Issue reported successfully! Our team will investigate.', 'success');
+    setTimeout(() => showSupport(), 2000);
+}
+
+function showMiningHelp() {
+    showNotification('⛏️ Make sure mining is enabled and you have stable internet connection.', 'info');
+}
+
+// 📄 14. TERMS & CONDITIONS
+function showTerms() {
+    document.getElementById('tasksAppContent').innerHTML = `
+        <div class="earn-page">
+            <div class="platform-header">
+                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <h3>📄 Terms & Conditions</h3>
+            </div>
+            
+            <div class="terms-content">
+                <div class="terms-section">
+                    <h4>1. Acceptance of Terms</h4>
+                    <p>By using TapEarn, you agree to these terms and conditions. If you disagree with any part, please discontinue use immediately.</p>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>2. Eligibility</h4>
+                    <p>You must be at least 13 years old to use this app. Some features may have additional age requirements.</p>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>3. Points System</h4>
+                    <p>Points are awarded for completing tasks and have no real monetary value. We reserve the right to modify point values and rewards.</p>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>4. Prohibited Activities</h4>
+                    <ul>
+                        <li>Using automated scripts or bots</li>
+                        <li>Creating multiple accounts</li>
+                        <li>Exploiting system vulnerabilities</li>
+                        <li>Sharing inappropriate content</li>
+                        <li>Attempting to cheat the system</li>
+                    </ul>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>5. Account Termination</h4>
+                    <p>We may suspend or terminate accounts that violate these terms or engage in fraudulent activities.</p>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>6. Privacy Policy</h4>
+                    <p>We collect and use your data as described in our Privacy Policy to provide and improve our services.</p>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>7. Changes to Terms</h4>
+                    <p>We may update these terms periodically. Continued use constitutes acceptance of changes.</p>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>8. Limitation of Liability</h4>
+                    <p>We are not liable for any indirect, incidental, or consequential damages arising from app usage.</p>
+                </div>
+                
+                <div class="terms-section">
+                    <h4>9. Contact Information</h4>
+                    <p>For questions about these terms, contact us at legal@tapearn.com</p>
+                </div>
+            </div>
+            
+            <div class="terms-actions">
+                <button class="terms-agree-btn" onclick="acceptTerms()">
+                    I Agree to Terms & Conditions
+                </button>
+            </div>
+        </div>
+    `;
+}
+
+function acceptTerms() {
+    localStorage.setItem('terms_accepted', 'true');
+    showNotification('✅ Terms accepted! Thank you for using TapEarn.', 'success');
 }
 
 // YouTube Video Search Function
