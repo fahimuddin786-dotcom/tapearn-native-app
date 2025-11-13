@@ -34,6 +34,11 @@ let lastEarningDate = null;
 let watchedVideos = [];
 let completedTasks = [];
 
+// Video Watch System
+let currentVideoTimer = null;
+let currentVideoTimeLeft = 0;
+let currentVideoData = null;
+
 // YouTube API Configuration
 const YOUTUBE_API_KEYS = [
     'AIzaSyBATxf5D7ZDeiQ61dbEdzEd4Tq72N713Y8',
@@ -403,15 +408,9 @@ function updateEarningUI() {
 
 // Format Time
 function formatTime(seconds) {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    
-    if (hours > 0) {
-        return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    } else {
-        return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    }
+    return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
 // Format Numbers
@@ -686,6 +685,118 @@ function switchTab(tabName) {
     updateUI();
 }
 
+// Video Watch System
+function openVideoModal(videoId, points, title, thumbnail, channel) {
+    if (watchedVideos.includes(videoId)) {
+        showNotification('❌ You already earned points for this video!', 'warning');
+        return;
+    }
+    
+    // Store current video data
+    currentVideoData = {
+        videoId: videoId,
+        points: points,
+        title: title,
+        thumbnail: thumbnail,
+        channel: channel
+    };
+    
+    // Reset timer
+    currentVideoTimeLeft = 60; // 1 minute
+    
+    // Update modal content
+    document.getElementById('modalVideoThumbnail').src = thumbnail;
+    document.getElementById('modalVideoTitle').textContent = title;
+    document.getElementById('modalVideoChannel').textContent = channel;
+    document.getElementById('modalVideoPoints').textContent = points;
+    document.getElementById('modalTimer').textContent = formatTime(currentVideoTimeLeft);
+    document.getElementById('modalProgressText').textContent = 'Keep watching...';
+    
+    // Update progress circle
+    updateTimerProgress(0);
+    
+    // Show modal
+    document.getElementById('videoWatchModal').classList.add('active');
+    
+    // Start countdown
+    startVideoTimer();
+}
+
+function closeVideoModal() {
+    if (currentVideoTimer) {
+        clearInterval(currentVideoTimer);
+        currentVideoTimer = null;
+    }
+    
+    document.getElementById('videoWatchModal').classList.remove('active');
+    currentVideoData = null;
+    
+    showNotification('⏹️ Video watch cancelled. No points earned.', 'warning');
+}
+
+function startVideoTimer() {
+    currentVideoTimer = setInterval(() => {
+        currentVideoTimeLeft--;
+        
+        // Update timer display
+        document.getElementById('modalTimer').textContent = formatTime(currentVideoTimeLeft);
+        
+        // Update progress circle
+        const progress = ((60 - currentVideoTimeLeft) / 60) * 100;
+        updateTimerProgress(progress);
+        
+        // Update progress text
+        if (currentVideoTimeLeft <= 10) {
+            document.getElementById('modalProgressText').textContent = 'Almost there...';
+        } else if (currentVideoTimeLeft <= 30) {
+            document.getElementById('modalProgressText').textContent = 'Keep watching...';
+        }
+        
+        // Check if timer completed
+        if (currentVideoTimeLeft <= 0) {
+            completeVideoWatch();
+        }
+    }, 1000);
+}
+
+function updateTimerProgress(progress) {
+    const progressElement = document.querySelector('.timer-progress');
+    progressElement.style.background = `conic-gradient(#4CAF50 ${progress}%, #2E7D32 ${progress}%)`;
+}
+
+function completeVideoWatch() {
+    if (currentVideoTimer) {
+        clearInterval(currentVideoTimer);
+        currentVideoTimer = null;
+    }
+    
+    // Award points
+    const { videoId, points, title } = currentVideoData;
+    
+    watchedVideos.push(videoId);
+    userPoints += points;
+    totalPointsEarned += points;
+    todayEarnings += points;
+    totalTasksCompleted++;
+    
+    // Update UI
+    updateUI();
+    saveMiningState();
+    
+    // Close modal
+    document.getElementById('videoWatchModal').classList.remove('active');
+    
+    // Show success message
+    showNotification(`✅ +${points} Points! "${title.substring(0, 30)}..."`, 'success');
+    
+    // Refresh video list if on video section
+    if (document.getElementById('videoResultsContainer')) {
+        setTimeout(() => searchVideos(), 500);
+    }
+    
+    currentVideoData = null;
+}
+
 // Earning Section Functions
 function showVideoSection() {
     document.getElementById('earnAppContent').innerHTML = `
@@ -698,7 +809,7 @@ function showVideoSection() {
             
             <div class="section-title">
                 <h3>Watch & Earn</h3>
-                <p class="section-subtitle">Watch videos to earn points instantly</p>
+                <p class="section-subtitle">Watch videos for 1 minute to earn points</p>
             </div>
 
             <div class="video-search">
@@ -811,17 +922,18 @@ function showInstagramSection() {
             
             <div class="section-title">
                 <h3>Watch Reels</h3>
-                <p class="section-subtitle">Watch reels to earn points</p>
+                <p class="section-subtitle">Watch reels for 1 minute to earn points</p>
             </div>
             
             <div class="videos-grid">
-                <div class="video-card ${completedTasks.includes('instagram1') ? 'video-completed' : ''}" 
-                     onclick="${completedTasks.includes('instagram1') ? '' : 'completeTask(\'instagram1\', 15, \'Fashion Reel\')'}">
+                <div class="video-card ${watchedVideos.includes('instagram1') ? 'video-completed' : ''}" 
+                     onclick="${watchedVideos.includes('instagram1') ? '' : `openVideoModal('instagram1', 15, 'Fashion Trends Reel 2024', 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop', '@fashion.world')`}">
                     <div class="video-thumbnail">
                         <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop" alt="Instagram Reel">
                         <div class="points-badge">+15</div>
                         <div class="platform-badge">Instagram</div>
                         <div class="video-duration">0:30</div>
+                        ${watchedVideos.includes('instagram1') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
                     </div>
                     <div class="video-info">
                         <div class="video-title">Fashion Trends Reel 2024</div>
@@ -829,13 +941,14 @@ function showInstagramSection() {
                     </div>
                 </div>
                 
-                <div class="video-card ${completedTasks.includes('instagram2') ? 'video-completed' : ''}" 
-                     onclick="${completedTasks.includes('instagram2') ? '' : 'completeTask(\'instagram2\', 12, \'Travel Reel\')'}">
+                <div class="video-card ${watchedVideos.includes('instagram2') ? 'video-completed' : ''}" 
+                     onclick="${watchedVideos.includes('instagram2') ? '' : `openVideoModal('instagram2', 12, 'Travel Adventures Reel', 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop', '@travel.diary')`}">
                     <div class="video-thumbnail">
                         <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop" alt="Instagram Reel">
                         <div class="points-badge">+12</div>
                         <div class="platform-badge">Instagram</div>
                         <div class="video-duration">0:45</div>
+                        ${watchedVideos.includes('instagram2') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
                     </div>
                     <div class="video-info">
                         <div class="video-title">Travel Adventures Reel</div>
@@ -843,13 +956,14 @@ function showInstagramSection() {
                     </div>
                 </div>
 
-                <div class="video-card ${completedTasks.includes('instagram3') ? 'video-completed' : ''}" 
-                     onclick="${completedTasks.includes('instagram3') ? '' : 'completeTask(\'instagram3\', 18, \'Cooking Reel\')'}">
+                <div class="video-card ${watchedVideos.includes('instagram3') ? 'video-completed' : ''}" 
+                     onclick="${watchedVideos.includes('instagram3') ? '' : `openVideoModal('instagram3', 18, 'Quick Cooking Recipes', 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop', '@cooking.master')`}">
                     <div class="video-thumbnail">
                         <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop" alt="Instagram Reel">
                         <div class="points-badge">+18</div>
                         <div class="platform-badge">Instagram</div>
                         <div class="video-duration">1:15</div>
+                        ${watchedVideos.includes('instagram3') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
                     </div>
                     <div class="video-info">
                         <div class="video-title">Quick Cooking Recipes</div>
@@ -857,13 +971,14 @@ function showInstagramSection() {
                     </div>
                 </div>
 
-                <div class="video-card ${completedTasks.includes('instagram4') ? 'video-completed' : ''}" 
-                     onclick="${completedTasks.includes('instagram4') ? '' : 'completeTask(\'instagram4\', 14, \'Fitness Reel\')'}">
+                <div class="video-card ${watchedVideos.includes('instagram4') ? 'video-completed' : ''}" 
+                     onclick="${watchedVideos.includes('instagram4') ? '' : `openVideoModal('instagram4', 14, 'Daily Fitness Challenge', 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop', '@fitness.coach')`}">
                     <div class="video-thumbnail">
                         <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop" alt="Instagram Reel">
                         <div class="points-badge">+14</div>
                         <div class="platform-badge">Instagram</div>
                         <div class="video-duration">0:55</div>
+                        ${watchedVideos.includes('instagram4') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
                     </div>
                     <div class="video-info">
                         <div class="video-title">Daily Fitness Challenge</div>
@@ -966,21 +1081,25 @@ function showHomePage() {
                     <span class="platform-icon">🎬</span>
                     <span class="platform-name">YouTube Videos</span>
                     <span class="platform-points">+10-20 points</span>
+                    <span class="platform-time">⏱️ 1 min watch</span>
                 </div>
                 <div class="platform-card" onclick="showTelegramSection()">
                     <span class="platform-icon">📱</span>
                     <span class="platform-name">Telegram Tasks</span>
                     <span class="platform-points">+15-30 points</span>
+                    <span class="platform-time">⚡ Instant</span>
                 </div>
                 <div class="platform-card" onclick="showInstagramSection()">
                     <span class="platform-icon">📷</span>
                     <span class="platform-name">Instagram Reels</span>
                     <span class="platform-points">+12-25 points</span>
+                    <span class="platform-time">⏱️ 1 min watch</span>
                 </div>
                 <div class="platform-card" onclick="showTwitterSection()">
                     <span class="platform-icon">🐦</span>
                     <span class="platform-name">Twitter Tasks</span>
                     <span class="platform-points">+8-20 points</span>
+                    <span class="platform-time">⚡ Instant</span>
                 </div>
             </div>
 
@@ -1078,11 +1197,12 @@ function displayYouTubeVideos(videos, searchQuery) {
         
         html += `
             <div class="video-card ${isWatched ? 'video-completed' : ''}" 
-                 onclick="${isWatched ? '' : `watchVideo('${videoId}', ${points}, '${title.replace(/'/g, "\\'")}')`}">
+                 onclick="${isWatched ? '' : `openVideoModal('${videoId}', ${points}, '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${channel}')`}">
                 <div class="video-thumbnail">
                     <img src="${thumbnail}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop'">
                     <div class="points-badge">+${points}</div>
                     <div class="platform-badge">YouTube</div>
+                    <div class="video-duration">1:00</div>
                     ${isWatched ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
                 </div>
                 <div class="video-info">
@@ -1143,35 +1263,6 @@ function showDemoVideos(searchQuery) {
     ];
     
     displayYouTubeVideos(demoVideos, searchQuery);
-}
-
-function watchVideo(videoId, points, title) {
-    if (watchedVideos.includes(videoId)) {
-        showNotification('❌ You already earned points for this video!', 'warning');
-        return;
-    }
-    
-    showNotification('⏳ Playing video...', 'info');
-    
-    // Simulate video watching with progress
-    setTimeout(() => {
-        watchedVideos.push(videoId);
-        userPoints += points;
-        totalPointsEarned += points;
-        todayEarnings += points;
-        totalTasksCompleted++;
-        
-        saveMiningState();
-        updateUI();
-        
-        showNotification(`✅ +${points} Points! "${title.substring(0, 30)}..."`, 'success');
-        
-        // Refresh the video display to show completed state
-        if (document.getElementById('videoResultsContainer')) {
-            const currentSearch = document.getElementById('videoSearch').value;
-            setTimeout(() => searchVideos(), 500);
-        }
-    }, 3000);
 }
 
 function completeTask(taskId, points, taskName) {
