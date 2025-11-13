@@ -159,39 +159,34 @@
                     <p class="page-subtitle">Complete tasks to earn points</p>
                 </div>
 
-                <!-- Main Earn Button -->
-                <div class="earn-main-section">
-                    <button class="earn-main-btn" onclick="showEarnPage()">
-                        <span class="earn-main-icon">💰</span>
-                        <span class="earn-main-text">EARN POINTS</span>
-                        <span class="earn-main-subtext">Tap to start earning from all platforms</span>
-                    </button>
-                </div>
-
                 <!-- Earning Content Area -->
                 <div id="earnAppContent">
                     <!-- Default Home Content -->
                     <div class="welcome-section">
                         <div class="welcome-icon">🚀</div>
                         <h3>Welcome to TapEarn!</h3>
-                        <p>Click the EARN POINTS button to start earning from:</p>
+                        <p>Click any platform to start earning points instantly</p>
                         
                         <div class="platforms-grid">
-                            <div class="platform-card">
+                            <div class="platform-card" onclick="showVideoSection()">
                                 <span class="platform-icon">🎬</span>
-                                <span class="platform-name">YouTube</span>
+                                <span class="platform-name">YouTube Videos</span>
+                                <span class="platform-points">+10-20 points</span>
                             </div>
-                            <div class="platform-card">
+                            <div class="platform-card" onclick="showTelegramSection()">
                                 <span class="platform-icon">📱</span>
-                                <span class="platform-name">Telegram</span>
+                                <span class="platform-name">Telegram Tasks</span>
+                                <span class="platform-points">+15-30 points</span>
                             </div>
-                            <div class="platform-card">
+                            <div class="platform-card" onclick="showInstagramSection()">
                                 <span class="platform-icon">📷</span>
-                                <span class="platform-name">Instagram</span>
+                                <span class="platform-name">Instagram Reels</span>
+                                <span class="platform-points">+12-25 points</span>
                             </div>
-                            <div class="platform-card">
+                            <div class="platform-card" onclick="showTwitterSection()">
                                 <span class="platform-icon">🐦</span>
-                                <span class="platform-name">Twitter</span>
+                                <span class="platform-name">Twitter Tasks</span>
+                                <span class="platform-points">+8-20 points</span>
                             </div>
                         </div>
 
@@ -203,6 +198,10 @@
                             <div class="earn-stat">
                                 <div class="stat-number" id="totalTasks">0</div>
                                 <div class="stat-label">Tasks Done</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="todayEarnings">0</div>
+                                <div class="stat-label">Today's Points</div>
                             </div>
                         </div>
                     </div>
