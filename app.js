@@ -47,7 +47,7 @@ let watchedTelegramVideoIds = [];
 let joinedTelegramChannels = [];
 let completedXTasks = [];
 
-// New Systems State
+// Profile Systems State
 let redeemedRewards = [];
 let referralData = {
     referralCode: generateReferralCode(),
@@ -188,7 +188,7 @@ function loadMiningState() {
     joinedTelegramChannels = getFromStorage('joinedTelegramChannels', []);
     completedXTasks = getFromStorage('completedXTasks', []);
     
-    // Load new systems state
+    // Load profile systems state
     redeemedRewards = getFromStorage('redeemedRewards', []);
     referralData = getFromStorage('referralData', {
         referralCode: generateReferralCode(),
@@ -271,7 +271,7 @@ function saveMiningState() {
     saveToStorage('joinedTelegramChannels', joinedTelegramChannels);
     saveToStorage('completedXTasks', completedXTasks);
     
-    // Save new systems state
+    // Save profile systems state
     saveToStorage('redeemedRewards', redeemedRewards);
     saveToStorage('referralData', referralData);
 }
@@ -357,6 +357,9 @@ function updateUI() {
     
     // Update Tasks UI
     updateTasksUI();
+    
+    // Update Profile UI
+    updateProfileUI();
 }
 
 // Update Level UI
@@ -460,6 +463,17 @@ function updateTasksUI() {
     document.getElementById('tasksTotalPoints').textContent = userPoints;
     document.getElementById('tasksCompleted').textContent = totalTasksCompleted;
     document.getElementById('tasksToday').textContent = completedDailyTasks.length;
+}
+
+// Update Profile UI
+function updateProfileUI() {
+    const profileTotalPoints = document.getElementById('profileTotalPoints');
+    const profileReferrals = document.getElementById('profileReferrals');
+    const profileRewards = document.getElementById('profileRewards');
+    
+    if (profileTotalPoints) profileTotalPoints.textContent = userPoints;
+    if (profileReferrals) profileReferrals.textContent = referralData.referredUsers.length;
+    if (profileRewards) profileRewards.textContent = redeemedRewards.length;
 }
 
 // Format Time
@@ -744,6 +758,8 @@ function switchTab(tabName) {
         document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
     } else if (tabName === 'tasks') {
         document.querySelector('.nav-btn:nth-child(3)').classList.add('active');
+    } else if (tabName === 'profile') {
+        document.querySelector('.nav-btn:nth-child(4)').classList.add('active');
     }
     
     updateUI();
@@ -1211,30 +1227,6 @@ function showTasksHomePage() {
                     <span class="platform-name">Social Tasks</span>
                     <span class="platform-points">+20-50 points</span>
                     <span class="platform-time">⚡ Instant</span>
-                </div>
-                <div class="platform-card" onclick="showCashier()">
-                    <span class="platform-icon">💰</span>
-                    <span class="platform-name">Rewards Center</span>
-                    <span class="platform-points">+Gift Cards</span>
-                    <span class="platform-time">🎁 Redeem</span>
-                </div>
-                <div class="platform-card" onclick="showReferralSystem()">
-                    <span class="platform-icon">👥</span>
-                    <span class="platform-name">Refer & Earn</span>
-                    <span class="platform-points">+50 points</span>
-                    <span class="platform-time">⚡ Per Referral</span>
-                </div>
-                <div class="platform-card" onclick="showSupport()">
-                    <span class="platform-icon">💬</span>
-                    <span class="platform-name">Support</span>
-                    <span class="platform-points">Help Center</span>
-                    <span class="platform-time">📞 24/7</span>
-                </div>
-                <div class="platform-card" onclick="showTerms()">
-                    <span class="platform-icon">📄</span>
-                    <span class="platform-name">Terms</span>
-                    <span class="platform-points">Legal</span>
-                    <span class="platform-time">⚖️ Info</span>
                 </div>
             </div>
 
@@ -1861,10 +1853,10 @@ function getSocialTaskById(taskId) {
 
 // 💰 10. REWARDS & CASHIER SYSTEM
 function showCashier() {
-    document.getElementById('tasksAppContent').innerHTML = `
+    document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
                 <div class="platform-header-icon">💰</div>
                 <h3>Rewards Center</h3>
             </div>
@@ -2052,10 +2044,10 @@ function calculateRedeemedValue() {
 
 // 👥 11. REFERRAL SYSTEM
 function showReferralSystem() {
-    document.getElementById('tasksAppContent').innerHTML = `
+    document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
                 <div class="platform-header-icon">👥</div>
                 <h3>Refer & Earn</h3>
             </div>
@@ -2181,10 +2173,10 @@ function simulateReferral() {
 
 // 💬 13. SUPPORT SYSTEM
 function showSupport() {
-    document.getElementById('tasksAppContent').innerHTML = `
+    document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
                 <div class="platform-header-icon">💬</div>
                 <h3>Support Center</h3>
             </div>
@@ -2259,7 +2251,7 @@ function showSupport() {
 }
 
 function showFAQ() {
-    document.getElementById('tasksAppContent').innerHTML = `
+    document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
                 <button onclick="showSupport()" class="back-btn">← Back</button>
@@ -2302,7 +2294,7 @@ function showFAQ() {
 }
 
 function showContactForm() {
-    document.getElementById('tasksAppContent').innerHTML = `
+    document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
                 <button onclick="showSupport()" class="back-btn">← Back</button>
@@ -2344,7 +2336,7 @@ function showContactForm() {
 }
 
 function showReportForm() {
-    document.getElementById('tasksAppContent').innerHTML = `
+    document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
                 <button onclick="showSupport()" class="back-btn">← Back</button>
@@ -2415,10 +2407,10 @@ function showMiningHelp() {
 
 // 📄 14. TERMS & CONDITIONS
 function showTerms() {
-    document.getElementById('tasksAppContent').innerHTML = `
+    document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showTasksHomePage()" class="back-btn">← Back</button>
+                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
                 <h3>📄 Terms & Conditions</h3>
             </div>
             
@@ -2487,6 +2479,84 @@ function showTerms() {
 function acceptTerms() {
     localStorage.setItem('terms_accepted', 'true');
     showNotification('✅ Terms accepted! Thank you for using TapEarn.', 'success');
+}
+
+// Profile Home Page
+function showProfileHomePage() {
+    document.getElementById('profileAppContent').innerHTML = `
+        <div class="welcome-section">
+            <div class="welcome-icon">👤</div>
+            <h3>Your Profile</h3>
+            <p>Manage your account, rewards, and settings</p>
+            
+            <div class="platforms-grid">
+                <div class="platform-card" onclick="showCashier()">
+                    <span class="platform-icon">💰</span>
+                    <span class="platform-name">Rewards Center</span>
+                    <span class="platform-points">+Gift Cards</span>
+                    <span class="platform-time">🎁 Redeem</span>
+                </div>
+                <div class="platform-card" onclick="showReferralSystem()">
+                    <span class="platform-icon">👥</span>
+                    <span class="platform-name">Refer & Earn</span>
+                    <span class="platform-points">+50 points</span>
+                    <span class="platform-time">⚡ Per Referral</span>
+                </div>
+                <div class="platform-card" onclick="showSupport()">
+                    <span class="platform-icon">💬</span>
+                    <span class="platform-name">Support</span>
+                    <span class="platform-points">Help Center</span>
+                    <span class="platform-time">📞 24/7</span>
+                </div>
+                <div class="platform-card" onclick="showTerms()">
+                    <span class="platform-icon">📄</span>
+                    <span class="platform-name">Terms</span>
+                    <span class="platform-points">Legal</span>
+                    <span class="platform-time">⚖️ Info</span>
+                </div>
+            </div>
+
+            <div class="earn-stats">
+                <div class="earn-stat">
+                    <div class="stat-number" id="profileTotalPoints">${userPoints}</div>
+                    <div class="stat-label">Total Points</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="profileReferrals">${referralData.referredUsers.length}</div>
+                    <div class="stat-label">Referrals</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="profileRewards">${redeemedRewards.length}</div>
+                    <div class="stat-label">Rewards</div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function completeTask(taskId, points, taskName) {
+    if (completedTasks.includes(taskId)) {
+        showNotification('❌ You already completed this task!', 'warning');
+        return;
+    }
+    
+    completedTasks.push(taskId);
+    userPoints += points;
+    totalPointsEarned += points;
+    todayEarnings += points;
+    totalTasksCompleted++;
+    
+    saveMiningState();
+    updateUI();
+    
+    showNotification(`✅ +${points} Points! ${taskName}`, 'success');
+    
+    // Refresh the current section to update task states
+    setTimeout(() => {
+        if (taskId.startsWith('telegram')) showTelegramSection();
+        else if (taskId.startsWith('twitter')) showTwitterSection();
+        else if (taskId.startsWith('instagram')) showInstagramSection();
+    }, 500);
 }
 
 // YouTube Video Search Function
@@ -2631,31 +2701,6 @@ function showDemoVideos(searchQuery) {
     ];
     
     displayYouTubeVideos(demoVideos, searchQuery);
-}
-
-function completeTask(taskId, points, taskName) {
-    if (completedTasks.includes(taskId)) {
-        showNotification('❌ You already completed this task!', 'warning');
-        return;
-    }
-    
-    completedTasks.push(taskId);
-    userPoints += points;
-    totalPointsEarned += points;
-    todayEarnings += points;
-    totalTasksCompleted++;
-    
-    saveMiningState();
-    updateUI();
-    
-    showNotification(`✅ +${points} Points! ${taskName}`, 'success');
-    
-    // Refresh the current section to update task states
-    setTimeout(() => {
-        if (taskId.startsWith('telegram')) showTelegramSection();
-        else if (taskId.startsWith('twitter')) showTwitterSection();
-        else if (taskId.startsWith('instagram')) showInstagramSection();
-    }, 500);
 }
 
 // Show Notification
