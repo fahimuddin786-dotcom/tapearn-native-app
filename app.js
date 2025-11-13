@@ -14,9 +14,11 @@ const BOT_USERNAME = '@penthon_trading_alerts_bot';
 function saveToStorage(key, value) {
     try {
         localStorage.setItem(key, JSON.stringify(value));
+        console.log('💾 Saved:', key, value);
         return true;
     } catch (error) {
-        console.error('Storage error:', error);
+        console.error('❌ Storage error:', error);
+        showNotification('❌ Storage error!', 'warning');
         return false;
     }
 }
@@ -24,17 +26,19 @@ function saveToStorage(key, value) {
 function getFromStorage(key, defaultValue = null) {
     try {
         const item = localStorage.getItem(key);
-        return item ? JSON.parse(item) : defaultValue;
+        const value = item ? JSON.parse(item) : defaultValue;
+        console.log('📂 Loaded:', key, value);
+        return value;
     } catch (error) {
-        console.error('Storage read error:', error);
+        console.error('❌ Storage read error:', error);
         return defaultValue;
     }
 }
 
 // Load Mining State
 function loadMiningState() {
+    console.log('🔄 Loading mining state...');
     const savedState = getFromStorage('miningState');
-    console.log('Loading mining state:', savedState);
     
     if (savedState) {
         isMining = savedState.isMining || false;
@@ -43,13 +47,20 @@ function loadMiningState() {
         totalMiningHours = savedState.totalMiningHours || 0;
         totalPointsEarned = savedState.totalPointsEarned || 0;
         
-        console.log('Mining state loaded:', {
-            isMining, miningSeconds, userPoints, totalMiningHours, totalPointsEarned
+        console.log('✅ Mining state loaded:', {
+            isMining, 
+            miningSeconds, 
+            userPoints, 
+            totalMiningHours, 
+            totalPointsEarned
         });
         
         if (isMining) {
+            console.log('⛏️ Resuming mining...');
             startMining();
         }
+    } else {
+        console.log('📭 No saved state found, starting fresh');
     }
     
     updateUI();
@@ -63,11 +74,10 @@ function saveMiningState() {
         userPoints: userPoints,
         totalMiningHours: totalMiningHours,
         totalPointsEarned: totalPointsEarned,
-        lastSaved: Date.now()
+        lastSaved: new Date().toISOString()
     };
     
     saveToStorage('miningState', miningState);
-    console.log('Mining state saved:', miningState);
 }
 
 // Update UI
@@ -85,15 +95,51 @@ function updateUI() {
     
     // Update Mining Status
     const statusElement = document.getElementById('miningStatusText');
+    const miningCard = document.querySelector('.mining-feature');
+    
     if (isMining) {
         statusElement.textContent = 'Mining Active - 5 pts/min';
         statusElement.style.color = '#FFD700';
-        document.querySelector('.mining-feature').classList.add('mining-active');
+        statusElement.style.fontWeight = 'bold';
+        miningCard.classList.add('mining-active');
+        document.getElementById('miningRate').textContent = '300/hr';
     } else {
         statusElement.textContent = 'Click to start mining';
         statusElement.style.color = '';
-        document.querySelector('.mining-feature').classList.remove('mining-active');
+        statusElement.style.fontWeight = '';
+        miningCard.classList.remove('mining-active');
+        document.getElementById('miningRate').textContent = '300/hr';
     }
+    
+    // Update user stats
+    document.querySelector('.user-stats').textContent = `${userPoints}/500`;
+    
+    // Update level based on points
+    updateUserLevel();
+}
+
+// Update User Level
+function updateUserLevel() {
+    const levelElement = document.querySelector('.user-level');
+    let level = 'Bronze';
+    let color = '#CD7F32';
+    
+    if (userPoints >= 10000) {
+        level = 'Diamond';
+        color = '#B9F2FF';
+    } else if (userPoints >= 5000) {
+        level = 'Platinum';
+        color = '#E5E4E2';
+    } else if (userPoints >= 2000) {
+        level = 'Gold';
+        color = '#FFD700';
+    } else if (userPoints >= 1000) {
+        level = 'Silver';
+        color = '#C0C0C0';
+    }
+    
+    levelElement.textContent = level;
+    levelElement.style.color = color;
 }
 
 // Format Numbers
@@ -122,18 +168,18 @@ function toggleMining() {
 
 // Start Mining
 function startMining() {
-    if (isMining) return;
+    if (isMining) {
+        console.log('⚠️ Mining already active');
+        return;
+    }
     
     console.log('🟢 Starting mining...');
     isMining = true;
     
-    // Update UI
-    const miningCard = document.querySelector('.mining-feature');
-    miningCard.classList.add('mining-active');
-    
     // Clear existing interval
     if (miningInterval) {
         clearInterval(miningInterval);
+        miningInterval = null;
     }
     
     let lastMinuteCheck = Math.floor(miningSeconds / 60);
@@ -186,7 +232,10 @@ function startMining() {
 
 // Stop Mining
 function stopMining() {
-    if (!isMining) return;
+    if (!isMining) {
+        console.log('⚠️ Mining not active');
+        return;
+    }
     
     console.log('🔴 Stopping mining...');
     isMining = false;
@@ -196,10 +245,6 @@ function stopMining() {
         clearInterval(miningInterval);
         miningInterval = null;
     }
-    
-    // Update UI
-    const miningCard = document.querySelector('.mining-feature');
-    miningCard.classList.remove('mining-active');
     
     showNotification('⏹️ Mining Stopped. Points saved!', 'info');
     saveMiningState();
@@ -211,7 +256,7 @@ function claimBoost() {
     userPoints += 100;
     totalPointsEarned += 100;
     
-    console.log('🚀 Boost claimed! +100 points');
+    console.log('🚀 Boost claimed! +100 points. Total:', userPoints);
     showNotification('🚀 +100 Points! Daily boost claimed!', 'success');
     
     saveMiningState();
@@ -220,29 +265,37 @@ function claimBoost() {
 
 // Show Mining History
 function showMiningHistory() {
-    alert(`📊 Mining Statistics:\n\n` +
-          `Total Points: ${userPoints}\n` +
-          `Mining Time: ${Math.floor(miningSeconds / 3600)}h ${Math.floor((miningSeconds % 3600) / 60)}m\n` +
-          `Total Hours: ${totalMiningHours}\n` +
-          `Points Earned: ${totalPointsEarned}`);
+    const hours = Math.floor(miningSeconds / 3600);
+    const minutes = Math.floor((miningSeconds % 3600) / 60);
+    
+    showNotification(
+        `📊 Mining Stats: ${hours}h ${minutes}m | Total: ${totalPointsEarned} points`, 
+        'info'
+    );
 }
 
 // Debug Storage
 function debugStorage() {
     const state = getFromStorage('miningState');
-    console.log('🔍 Debug Storage:', state);
+    const currentTime = new Date().toISOString();
     
-    alert(`🐛 Storage Debug:\n\n` +
-          `isMining: ${state?.isMining}\n` +
-          `miningSeconds: ${state?.miningSeconds}\n` +
-          `userPoints: ${state?.userPoints}\n` +
-          `totalMiningHours: ${state?.totalMiningHours}\n` +
-          `totalPointsEarned: ${state?.totalPointsEarned}`);
+    console.log('🔍 Debug Storage:', {
+        currentTime,
+        state,
+        currentPoints: userPoints,
+        currentMiningSeconds: miningSeconds,
+        isMiningCurrently: isMining
+    });
+    
+    showNotification(
+        `🐛 Debug: ${userPoints} pts | ${Math.floor(miningSeconds/3600)}h | Mining: ${isMining ? 'ON' : 'OFF'}`,
+        'info'
+    );
 }
 
 // Reset Mining
 function resetMining() {
-    if (confirm('⚠️ Are you sure you want to reset all mining data?')) {
+    if (confirm('⚠️ Are you sure you want to reset ALL mining data? This cannot be undone!')) {
         isMining = false;
         miningSeconds = 0;
         userPoints = 0;
@@ -256,14 +309,37 @@ function resetMining() {
         
         localStorage.removeItem('miningState');
         
-        console.log('🔄 Mining data reset');
-        showNotification('🔄 Mining data reset successfully!', 'success');
+        console.log('🔄 Mining data reset complete');
+        showNotification('🔄 All mining data reset successfully!', 'success');
         updateUI();
     }
 }
 
+// Add Test Points (Testing के लिए)
+function addTestPoints() {
+    userPoints += 1000;
+    totalPointsEarned += 1000;
+    
+    console.log('💰 Added 1000 test points. Total:', userPoints);
+    showNotification('💰 +1000 Test Points Added!', 'success');
+    
+    saveMiningState();
+    updateUI();
+}
+
+// Show Wallet Details (Basic)
+function showWalletDetails() {
+    showNotification(
+        `💰 Wallet: ${userPoints} points | Level: ${document.querySelector('.user-level').textContent}`,
+        'info'
+    );
+}
+
 // Notification System
 function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    document.querySelectorAll('.notification').forEach(notif => notif.remove());
+    
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     notification.innerHTML = `
@@ -274,6 +350,7 @@ function showNotification(message, type = 'info') {
     `;
     document.body.appendChild(notification);
     
+    // Auto remove after 4 seconds
     setTimeout(() => {
         if (notification.parentElement) {
             notification.remove();
@@ -283,16 +360,42 @@ function showNotification(message, type = 'info') {
 
 // Initialize Mining App
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎯 Mining App Initializing...');
+    console.log('🎯 TapEarn Mining App Initializing...');
+    console.log('🤖 Bot Token:', BOT_TOKEN);
+    console.log('📺 YouTube API: Loaded');
     
     // Load saved state
     loadMiningState();
     
     // Show welcome message
-    showNotification('🚀 TapEarn Mining Started! Click the mining card to begin.', 'info');
+    setTimeout(() => {
+        showNotification('🚀 TapEarn Mining Started! Click the mining card to begin earning points.', 'info');
+    }, 1000);
     
     console.log('✅ Mining App Ready!');
-    console.log('Current State:', {
-        isMining, miningSeconds, userPoints, totalMiningHours, totalPointsEarned
+    console.log('📊 Current State:', {
+        isMining, 
+        miningSeconds, 
+        userPoints, 
+        totalMiningHours, 
+        totalPointsEarned
     });
+    
+    // Auto-save every minute
+    setInterval(() => {
+        if (isMining) {
+            saveMiningState();
+            console.log('💾 Auto-save completed');
+        }
+    }, 60000);
+});
+
+// Prevent accidental page close
+window.addEventListener('beforeunload', function(e) {
+    if (isMining) {
+        saveMiningState();
+        // Optional: Show confirmation dialog
+        // e.preventDefault();
+        // e.returnValue = 'Mining is active. Are you sure you want to leave?';
+    }
 });
