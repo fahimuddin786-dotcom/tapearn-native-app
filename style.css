@@ -299,6 +299,173 @@ body {
     opacity: 0.8;
 }
 
+/* Success Popup */
+.success-popup {
+    text-align: center;
+    padding: 30px 20px;
+}
+
+.success-icon {
+    font-size: 60px;
+    margin-bottom: 15px;
+}
+
+.success-popup h3 {
+    color: #4CAF50;
+    margin-bottom: 10px;
+    font-size: 24px;
+}
+
+.success-popup p {
+    margin-bottom: 20px;
+    opacity: 0.8;
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+/* Wallet History Modal */
+.wallet-history-content {
+    padding: 20px;
+}
+
+.history-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.history-stat {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px 10px;
+    border-radius: 10px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.history-stat .stat-number {
+    font-size: 16px;
+    font-weight: bold;
+    color: #4CAF50;
+    margin-bottom: 4px;
+}
+
+.history-stat .stat-label {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.history-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.history-tab {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+.history-tab.active {
+    background: #4CAF50;
+    color: white;
+    border-color: #4CAF50;
+}
+
+.history-tab:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.history-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.transaction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.transaction-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.transaction-info {
+    flex: 1;
+}
+
+.transaction-title {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.transaction-desc {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.transaction-details {
+    text-align: right;
+}
+
+.transaction-amount {
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 2px;
+}
+
+.transaction-amount.positive {
+    color: #4CAF50;
+}
+
+.transaction-amount.negative {
+    color: #FF6B6B;
+}
+
+.transaction-time {
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.no-history {
+    text-align: center;
+    padding: 40px 20px;
+    opacity: 0.7;
+    font-style: italic;
+}
+
 /* App Content */
 .app-content {
     flex: 1;
@@ -453,7 +620,6 @@ body {
 .control-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
 }
 
 .btn-icon {
@@ -479,6 +645,7 @@ body {
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
     transition: transform 0.3s ease;
+    cursor: pointer;
 }
 
 .stat-card:hover {
@@ -714,6 +881,13 @@ body {
     border-radius: 10px;
     text-align: center;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.earn-stat:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
 }
 
 /* Earn Page Sections */
@@ -2454,6 +2628,24 @@ body {
     .btn-share, .btn-copy {
         width: 100%;
     }
+    
+    .history-stats {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+    
+    .history-stat {
+        padding: 12px 8px;
+    }
+    
+    .history-tabs {
+        gap: 6px;
+    }
+    
+    .history-tab {
+        padding: 6px 8px;
+        font-size: 11px;
+    }
 }
 
 /* Additional Mobile Optimizations */
@@ -2525,6 +2717,10 @@ body {
     .btn-redeem, .btn-share, .btn-copy, .submit-btn, .terms-agree-btn {
         border: 1px solid rgba(255, 255, 255, 0.2);
     }
+    
+    .transaction-item {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
 }
 
 /* Reduced motion support */
@@ -2561,6 +2757,11 @@ body {
     .reward-card:hover,
     .support-card:hover,
     .help-item:hover {
+        transform: none;
+    }
+    
+    .earn-stat:hover,
+    .stat-card:hover {
         transform: none;
     }
 }
