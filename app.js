@@ -199,19 +199,26 @@ function saveTelegramId() {
     referralData.telegramUsername = formattedTelegramId;
     saveToStorage('referralData', referralData);
     
-    // Update mining state with Telegram ID
-    const miningState = getFromStorage('miningState', {});
-    miningState.telegramUsername = formattedTelegramId;
-    saveToStorage('miningState', miningState);
-    
-    // Create user profile data
-    const userProfile = {
+    // ✅ IMPROVED: Save user data in admin-compatible format
+    const userData = {
+        userPoints: userPoints,
+        miningLevel: miningLevel,
+        isMining: isMining,
+        totalTasksCompleted: totalTasksCompleted,
+        totalPointsEarned: totalPointsEarned,
+        todayEarnings: todayEarnings,
         telegramUsername: formattedTelegramId,
+        miningSeconds: miningSeconds,
+        totalMiningHours: totalMiningHours,
+        speedLevel: speedLevel,
+        multiplierLevel: multiplierLevel,
+        loginStreak: loginStreak,
         joinDate: new Date().toISOString(),
         lastActive: new Date().toISOString(),
-        userId: userId
+        referralData: referralData
     };
-    saveToStorage('userProfile', userProfile);
+    
+    saveToStorage(`userData_${userId}`, userData);
     
     console.log('✅ Telegram ID saved:', formattedTelegramId);
     showNotification('✅ Telegram ID saved successfully!', 'success');
@@ -344,6 +351,18 @@ function loadMiningState() {
     telegramUsername = getFromStorage('telegramUsername', '');
     userId = getFromStorage('userId', generateUserId());
     
+    // ✅ IMPROVED: Load from userData format for admin compatibility
+    const userDataKey = `userData_${userId}`;
+    const userData = getFromStorage(userDataKey);
+    if (userData) {
+        userPoints = userData.userPoints || userPoints;
+        miningLevel = userData.miningLevel || miningLevel;
+        telegramUsername = userData.telegramUsername || telegramUsername;
+        totalTasksCompleted = userData.totalTasksCompleted || totalTasksCompleted;
+        totalPointsEarned = userData.totalPointsEarned || totalPointsEarned;
+        todayEarnings = userData.todayEarnings || todayEarnings;
+    }
+    
     // Check daily reset for earnings
     checkDailyEarningsReset();
     
@@ -365,7 +384,7 @@ function loadMiningState() {
     updateUI();
 }
 
-// Save Complete State
+// Save Complete State - IMPROVED VERSION
 function saveMiningState() {
     const miningState = {
         isMining: isMining,
@@ -432,6 +451,27 @@ function saveMiningState() {
     // Save Telegram ID and User ID
     saveToStorage('telegramUsername', telegramUsername);
     saveToStorage('userId', userId);
+    
+    // ✅ IMPROVED: Save user data in admin-compatible format
+    const userData = {
+        userPoints: userPoints,
+        miningLevel: miningLevel,
+        isMining: isMining,
+        totalTasksCompleted: totalTasksCompleted,
+        totalPointsEarned: totalPointsEarned,
+        todayEarnings: todayEarnings,
+        telegramUsername: telegramUsername,
+        miningSeconds: miningSeconds,
+        totalMiningHours: totalMiningHours,
+        speedLevel: speedLevel,
+        multiplierLevel: multiplierLevel,
+        loginStreak: loginStreak,
+        joinDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        referralData: referralData
+    };
+    
+    saveToStorage(`userData_${userId}`, userData);
 }
 
 // Check Daily Reset for Earnings
