@@ -6,6 +6,10 @@ let userPoints = 0;
 let totalMiningHours = 0;
 let totalPointsEarned = 0;
 
+// Telegram ID System
+let telegramUsername = '';
+let userId = '';
+
 // Mining Upgrades
 let miningLevel = 1;
 let speedLevel = 1;
@@ -52,7 +56,8 @@ let redeemedRewards = [];
 let referralData = {
     referralCode: generateReferralCode(),
     referredUsers: [],
-    totalEarned: 0
+    totalEarned: 0,
+    telegramUsername: ''
 };
 
 // Wallet History System
@@ -131,6 +136,105 @@ function addTransaction(description, amount, type, category = "other") {
     saveMiningState();
 }
 
+// Telegram ID System Functions
+function captureTelegramId() {
+    const savedTelegramId = getFromStorage('telegramUsername', '');
+    const savedUserId = getFromStorage('userId', '');
+    
+    userId = savedUserId || generateUserId();
+    
+    if (!savedTelegramId || savedTelegramId === 'Not set' || savedTelegramId === '') {
+        // Show modal to capture Telegram ID
+        setTimeout(() => {
+            showTelegramIdModal();
+        }, 1500);
+    } else {
+        telegramUsername = savedTelegramId;
+        console.log('✅ Telegram ID loaded:', telegramUsername);
+    }
+}
+
+function showTelegramIdModal() {
+    // Don't show if already shown and closed
+    const telegramModalShown = getFromStorage('telegramModalShown', false);
+    if (telegramModalShown) return;
+    
+    document.getElementById('telegramIdModal').classList.add('active');
+    // Focus on input field
+    setTimeout(() => {
+        const input = document.getElementById('telegramIdInput');
+        if (input) input.focus();
+    }, 300);
+}
+
+function closeTelegramIdModal() {
+    document.getElementById('telegramIdModal').classList.remove('active');
+}
+
+function saveTelegramId() {
+    const telegramIdInput = document.getElementById('telegramIdInput').value.trim();
+    
+    if (!telegramIdInput) {
+        showNotification('❌ Please enter your Telegram username!', 'warning');
+        return;
+    }
+    
+    // Validate Telegram username format
+    if (!isValidTelegramUsername(telegramIdInput)) {
+        showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
+        return;
+    }
+    
+    // Ensure it starts with @
+    const formattedTelegramId = telegramIdInput.startsWith('@') ? telegramIdInput : '@' + telegramIdInput;
+    
+    telegramUsername = formattedTelegramId;
+    
+    // Save to storage
+    saveToStorage('telegramUsername', formattedTelegramId);
+    saveToStorage('userId', userId);
+    saveToStorage('telegramModalShown', true);
+    
+    // Also update referral data
+    referralData.telegramUsername = formattedTelegramId;
+    saveToStorage('referralData', referralData);
+    
+    // Update mining state with Telegram ID
+    const miningState = getFromStorage('miningState', {});
+    miningState.telegramUsername = formattedTelegramId;
+    saveToStorage('miningState', miningState);
+    
+    // Create user profile data
+    const userProfile = {
+        telegramUsername: formattedTelegramId,
+        joinDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        userId: userId
+    };
+    saveToStorage('userProfile', userProfile);
+    
+    console.log('✅ Telegram ID saved:', formattedTelegramId);
+    showNotification('✅ Telegram ID saved successfully!', 'success');
+    
+    closeTelegramIdModal();
+    
+    // Update UI
+    updateUI();
+}
+
+function isValidTelegramUsername(username) {
+    // Remove @ for validation
+    const cleanUsername = username.replace('@', '');
+    
+    // Telegram username validation: 5-32 characters, contains only a-z, 0-9, and underscores
+    const telegramRegex = /^[a-zA-Z0-9_]{5,32}$/;
+    return telegramRegex.test(cleanUsername);
+}
+
+function generateUserId() {
+    return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
 // Storage Functions
 function saveToStorage(key, value) {
     try {
@@ -172,6 +276,7 @@ function loadMiningState() {
         userPoints = savedState.userPoints || 0;
         totalMiningHours = savedState.totalMiningHours || 0;
         totalPointsEarned = savedState.totalPointsEarned || 0;
+        telegramUsername = savedState.telegramUsername || '';
     }
     
     // Load upgrades
@@ -226,13 +331,18 @@ function loadMiningState() {
     referralData = getFromStorage('referralData', {
         referralCode: generateReferralCode(),
         referredUsers: [],
-        totalEarned: 0
+        totalEarned: 0,
+        telegramUsername: ''
     });
     
     // Load wallet history
     transactionHistory = getFromStorage('transactionHistory', []);
     totalEarned = getFromStorage('totalEarned', 0);
     totalSpent = getFromStorage('totalSpent', 0);
+    
+    // Load Telegram ID and User ID
+    telegramUsername = getFromStorage('telegramUsername', '');
+    userId = getFromStorage('userId', generateUserId());
     
     // Check daily reset for earnings
     checkDailyEarningsReset();
@@ -263,6 +373,7 @@ function saveMiningState() {
         userPoints: userPoints,
         totalMiningHours: totalMiningHours,
         totalPointsEarned: totalPointsEarned,
+        telegramUsername: telegramUsername,
         lastSaved: new Date().toISOString()
     };
     
@@ -317,6 +428,10 @@ function saveMiningState() {
     saveToStorage('transactionHistory', transactionHistory);
     saveToStorage('totalEarned', totalEarned);
     saveToStorage('totalSpent', totalSpent);
+    
+    // Save Telegram ID and User ID
+    saveToStorage('telegramUsername', telegramUsername);
+    saveToStorage('userId', userId);
 }
 
 // Check Daily Reset for Earnings
@@ -835,7 +950,7 @@ function switchTab(tabName) {
     updateUI();
 }
 
-// NEW: Video System Improvements
+// Video System Improvements
 function openVideoModal(videoId, points, title, thumbnail, channel) {
     if (watchedVideos.includes(videoId)) {
         showNotification('❌ You already earned points for this video!', 'warning');
@@ -945,7 +1060,7 @@ function completeVideoWatch() {
     currentVideoData = null;
 }
 
-// NEW: Points Claim Popup
+// Points Claim Popup
 function showPointsClaimPopup(points, title) {
     document.getElementById('claimedPoints').textContent = points;
     document.getElementById('pointsClaimTitle').textContent = 'Points Claimed!';
@@ -2944,6 +3059,7 @@ function showNotification(message, type = 'info') {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 TapEarn App Initialized');
     loadMiningState();
+    captureTelegramId(); // Capture Telegram ID on app load
     
     // Auto-save every minute
     setInterval(() => {
