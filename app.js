@@ -758,14 +758,7 @@ function updateTasksUI() {
 
 // 🆕 UPDATED: Profile UI with Telegram ID Display
 function updateProfileUI() {
-    const profileTotalPoints = document.getElementById('profileTotalPoints');
-    const profileReferrals = document.getElementById('profileReferrals');
-    const profileRewards = document.getElementById('profileRewards');
     const profileTelegramId = document.getElementById('profileTelegramId');
-    
-    if (profileTotalPoints) profileTotalPoints.textContent = userPoints;
-    if (profileReferrals) profileReferrals.textContent = referralData.referredUsers.length;
-    if (profileRewards) profileRewards.textContent = redeemedRewards.length;
     
     // 🆕 Display Telegram ID in profile
     if (profileTelegramId) {
@@ -775,11 +768,17 @@ function updateProfileUI() {
         } else {
             profileTelegramId.textContent = 'Not Set - Tap to Set';
             profileTelegramId.style.color = '#FF6B6B';
-            // Make it clickable to set Telegram ID
-            profileTelegramId.style.cursor = 'pointer';
-            profileTelegramId.onclick = showTelegramIdModal;
         }
     }
+    
+    // Update other profile stats
+    const profileTotalPoints = document.getElementById('profileTotalPoints');
+    const profileReferrals = document.getElementById('profileReferrals');
+    const profileRewards = document.getElementById('profileRewards');
+    
+    if (profileTotalPoints) profileTotalPoints.textContent = userPoints;
+    if (profileReferrals) profileReferrals.textContent = referralData.referredUsers.length;
+    if (profileRewards) profileRewards.textContent = redeemedRewards.length;
 }
 
 // Format Time
@@ -1096,72 +1095,6 @@ function switchTab(tabName) {
     }
     
     updateUI();
-}
-
-// 🆕 UPDATED: Profile Home Page with Telegram ID Display
-function showProfileHomePage() {
-    document.getElementById('profileAppContent').innerHTML = `
-        <div class="welcome-section">
-            <div class="welcome-icon">👤</div>
-            <h3>Your Profile</h3>
-            <p>Manage your account, rewards, and settings</p>
-            
-            <!-- 🆕 Telegram ID Display Card -->
-            <div class="telegram-id-card" onclick="showTelegramIdModal()">
-                <div class="telegram-icon">📱</div>
-                <div class="telegram-info">
-                    <div class="telegram-label">Telegram ID</div>
-                    <div class="telegram-value" id="profileTelegramId">${telegramUsername || 'Not Set - Tap to Set'}</div>
-                </div>
-                <div class="telegram-edit">✏️</div>
-            </div>
-            
-            <div class="platforms-grid">
-                <div class="platform-card" onclick="showCashier()">
-                    <span class="platform-icon">💰</span>
-                    <span class="platform-name">Rewards Center</span>
-                    <span class="platform-points">+Gift Cards</span>
-                    <span class="platform-time">🎁 Redeem</span>
-                </div>
-                <div class="platform-card" onclick="showWalletHistory()">
-                    <span class="platform-icon">📊</span>
-                    <span class="platform-name">Wallet History</span>
-                    <span class="platform-points">All Transactions</span>
-                    <span class="platform-time">📈 View</span>
-                </div>
-                <div class="platform-card" onclick="showReferralSystem()">
-                    <span class="platform-icon">👥</span>
-                    <span class="platform-name">Refer & Earn</span>
-                    <span class="platform-points">+50 points</span>
-                    <span class="platform-time">⚡ Per Referral</span>
-                </div>
-                <div class="platform-card" onclick="showSupport()">
-                    <span class="platform-icon">💬</span>
-                    <span class="platform-name">Support</span>
-                    <span class="platform-points">Help Center</span>
-                    <span class="platform-time">📞 24/7</span>
-                </div>
-            </div>
-
-            <div class="earn-stats">
-                <div class="earn-stat" onclick="showWalletHistory()">
-                    <div class="stat-number" id="profileTotalPoints">${userPoints}</div>
-                    <div class="stat-label">Total Points</div>
-                </div>
-                <div class="earn-stat">
-                    <div class="stat-number" id="profileReferrals">${referralData.referredUsers.length}</div>
-                    <div class="stat-label">Referrals</div>
-                </div>
-                <div class="earn-stat">
-                    <div class="stat-number" id="profileRewards">${redeemedRewards.length}</div>
-                    <div class="stat-label">Rewards</div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    // Update Telegram ID display
-    updateProfileUI();
 }
 
 // Video System Improvements
@@ -3214,6 +3147,72 @@ function showNotification(message, type = 'info') {
             notification.remove();
         }
     }, 3000);
+}
+
+// 🆕 UPDATED: Profile Home Page with Telegram ID Display
+function showProfileHomePage() {
+    document.getElementById('profileAppContent').innerHTML = `
+        <div class="welcome-section">
+            <div class="welcome-icon">👤</div>
+            <h3>Your Profile</h3>
+            <p>Manage your account, rewards, and settings</p>
+            
+            <!-- 🆕 Telegram ID Display Card -->
+            <div class="telegram-id-card" onclick="showTelegramIdModal()">
+                <div class="telegram-icon">📱</div>
+                <div class="telegram-info">
+                    <div class="telegram-label">Telegram ID</div>
+                    <div class="telegram-value" id="profileTelegramId">${telegramUsername || 'Not Set - Tap to Set'}</div>
+                </div>
+                <div class="telegram-edit">✏️</div>
+            </div>
+            
+            <div class="platforms-grid">
+                <div class="platform-card" onclick="showCashier()">
+                    <span class="platform-icon">💰</span>
+                    <span class="platform-name">Rewards Center</span>
+                    <span class="platform-points">+Gift Cards</span>
+                    <span class="platform-time">🎁 Redeem</span>
+                </div>
+                <div class="platform-card" onclick="showWalletHistory()">
+                    <span class="platform-icon">📊</span>
+                    <span class="platform-name">Wallet History</span>
+                    <span class="platform-points">All Transactions</span>
+                    <span class="platform-time">📈 View</span>
+                </div>
+                <div class="platform-card" onclick="showReferralSystem()">
+                    <span class="platform-icon">👥</span>
+                    <span class="platform-name">Refer & Earn</span>
+                    <span class="platform-points">+50 points</span>
+                    <span class="platform-time">⚡ Per Referral</span>
+                </div>
+                <div class="platform-card" onclick="showSupport()">
+                    <span class="platform-icon">💬</span>
+                    <span class="platform-name">Support</span>
+                    <span class="platform-points">Help Center</span>
+                    <span class="platform-time">📞 24/7</span>
+                </div>
+            </div>
+
+            <div class="earn-stats">
+                <div class="earn-stat" onclick="showWalletHistory()">
+                    <div class="stat-number" id="profileTotalPoints">${userPoints}</div>
+                    <div class="stat-label">Total Points</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="profileReferrals">${referralData.referredUsers.length}</div>
+                    <div class="stat-label">Referrals</div>
+                </div>
+                <div class="earn-stat">
+                    <div class="stat-number" id="profileRewards">${redeemedRewards.length}</div>
+                    <div class="stat-label">Rewards</div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Update Telegram ID display
+    updateProfileUI();
 }
 
 // Initialize App
