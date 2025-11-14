@@ -136,7 +136,7 @@ function addTransaction(description, amount, type, category = "other") {
     saveMiningState();
 }
 
-// Telegram ID System Functions
+// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM
 function captureTelegramId() {
     const savedTelegramId = getFromStorage('telegramUsername', '');
     const savedUserId = getFromStorage('userId', '');
@@ -151,7 +151,45 @@ function captureTelegramId() {
     } else {
         telegramUsername = savedTelegramId;
         console.log('✅ Telegram ID loaded:', telegramUsername);
+        // 🆕 Create user profile immediately
+        createUserProfileFromTelegram(savedTelegramId, userId);
     }
+}
+
+function createUserProfileFromTelegram(telegramId, userId) {
+    console.log('🆕 Creating user profile from Telegram:', telegramId);
+    
+    const userProfileData = {
+        id: userId,
+        telegramUsername: telegramId,
+        points: userPoints,
+        level: miningLevel,
+        miningStatus: isMining ? 'Active' : 'Inactive',
+        tasksCompleted: totalTasksCompleted,
+        joinDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        totalEarned: totalPointsEarned,
+        todayEarnings: todayEarnings,
+        miningSeconds: miningSeconds,
+        totalMiningHours: totalMiningHours,
+        speedLevel: speedLevel,
+        multiplierLevel: multiplierLevel,
+        loginStreak: loginStreak,
+        profileSource: 'telegram_direct',
+        isVerified: true
+    };
+    
+    // 🆕 Save in admin panel format
+    saveToStorage(`userData_${userId}`, userProfileData);
+    
+    // Also update referral data
+    referralData.telegramUsername = telegramId;
+    saveToStorage('referralData', referralData);
+    
+    console.log('✅ User profile created for admin panel:', telegramId);
+    
+    // 🆕 Notify admin panel
+    notifyAdminPanel('user_created', userProfileData);
 }
 
 function showTelegramIdModal() {
@@ -195,38 +233,90 @@ function saveTelegramId() {
     saveToStorage('userId', userId);
     saveToStorage('telegramModalShown', true);
     
+    // 🆕 Create complete user profile
+    createUserProfileFromTelegram(formattedTelegramId, userId);
+    
     // Also update referral data
     referralData.telegramUsername = formattedTelegramId;
     saveToStorage('referralData', referralData);
     
-    // ✅ IMPROVED: Save user data in admin-compatible format
-    const userData = {
-        userPoints: userPoints,
-        miningLevel: miningLevel,
-        isMining: isMining,
-        totalTasksCompleted: totalTasksCompleted,
-        totalPointsEarned: totalPointsEarned,
-        todayEarnings: todayEarnings,
+    // Update mining state with Telegram ID
+    const miningState = getFromStorage('miningState', {});
+    miningState.telegramUsername = formattedTelegramId;
+    saveToStorage('miningState', miningState);
+    
+    // Create user profile data
+    const userProfile = {
         telegramUsername: formattedTelegramId,
-        miningSeconds: miningSeconds,
-        totalMiningHours: totalMiningHours,
-        speedLevel: speedLevel,
-        multiplierLevel: multiplierLevel,
-        loginStreak: loginStreak,
         joinDate: new Date().toISOString(),
         lastActive: new Date().toISOString(),
-        referralData: referralData
+        userId: userId
     };
+    saveToStorage('userProfile', userProfile);
     
-    saveToStorage(`userData_${userId}`, userData);
-    
-    console.log('✅ Telegram ID saved:', formattedTelegramId);
+    console.log('✅ Telegram ID saved and profile created:', formattedTelegramId);
     showNotification('✅ Telegram ID saved successfully!', 'success');
     
     closeTelegramIdModal();
     
     // Update UI
     updateUI();
+}
+
+// 🆕 NOTIFY ADMIN PANEL
+function notifyAdminPanel(event, data) {
+    console.log(`📢 Notifying admin: ${event}`, data);
+    
+    // Create admin notification
+    const adminNotification = {
+        event: event,
+        data: data,
+        timestamp: new Date().toISOString(),
+        userId: userId,
+        telegramUsername: telegramUsername
+    };
+    
+    // Save notification for admin panel
+    const existingNotifications = getFromStorage('adminNotifications', []);
+    existingNotifications.unshift(adminNotification);
+    
+    // Keep only last 50 notifications
+    if (existingNotifications.length > 50) {
+        existingNotifications.splice(50);
+    }
+    
+    saveToStorage('adminNotifications', existingNotifications);
+    
+    // Also update user activity
+    updateUserActivity();
+}
+
+// 🆕 UPDATE USER ACTIVITY
+function updateUserActivity() {
+    if (!userId || !telegramUsername) return;
+    
+    const userActivity = {
+        id: userId,
+        telegramUsername: telegramUsername,
+        lastActive: new Date().toISOString(),
+        points: userPoints,
+        level: miningLevel,
+        miningStatus: isMining ? 'Active' : 'Inactive'
+    };
+    
+    // Save activity for admin panel
+    const userActivities = getFromStorage('userActivities', []);
+    
+    // Remove existing activity for this user
+    const filteredActivities = userActivities.filter(activity => activity.id !== userId);
+    filteredActivities.unshift(userActivity);
+    
+    // Keep only last 100 activities
+    if (filteredActivities.length > 100) {
+        filteredActivities.splice(100);
+    }
+    
+    saveToStorage('userActivities', filteredActivities);
 }
 
 function isValidTelegramUsername(username) {
@@ -259,7 +349,6 @@ function getFromStorage(key, defaultValue = null) {
     try {
         const item = localStorage.getItem(key);
         const value = item ? JSON.parse(item) : defaultValue;
-        console.log('📂 Loaded:', key, value);
         return value;
     } catch (error) {
         console.error('❌ Storage read error:', error);
@@ -351,16 +440,9 @@ function loadMiningState() {
     telegramUsername = getFromStorage('telegramUsername', '');
     userId = getFromStorage('userId', generateUserId());
     
-    // ✅ IMPROVED: Load from userData format for admin compatibility
-    const userDataKey = `userData_${userId}`;
-    const userData = getFromStorage(userDataKey);
-    if (userData) {
-        userPoints = userData.userPoints || userPoints;
-        miningLevel = userData.miningLevel || miningLevel;
-        telegramUsername = userData.telegramUsername || telegramUsername;
-        totalTasksCompleted = userData.totalTasksCompleted || totalTasksCompleted;
-        totalPointsEarned = userData.totalPointsEarned || totalPointsEarned;
-        todayEarnings = userData.todayEarnings || todayEarnings;
+    // 🆕 Create user profile if Telegram ID exists
+    if (telegramUsername && telegramUsername !== 'Not set' && telegramUsername !== '') {
+        createUserProfileFromTelegram(telegramUsername, userId);
     }
     
     // Check daily reset for earnings
@@ -384,7 +466,7 @@ function loadMiningState() {
     updateUI();
 }
 
-// Save Complete State - IMPROVED VERSION
+// Save Complete State
 function saveMiningState() {
     const miningState = {
         isMining: isMining,
@@ -452,26 +534,13 @@ function saveMiningState() {
     saveToStorage('telegramUsername', telegramUsername);
     saveToStorage('userId', userId);
     
-    // ✅ IMPROVED: Save user data in admin-compatible format
-    const userData = {
-        userPoints: userPoints,
-        miningLevel: miningLevel,
-        isMining: isMining,
-        totalTasksCompleted: totalTasksCompleted,
-        totalPointsEarned: totalPointsEarned,
-        todayEarnings: todayEarnings,
-        telegramUsername: telegramUsername,
-        miningSeconds: miningSeconds,
-        totalMiningHours: totalMiningHours,
-        speedLevel: speedLevel,
-        multiplierLevel: multiplierLevel,
-        loginStreak: loginStreak,
-        joinDate: new Date().toISOString(),
-        lastActive: new Date().toISOString(),
-        referralData: referralData
-    };
+    // 🆕 Update user profile for admin panel
+    if (telegramUsername && telegramUsername !== 'Not set' && telegramUsername !== '') {
+        createUserProfileFromTelegram(telegramUsername, userId);
+    }
     
-    saveToStorage(`userData_${userId}`, userData);
+    // 🆕 Update user activity
+    updateUserActivity();
 }
 
 // Check Daily Reset for Earnings
@@ -558,6 +627,9 @@ function updateUI() {
     
     // Update Profile UI
     updateProfileUI();
+    
+    // 🆕 Update user activity
+    updateUserActivity();
 }
 
 // Update Level UI
