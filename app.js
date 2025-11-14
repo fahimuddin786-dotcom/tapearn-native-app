@@ -156,6 +156,7 @@ function captureTelegramId() {
     }
 }
 
+// ✅ FIXED: Enhanced user profile creation for admin panel
 function createUserProfileFromTelegram(telegramId, userId) {
     console.log('🆕 Creating user profile from Telegram:', telegramId);
     
@@ -179,8 +180,28 @@ function createUserProfileFromTelegram(telegramId, userId) {
         isVerified: true
     };
     
-    // 🆕 Save in admin panel format
+    // 🆕 IMPROVED: Save in multiple formats for better admin panel detection
     saveToStorage(`userData_${userId}`, userProfileData);
+    
+    // Also save in miningState format for compatibility
+    const miningStateData = {
+        telegramUsername: telegramId,
+        userPoints: userPoints,
+        miningLevel: miningLevel,
+        isMining: isMining,
+        totalTasksCompleted: totalTasksCompleted,
+        totalPointsEarned: totalPointsEarned,
+        todayEarnings: todayEarnings,
+        miningSeconds: miningSeconds,
+        totalMiningHours: totalMiningHours,
+        speedLevel: speedLevel,
+        multiplierLevel: multiplierLevel,
+        loginStreak: loginStreak,
+        userId: userId,
+        joinDate: new Date().toISOString(),
+        lastActive: new Date().toISOString()
+    };
+    saveToStorage(`miningState_${userId}`, miningStateData);
     
     // Also update referral data
     referralData.telegramUsername = telegramId;
