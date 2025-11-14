@@ -402,11 +402,21 @@
 
                 <!-- Profile Content Area -->
                 <div id="profileAppContent">
-                    <!-- Default Profile Home Content -->
+                    <!-- Updated Profile Home Content with Telegram ID -->
                     <div class="welcome-section">
                         <div class="welcome-icon">👤</div>
                         <h3>Your Profile</h3>
                         <p>Manage your account, rewards, and settings</p>
+                        
+                        <!-- 🆕 Telegram ID Display Card -->
+                        <div class="telegram-id-card" onclick="showTelegramIdModal()">
+                            <div class="telegram-icon">📱</div>
+                            <div class="telegram-info">
+                                <div class="telegram-label">Telegram ID</div>
+                                <div class="telegram-value" id="profileTelegramId">Not Set - Tap to Set</div>
+                            </div>
+                            <div class="telegram-edit">✏️</div>
+                        </div>
                         
                         <div class="platforms-grid">
                             <div class="platform-card" onclick="showCashier()">
