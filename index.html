@@ -65,6 +65,52 @@
             </div>
         </div>
 
+        <!-- Success Popup Modal -->
+        <div id="successPopup" class="modal">
+            <div class="modal-content success-popup">
+                <div class="success-icon">🎉</div>
+                <h3 id="successTitle">Success!</h3>
+                <p id="successMessage">You have earned points successfully!</p>
+                <button class="btn-success" onclick="closeSuccessPopup()">Awesome!</button>
+            </div>
+        </div>
+
+        <!-- Wallet History Modal -->
+        <div id="walletHistoryModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📊 Wallet History</h3>
+                    <button class="modal-close" onclick="closeWalletHistory()">×</button>
+                </div>
+                <div class="wallet-history-content">
+                    <div class="history-stats">
+                        <div class="history-stat">
+                            <div class="stat-number" id="totalEarnedHistory">0</div>
+                            <div class="stat-label">Total Earned</div>
+                        </div>
+                        <div class="history-stat">
+                            <div class="stat-number" id="todayEarnedHistory">0</div>
+                            <div class="stat-label">Today's Earnings</div>
+                        </div>
+                        <div class="history-stat">
+                            <div class="stat-number" id="totalSpentHistory">0</div>
+                            <div class="stat-label">Total Spent</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-tabs">
+                        <button class="history-tab active" onclick="showAllHistory()">All</button>
+                        <button class="history-tab" onclick="showEarningHistory()">Earnings</button>
+                        <button class="history-tab" onclick="showSpendingHistory()">Spending</button>
+                    </div>
+                    
+                    <div class="history-list" id="historyList">
+                        <div class="no-history">No transactions yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Main Content Area -->
         <div class="app-content">
             <!-- Mining Content (Default) -->
@@ -115,7 +161,7 @@
 
                 <!-- Quick Stats -->
                 <div class="quick-stats">
-                    <div class="stat-card">
+                    <div class="stat-card" onclick="showWalletHistory()">
                         <div class="stat-number" id="totalPoints">0</div>
                         <div class="stat-label">Total Points</div>
                     </div>
@@ -230,7 +276,7 @@
                         </div>
 
                         <div class="earn-stats">
-                            <div class="earn-stat">
+                            <div class="earn-stat" onclick="showWalletHistory()">
                                 <div class="stat-number" id="totalEarnings">0</div>
                                 <div class="stat-label">Total Points</div>
                             </div>
@@ -284,7 +330,7 @@
                         </div>
 
                         <div class="earn-stats">
-                            <div class="earn-stat">
+                            <div class="earn-stat" onclick="showWalletHistory()">
                                 <div class="stat-number" id="tasksTotalPoints">0</div>
                                 <div class="stat-label">Total Points</div>
                             </div>
@@ -323,6 +369,12 @@
                                 <span class="platform-points">+Gift Cards</span>
                                 <span class="platform-time">🎁 Redeem</span>
                             </div>
+                            <div class="platform-card" onclick="showWalletHistory()">
+                                <span class="platform-icon">📊</span>
+                                <span class="platform-name">Wallet History</span>
+                                <span class="platform-points">All Transactions</span>
+                                <span class="platform-time">📈 View</span>
+                            </div>
                             <div class="platform-card" onclick="showReferralSystem()">
                                 <span class="platform-icon">👥</span>
                                 <span class="platform-name">Refer & Earn</span>
@@ -335,16 +387,10 @@
                                 <span class="platform-points">Help Center</span>
                                 <span class="platform-time">📞 24/7</span>
                             </div>
-                            <div class="platform-card" onclick="showTerms()">
-                                <span class="platform-icon">📄</span>
-                                <span class="platform-name">Terms</span>
-                                <span class="platform-points">Legal</span>
-                                <span class="platform-time">⚖️ Info</span>
-                            </div>
                         </div>
 
                         <div class="earn-stats">
-                            <div class="earn-stat">
+                            <div class="earn-stat" onclick="showWalletHistory()">
                                 <div class="stat-number" id="profileTotalPoints">0</div>
                                 <div class="stat-label">Total Points</div>
                             </div>
