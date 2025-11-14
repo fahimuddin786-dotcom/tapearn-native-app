@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -384,6 +384,25 @@
             cursor: pointer;
         }
 
+        /* User Status */
+        .user-status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .status-active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .status-inactive {
+            background: #f44336;
+            color: white;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .admin-container {
@@ -421,27 +440,27 @@
             <ul class="admin-nav">
                 <li><a href="#dashboard" class="active" onclick="showSection('dashboard')">
                     <span class="nav-icon">📊</span>
-                    <span>डैशबोर्ड</span>
+                    <span>Dashboard</span>
                 </a></li>
                 <li><a href="#users" onclick="showSection('users')">
                     <span class="nav-icon">👥</span>
-                    <span>सभी यूजर्स</span>
+                    <span>All Users</span>
                 </a></li>
                 <li><a href="#points" onclick="showSection('points')">
                     <span class="nav-icon">💰</span>
-                    <span>पॉइंट्स मैनेजमेंट</span>
+                    <span>Points Management</span>
                 </a></li>
                 <li><a href="#settings" onclick="showSection('settings')">
                     <span class="nav-icon">⚙️</span>
-                    <span>ग्लोबल सेटिंग्स</span>
+                    <span>Global Settings</span>
                 </a></li>
                 <li><a href="#rewards" onclick="showSection('rewards')">
                     <span class="nav-icon">🎁</span>
-                    <span>रिवॉर्ड्स</span>
+                    <span>Rewards</span>
                 </a></li>
                 <li><a href="#analytics" onclick="showSection('analytics')">
                     <span class="nav-icon">📈</span>
-                    <span>एनालिटिक्स</span>
+                    <span>Analytics</span>
                 </a></li>
             </ul>
         </div>
@@ -463,33 +482,33 @@
             <!-- Dashboard Section -->
             <div id="dashboard" class="content-section active">
                 <div class="section-header">
-                    <h3>📊 सारांश</h3>
+                    <h3>📊 Overview</h3>
                     <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh Data</button>
                 </div>
 
                 <div class="admin-stats">
                     <div class="stat-card">
                         <div class="stat-number" id="totalUsers">0</div>
-                        <div class="stat-label">कुल यूजर्स</div>
+                        <div class="stat-label">Total Users</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="totalPoints">0</div>
-                        <div class="stat-label">कुल पॉइंट्स</div>
+                        <div class="stat-label">Total Points</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="activeUsers">0</div>
-                        <div class="stat-label">एक्टिव यूजर्स</div>
+                        <div class="stat-label">Active Users</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="todayEarnings">0</div>
-                        <div class="stat-label">आज की कमाई</div>
+                        <div class="stat-label">Today's Earnings</div>
                     </div>
                 </div>
 
                 <div class="admin-tabs">
-                    <button class="tab-btn active" onclick="showTab('recentUsers')">नए यूजर्स</button>
-                    <button class="tab-btn" onclick="showTab('topUsers')">टॉप यूजर्स</button>
-                    <button class="tab-btn" onclick="showTab('activities')">एक्टिविटीज</button>
+                    <button class="tab-btn active" onclick="showTab('recentUsers')">Recent Users</button>
+                    <button class="tab-btn" onclick="showTab('topUsers')">Top Users</button>
+                    <button class="tab-btn" onclick="showTab('activities')">Activities</button>
                 </div>
 
                 <div id="recentUsers" class="tab-content">
@@ -500,7 +519,8 @@
                                 <th>Telegram</th>
                                 <th>Points</th>
                                 <th>Level</th>
-                                <th>ज्वाइन किया</th>
+                                <th>Joined</th>
+                                <th>Status</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -514,10 +534,11 @@
             <!-- Users Section -->
             <div id="users" class="content-section" style="display: none;">
                 <div class="section-header">
-                    <h3>👥 सभी यूजर्स</h3>
+                    <h3>👥 All Users</h3>
                     <div class="search-box">
-                        <input type="text" class="search-input" id="userSearch" placeholder="User ID, Telegram या नाम से खोजें...">
+                        <input type="text" class="search-input" id="userSearch" placeholder="Search by User ID, Telegram or name...">
                         <button class="btn btn-primary" onclick="searchUsers()">🔍 Search</button>
+                        <button class="btn btn-warning" onclick="clearSearch()">🗑️ Clear</button>
                     </div>
                 </div>
 
@@ -530,6 +551,7 @@
                             <th>Level</th>
                             <th>Mining Status</th>
                             <th>Tasks Done</th>
+                            <th>Joined Date</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -542,96 +564,96 @@
             <!-- Points Management Section -->
             <div id="points" class="content-section" style="display: none;">
                 <div class="section-header">
-                    <h3>💰 पॉइंट्स मैनेजमेंट</h3>
+                    <h3>💰 Points Management</h3>
                 </div>
 
                 <div class="form-group">
-                    <label>यूजर चुनें:</label>
+                    <label>Select User:</label>
                     <select class="form-control" id="userSelect">
-                        <option value="">-- यूजर चुनें --</option>
+                        <option value="">-- Select User --</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>पॉइंट्स एक्शन:</label>
+                    <label>Points Action:</label>
                     <select class="form-control" id="pointsAction">
-                        <option value="add">पॉइंट्स जोड़ें</option>
-                        <option value="subtract">पॉइंट्स घटाएं</option>
-                        <option value="set">पॉइंट्स सेट करें</option>
+                        <option value="add">Add Points</option>
+                        <option value="subtract">Subtract Points</option>
+                        <option value="set">Set Points</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label>पॉइंट्स की संख्या:</label>
-                    <input type="number" class="form-control" id="pointsAmount" placeholder="पॉइंट्स की संख्या">
+                    <label>Points Amount:</label>
+                    <input type="number" class="form-control" id="pointsAmount" placeholder="Enter points amount">
                 </div>
 
                 <div class="form-group">
-                    <label>कारण (Reason):</label>
-                    <input type="text" class="form-control" id="pointsReason" placeholder="पॉइंट्स बदलाव का कारण">
+                    <label>Reason:</label>
+                    <input type="text" class="form-control" id="pointsReason" placeholder="Reason for points change">
                 </div>
 
-                <button class="btn btn-primary" onclick="updateUserPoints()">💾 पॉइंट्स अपडेट करें</button>
+                <button class="btn btn-primary" onclick="updateUserPoints()">💾 Update Points</button>
 
                 <div style="margin-top: 30px;">
-                    <h4>ग्लोबल पॉइंट्स सेटिंग्स</h4>
+                    <h4>Global Points Settings</h4>
                     <div class="form-group">
-                        <label>माइनिंग रेट (प्रति मिनट):</label>
+                        <label>Mining Rate (per minute):</label>
                         <input type="number" class="form-control" id="globalMiningRate" placeholder="Current: 5">
                     </div>
-                    <button class="btn btn-warning" onclick="updateGlobalSettings()">⚙️ ग्लोबल सेटिंग्स अपडेट</button>
+                    <button class="btn btn-warning" onclick="updateGlobalSettings()">⚙️ Update Global Settings</button>
                 </div>
             </div>
 
             <!-- Settings Section -->
             <div id="settings" class="content-section" style="display: none;">
                 <div class="section-header">
-                    <h3>⚙️ ग्लोबल सेटिंग्स</h3>
+                    <h3>⚙️ Global Settings</h3>
                 </div>
 
                 <div class="form-group">
-                    <label>एप्प का नाम:</label>
+                    <label>App Name:</label>
                     <input type="text" class="form-control" id="appName" placeholder="TapEarn">
                 </div>
 
                 <div class="form-group">
-                    <label>वेलकम मैसेज:</label>
+                    <label>Welcome Message:</label>
                     <textarea class="form-control" id="welcomeMessage" rows="3" placeholder="Welcome to TapEarn..."></textarea>
                 </div>
 
                 <div class="form-group">
-                    <label>मिनिमम विथड्रॉल:</label>
+                    <label>Minimum Withdrawal:</label>
                     <input type="number" class="form-control" id="minWithdrawal" placeholder="1000">
                 </div>
 
                 <div class="form-group">
-                    <label>रेफरल बोनस:</label>
+                    <label>Referral Bonus:</label>
                     <input type="number" class="form-control" id="referralBonus" placeholder="50">
                 </div>
 
                 <div class="form-group">
-                    <label>डेली बोनस:</label>
+                    <label>Daily Bonus:</label>
                     <input type="number" class="form-control" id="dailyBonus" placeholder="100">
                 </div>
 
-                <button class="btn btn-primary" onclick="saveGlobalSettings()">💾 सेटिंग्स सेव करें</button>
+                <button class="btn btn-primary" onclick="saveGlobalSettings()">💾 Save Settings</button>
             </div>
 
             <!-- Rewards Section -->
             <div id="rewards" class="content-section" style="display: none;">
                 <div class="section-header">
-                    <h3>🎁 रिवॉर्ड्स मैनेजमेंट</h3>
-                    <button class="btn btn-primary" onclick="showAddRewardModal()">➕ नया रिवॉर्ड जोड़ें</button>
+                    <h3>🎁 Rewards Management</h3>
+                    <button class="btn btn-primary" onclick="showAddRewardModal()">➕ Add New Reward</button>
                 </div>
 
                 <table class="data-table">
                     <thead>
                         <tr>
-                            <th>रिवॉर्ड नाम</th>
-                            <th>पॉइंट्स कॉस्ट</th>
-                            <th>वैल्यू</th>
-                            <th>टाइप</th>
-                            <th>स्टेटस</th>
+                            <th>Reward Name</th>
+                            <th>Points Cost</th>
+                            <th>Value</th>
+                            <th>Type</th>
+                            <th>Status</th>
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -644,33 +666,32 @@
             <!-- Analytics Section -->
             <div id="analytics" class="content-section" style="display: none;">
                 <div class="section-header">
-                    <h3>📈 एनालिटिक्स & रिपोर्ट्स</h3>
+                    <h3>📈 Analytics & Reports</h3>
                 </div>
 
                 <div class="admin-stats">
                     <div class="stat-card">
                         <div class="stat-number" id="totalMining">0</div>
-                        <div class="stat-label">कुल माइनिंग घंटे</div>
+                        <div class="stat-label">Total Mining Hours</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="totalTasks">0</div>
-                        <div class="stat-label">कुल टास्क्स</div>
+                        <div class="stat-label">Total Tasks</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="totalVideos">0</div>
-                        <div class="stat-label">कुल विडियोज</div>
+                        <div class="stat-label">Total Videos</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-number" id="totalReferrals">0</div>
-                        <div class="stat-label">कुल रेफरल्स</div>
+                        <div class="stat-label">Total Referrals</div>
                     </div>
                 </div>
 
                 <div style="margin-top: 30px;">
-                    <h4>डेली ग्रोथ</h4>
+                    <h4>Daily Growth</h4>
                     <div id="growthChart" style="height: 300px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
-                        <!-- Chart will be implemented -->
-                        <p style="text-align: center; opacity: 0.7;">ग्रोथ चार्ट यहाँ दिखेगा</p>
+                        <p style="text-align: center; opacity: 0.7;">Growth chart will appear here</p>
                     </div>
                 </div>
             </div>
@@ -681,27 +702,27 @@
     <div id="addRewardModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>➕ नया रिवॉर्ड जोड़ें</h3>
+                <h3>➕ Add New Reward</h3>
                 <button class="modal-close" onclick="closeModal('addRewardModal')">×</button>
             </div>
             <div class="form-group">
-                <label>रिवॉर्ड नाम:</label>
+                <label>Reward Name:</label>
                 <input type="text" class="form-control" id="rewardName" placeholder="Amazon Gift Card">
             </div>
             <div class="form-group">
-                <label>विवरण:</label>
+                <label>Description:</label>
                 <textarea class="form-control" id="rewardDescription" rows="3" placeholder="Reward description..."></textarea>
             </div>
             <div class="form-group">
-                <label>पॉइंट्स कॉस्ट:</label>
+                <label>Points Cost:</label>
                 <input type="number" class="form-control" id="rewardCost" placeholder="1000">
             </div>
             <div class="form-group">
-                <label>वैल्यू ($):</label>
+                <label>Value ($):</label>
                 <input type="number" class="form-control" id="rewardValue" placeholder="5">
             </div>
             <div class="form-group">
-                <label>टाइप:</label>
+                <label>Type:</label>
                 <select class="form-control" id="rewardType">
                     <option value="giftcard">Gift Card</option>
                     <option value="cash">Cash</option>
@@ -709,7 +730,20 @@
                     <option value="voucher">Voucher</option>
                 </select>
             </div>
-            <button class="btn btn-primary" onclick="addNewReward()">💾 रिवॉर्ड जोड़ें</button>
+            <button class="btn btn-primary" onclick="addNewReward()">💾 Add Reward</button>
+        </div>
+    </div>
+
+    <!-- User Details Modal -->
+    <div id="userDetailsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👤 User Details</h3>
+                <button class="modal-close" onclick="closeModal('userDetailsModal')">×</button>
+            </div>
+            <div id="userDetailsContent">
+                <!-- User details will be populated here -->
+            </div>
         </div>
     </div>
 
