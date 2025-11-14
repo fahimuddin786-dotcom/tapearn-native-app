@@ -4,7 +4,7 @@ let autoRefreshInterval = null;
 
 // Initialize Admin Panel
 function initAdminPanel() {
-    console.log('🚀 Admin Panel Initialized - UPDATED VERSION');
+    console.log('🚀 Admin Panel Initialized - COMPLETE FIXED VERSION');
     loadAllUsers();
     setupAutoRefresh();
     updateAdminStats();
@@ -19,7 +19,7 @@ function loadAllUsers() {
     // Get all keys from localStorage
     const allKeys = Object.keys(localStorage);
     
-    console.log('🔍 Found keys:', allKeys);
+    console.log('🔍 Total keys found:', allKeys.length);
     
     // Process each localStorage item to find user data
     allKeys.forEach(key => {
@@ -28,23 +28,37 @@ function loadAllUsers() {
             if (item) {
                 const data = JSON.parse(item);
                 
-                // Check if this is user data based on structure
-                if (isUserData(data)) {
-                    const user = extractUserData(key, data);
-                    if (user && user.telegramUsername !== 'Not set') {
-                        allUsers.push(user);
-                        console.log('✅ Loaded user:', user.telegramUsername, user.points);
+                // ✅ IMPROVED: Check for userData_ keys first (new format)
+                if (key.startsWith('userData_')) {
+                    const user = extractUserDataFromUserData(key, data);
+                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
+                        // Check if user already exists
+                        if (!allUsers.find(u => u.id === user.id)) {
+                            allUsers.push(user);
+                            console.log('✅ Loaded user from userData:', user.telegramUsername, user.points);
+                        }
                     }
                 }
                 
-                // Also check for miningState data
+                // Also check for miningState data (old format)
                 if (key.startsWith('miningState')) {
                     const user = extractUserDataFromMiningState(key, data);
-                    if (user && user.telegramUsername !== 'Not set') {
+                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
                         // Check if user already exists
                         if (!allUsers.find(u => u.id === user.id)) {
                             allUsers.push(user);
                             console.log('✅ Loaded user from miningState:', user.telegramUsername);
+                        }
+                    }
+                }
+                
+                // Check for standalone user data
+                if (isUserData(data) && !key.startsWith('userData_') && !key.startsWith('miningState')) {
+                    const user = extractUserData(key, data);
+                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
+                        if (!allUsers.find(u => u.id === user.id)) {
+                            allUsers.push(user);
+                            console.log('✅ Loaded user from generic data:', user.telegramUsername);
                         }
                     }
                 }
@@ -57,16 +71,48 @@ function loadAllUsers() {
     // Also check for standalone Telegram IDs
     checkStandaloneTelegramIds();
     
-    // If no users found, create demo users
+    // ✅ IMPROVED: Only create demo users if NO real users found
     if (allUsers.length === 0) {
-        console.log('⚠️ No users found, creating demo data...');
+        console.log('⚠️ No real users found, creating demo data...');
         createDemoUsers();
+    } else {
+        console.log(`🎉 Found ${allUsers.length} real users!`);
     }
     
     console.log(`✅ FINAL LOADED: ${allUsers.length} users`);
     updateUsersTable();
     updateUserSelect();
     updateAdminStats();
+}
+
+// Extract user data from userData_ format (NEW - from updated app.js)
+function extractUserDataFromUserData(key, data) {
+    try {
+        const userId = key.replace('userData_', '');
+        
+        const user = {
+            id: userId,
+            telegramUsername: data.telegramUsername || 'Not set',
+            points: data.userPoints || 0,
+            level: data.miningLevel || 1,
+            miningStatus: data.isMining ? 'Active' : 'Inactive',
+            tasksCompleted: data.totalTasksCompleted || 0,
+            joinDate: data.joinDate || new Date().toLocaleDateString('en-US'),
+            lastActive: data.lastActive || new Date().toLocaleString('en-US'),
+            totalEarned: data.totalPointsEarned || 0,
+            todayEarnings: data.todayEarnings || 0,
+            miningSeconds: data.miningSeconds || 0,
+            totalMiningHours: data.totalMiningHours || 0,
+            speedLevel: data.speedLevel || 1,
+            multiplierLevel: data.multiplierLevel || 1,
+            loginStreak: data.loginStreak || 1
+        };
+        
+        return user;
+    } catch (error) {
+        console.error('Error extracting from userData:', error);
+        return null;
+    }
 }
 
 // Check for standalone Telegram IDs in localStorage
@@ -81,7 +127,7 @@ function checkStandaloneTelegramIds() {
             
             // Check if this user already exists
             if (!allUsers.find(u => u.id === userId)) {
-                const user = {
+                const userData = {
                     id: userId,
                     telegramUsername: telegramUsername,
                     points: parseInt(localStorage.getItem('userPoints')) || 0,
@@ -99,7 +145,7 @@ function checkStandaloneTelegramIds() {
                     loginStreak: 1
                 };
                 
-                allUsers.push(user);
+                allUsers.push(userData);
                 console.log('✅ Added user from standalone Telegram ID:', telegramUsername);
             }
         }
@@ -155,7 +201,7 @@ function isUserData(data) {
     );
 }
 
-// Extract user data from localStorage item
+// Extract user data from localStorage item (generic)
 function extractUserData(key, data) {
     try {
         // Generate user ID from key or create new one
@@ -179,19 +225,6 @@ function extractUserData(key, data) {
             telegramUsername = data.referralData.telegramUsername;
         } else if (data.userData && data.userData.telegramUsername) {
             telegramUsername = data.userData.telegramUsername;
-        }
-        
-        // If still not set, try to extract from other data fields
-        if (telegramUsername === 'Not set') {
-            // Check if there's any data that might contain Telegram info
-            const stringData = JSON.stringify(data).toLowerCase();
-            if (stringData.includes('@')) {
-                const atIndex = stringData.indexOf('@');
-                const possibleUsername = stringData.substring(atIndex, Math.min(atIndex + 20, stringData.length)).split(/[^a-zA-Z0-9_@]/)[0];
-                if (possibleUsername.startsWith('@')) {
-                    telegramUsername = possibleUsername;
-                }
-            }
         }
         
         const user = {
@@ -223,7 +256,7 @@ function extractUserData(key, data) {
 function createDemoUsers() {
     const demoUsers = [
         {
-            id: 'user_' + Date.now() + '_1',
+            id: 'demo_user_1',
             telegramUsername: '@john_doe',
             points: 1500,
             level: 2,
@@ -240,7 +273,7 @@ function createDemoUsers() {
             loginStreak: 5
         },
         {
-            id: 'user_' + Date.now() + '_2',
+            id: 'demo_user_2',
             telegramUsername: '@jane_smith',
             points: 800,
             level: 1,
@@ -257,7 +290,7 @@ function createDemoUsers() {
             loginStreak: 3
         },
         {
-            id: 'user_' + Date.now() + '_3',
+            id: 'demo_user_3',
             telegramUsername: '@tech_guru',
             points: 3500,
             level: 3,
@@ -478,6 +511,15 @@ function updateUserPoints() {
     userData.userPoints = newPoints;
     userData.totalPointsEarned = (userData.totalPointsEarned || 0) + (action === 'add' ? amount : 0);
     localStorage.setItem(userDataKey, JSON.stringify(userData));
+    
+    // Also update miningState if exists
+    const miningStateKey = `miningState_${userId}`;
+    const miningState = JSON.parse(localStorage.getItem(miningStateKey));
+    if (miningState) {
+        miningState.userPoints = newPoints;
+        miningState.totalPointsEarned = (miningState.totalPointsEarned || 0) + (action === 'add' ? amount : 0);
+        localStorage.setItem(miningStateKey, JSON.stringify(miningState));
+    }
     
     // Update in-memory data
     user.points = newPoints;
@@ -738,6 +780,7 @@ function deleteUser(userId) {
         // Remove from localStorage
         localStorage.removeItem(`userData_${userId}`);
         localStorage.removeItem(`miningState_${userId}`);
+        localStorage.removeItem(`userProfile_${userId}`);
         
         // Remove from in-memory array
         allUsers = allUsers.filter(u => u.id !== userId);
@@ -824,7 +867,7 @@ function refreshData() {
     alert('✅ Data refreshed!');
 }
 
-// NEW FUNCTIONS FOR BETTER USER DETECTION
+// 🆕 ENHANCED FUNCTIONS FOR BETTER USER DETECTION
 
 // Force reload all data
 function forceReloadAllData() {
@@ -880,7 +923,7 @@ function debugUserData() {
 
 // Migrate all user data to new format
 function migrateAllUserData() {
-    console.log('🚚 Migrating ALL user data...');
+    console.log('🚚 Migrating ALL user data to new format...');
     
     const allKeys = Object.keys(localStorage);
     let migratedCount = 0;
@@ -907,6 +950,11 @@ function migrateAllUserData() {
                     userId = localStorage.getItem('userId') || 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 } else {
                     userId = key;
+                }
+                
+                // Skip if already exists in new format
+                if (localStorage.getItem(`userData_${userId}`)) {
+                    return;
                 }
                 
                 // Create new user data structure
@@ -960,12 +1008,55 @@ function addDebugButtons() {
         const debugDiv = document.createElement('div');
         debugDiv.id = 'debugButtons';
         debugDiv.style.marginTop = '10px';
+        debugDiv.style.display = 'flex';
+        debugDiv.style.gap = '10px';
+        debugDiv.style.flexWrap = 'wrap';
         debugDiv.innerHTML = `
             <button class="btn btn-sm btn-warning" onclick="forceReloadAllData()" title="Force reload all data">🔄 Force Reload</button>
             <button class="btn btn-sm btn-info" onclick="debugUserData()" title="Debug user data">🐛 Debug</button>
             <button class="btn btn-sm btn-success" onclick="migrateAllUserData()" title="Migrate all user data">🚚 Migrate Data</button>
+            <button class="btn btn-sm btn-primary" onclick="checkDataConsistency()" title="Check data consistency">🔍 Check Data</button>
         `;
         header.appendChild(debugDiv);
+    }
+}
+
+// Check data consistency
+function checkDataConsistency() {
+    console.log('🔍 Checking data consistency...');
+    
+    const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
+    const miningStateKeys = Object.keys(localStorage).filter(key => key.startsWith('miningState_'));
+    
+    console.log(`📊 userData keys: ${userDataKeys.length}, miningState keys: ${miningStateKeys.length}`);
+    
+    let inconsistentUsers = 0;
+    
+    // Check each userData entry
+    userDataKeys.forEach(key => {
+        try {
+            const userData = JSON.parse(localStorage.getItem(key));
+            const userId = key.replace('userData_', '');
+            
+            // Check if miningState exists for this user
+            const miningStateKey = `miningState_${userId}`;
+            const miningState = localStorage.getItem(miningStateKey);
+            
+            if (!miningState) {
+                console.log(`⚠️ No miningState for user: ${userId} (${userData.telegramUsername})`);
+                inconsistentUsers++;
+            }
+        } catch (error) {
+            console.error('Error checking consistency for key:', key, error);
+        }
+    });
+    
+    if (inconsistentUsers === 0) {
+        console.log('✅ All user data is consistent!');
+        alert('✅ All user data is consistent!');
+    } else {
+        console.log(`⚠️ Found ${inconsistentUsers} users with inconsistent data`);
+        alert(`⚠️ Found ${inconsistentUsers} users with inconsistent data. Check console for details.`);
     }
 }
 
@@ -982,4 +1073,11 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto debug after 3 seconds
     setTimeout(debugUserData, 3000);
+    
+    // Show welcome message with user count
+    setTimeout(() => {
+        if (allUsers.length > 0 && !allUsers[0].id.startsWith('demo_')) {
+            console.log('🎉 REAL USERS LOADED SUCCESSFULLY!');
+        }
+    }, 5000);
 });
