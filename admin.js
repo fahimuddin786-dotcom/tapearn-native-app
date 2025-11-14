@@ -1,16 +1,16 @@
-// Admin Panel JavaScript
+// Admin Panel JavaScript - COMPLETE UPDATED VERSION
 let allUsers = [];
 let autoRefreshInterval = null;
 
 // Initialize Admin Panel
 function initAdminPanel() {
-    console.log('🚀 Admin Panel Initialized');
+    console.log('🚀 Admin Panel Initialized - UPDATED VERSION');
     loadAllUsers();
     setupAutoRefresh();
     updateAdminStats();
 }
 
-// Load all users from localStorage with Telegram ID detection
+// Load all users from localStorage with IMPROVED detection
 function loadAllUsers() {
     console.log('📥 Loading users from storage...');
     
@@ -18,6 +18,8 @@ function loadAllUsers() {
     
     // Get all keys from localStorage
     const allKeys = Object.keys(localStorage);
+    
+    console.log('🔍 Found keys:', allKeys);
     
     // Process each localStorage item to find user data
     allKeys.forEach(key => {
@@ -29,8 +31,21 @@ function loadAllUsers() {
                 // Check if this is user data based on structure
                 if (isUserData(data)) {
                     const user = extractUserData(key, data);
-                    if (user) {
+                    if (user && user.telegramUsername !== 'Not set') {
                         allUsers.push(user);
+                        console.log('✅ Loaded user:', user.telegramUsername, user.points);
+                    }
+                }
+                
+                // Also check for miningState data
+                if (key.startsWith('miningState')) {
+                    const user = extractUserDataFromMiningState(key, data);
+                    if (user && user.telegramUsername !== 'Not set') {
+                        // Check if user already exists
+                        if (!allUsers.find(u => u.id === user.id)) {
+                            allUsers.push(user);
+                            console.log('✅ Loaded user from miningState:', user.telegramUsername);
+                        }
                     }
                 }
             }
@@ -39,16 +54,93 @@ function loadAllUsers() {
         }
     });
     
+    // Also check for standalone Telegram IDs
+    checkStandaloneTelegramIds();
+    
     // If no users found, create demo users
     if (allUsers.length === 0) {
         console.log('⚠️ No users found, creating demo data...');
         createDemoUsers();
     }
     
-    console.log(`✅ Loaded ${allUsers.length} users`);
+    console.log(`✅ FINAL LOADED: ${allUsers.length} users`);
     updateUsersTable();
     updateUserSelect();
     updateAdminStats();
+}
+
+// Check for standalone Telegram IDs in localStorage
+function checkStandaloneTelegramIds() {
+    console.log('🔍 Checking for standalone Telegram IDs...');
+    
+    try {
+        // Check for telegramUsername key
+        const telegramUsername = localStorage.getItem('telegramUsername');
+        if (telegramUsername && telegramUsername !== 'Not set' && telegramUsername !== '') {
+            const userId = localStorage.getItem('userId') || 'user_' + Date.now();
+            
+            // Check if this user already exists
+            if (!allUsers.find(u => u.id === userId)) {
+                const user = {
+                    id: userId,
+                    telegramUsername: telegramUsername,
+                    points: parseInt(localStorage.getItem('userPoints')) || 0,
+                    level: parseInt(localStorage.getItem('miningLevel')) || 1,
+                    miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
+                    tasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+                    joinDate: new Date().toLocaleDateString('en-US'),
+                    lastActive: new Date().toLocaleString('en-US'),
+                    totalEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+                    todayEarnings: parseInt(localStorage.getItem('todayEarnings')) || 0,
+                    miningSeconds: parseInt(localStorage.getItem('miningSeconds')) || 0,
+                    totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
+                    speedLevel: 1,
+                    multiplierLevel: 1,
+                    loginStreak: 1
+                };
+                
+                allUsers.push(user);
+                console.log('✅ Added user from standalone Telegram ID:', telegramUsername);
+            }
+        }
+    } catch (error) {
+        console.error('Error checking standalone Telegram IDs:', error);
+    }
+}
+
+// Extract user data from miningState
+function extractUserDataFromMiningState(key, data) {
+    try {
+        const userId = key.replace('miningState_', '') || key.replace('miningState', '') || 'user_' + Date.now();
+        
+        let telegramUsername = 'Not set';
+        if (data.telegramUsername && data.telegramUsername !== 'Not set') {
+            telegramUsername = data.telegramUsername;
+        }
+        
+        const user = {
+            id: userId,
+            telegramUsername: telegramUsername,
+            points: data.userPoints || 0,
+            level: data.miningLevel || 1,
+            miningStatus: data.isMining ? 'Active' : 'Inactive',
+            tasksCompleted: data.totalTasksCompleted || 0,
+            joinDate: data.joinDate || new Date().toLocaleDateString('en-US'),
+            lastActive: data.lastActive || new Date().toLocaleString('en-US'),
+            totalEarned: data.totalPointsEarned || 0,
+            todayEarnings: data.todayEarnings || 0,
+            miningSeconds: data.miningSeconds || 0,
+            totalMiningHours: data.totalMiningHours || 0,
+            speedLevel: data.speedLevel || 1,
+            multiplierLevel: data.multiplierLevel || 1,
+            loginStreak: data.loginStreak || 1
+        };
+        
+        return user;
+    } catch (error) {
+        console.error('Error extracting from miningState:', error);
+        return null;
+    }
 }
 
 // Check if data object contains user information
@@ -58,7 +150,8 @@ function isUserData(data) {
         data.miningLevel !== undefined ||
         data.totalPointsEarned !== undefined ||
         data.telegramUsername !== undefined ||
-        (data.referralData && data.referralData.referralCode)
+        (data.referralData && data.referralData.referralCode) ||
+        data.isMining !== undefined
     );
 }
 
@@ -66,19 +159,39 @@ function isUserData(data) {
 function extractUserData(key, data) {
     try {
         // Generate user ID from key or create new one
-        const userId = key.includes('_') ? key.split('_')[1] : 'user_' + Date.now() + Math.random().toString(36).substr(2, 9);
+        let userId = '';
+        if (key.includes('userData_')) {
+            userId = key.replace('userData_', '');
+        } else if (key.includes('miningState_')) {
+            userId = key.replace('miningState_', '');
+        } else if (key.includes('userProfile_')) {
+            userId = key.replace('userProfile_', '');
+        } else {
+            userId = 'user_' + Date.now() + Math.random().toString(36).substr(2, 9);
+        }
         
         // Extract Telegram username - check multiple possible locations
         let telegramUsername = 'Not set';
         
-        if (data.telegramUsername && data.telegramUsername !== 'Not set') {
+        if (data.telegramUsername && data.telegramUsername !== 'Not set' && data.telegramUsername !== '') {
             telegramUsername = data.telegramUsername;
         } else if (data.referralData && data.referralData.telegramUsername) {
             telegramUsername = data.referralData.telegramUsername;
         } else if (data.userData && data.userData.telegramUsername) {
             telegramUsername = data.userData.telegramUsername;
-        } else if (data.telegramUsername) {
-            telegramUsername = data.telegramUsername;
+        }
+        
+        // If still not set, try to extract from other data fields
+        if (telegramUsername === 'Not set') {
+            // Check if there's any data that might contain Telegram info
+            const stringData = JSON.stringify(data).toLowerCase();
+            if (stringData.includes('@')) {
+                const atIndex = stringData.indexOf('@');
+                const possibleUsername = stringData.substring(atIndex, Math.min(atIndex + 20, stringData.length)).split(/[^a-zA-Z0-9_@]/)[0];
+                if (possibleUsername.startsWith('@')) {
+                    telegramUsername = possibleUsername;
+                }
+            }
         }
         
         const user = {
@@ -184,8 +297,7 @@ function createDemoUsers() {
             referralData: {
                 referralCode: 'TAPEARN-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
                 referredUsers: [],
-                totalEarned: 0,
-                telegramUsername: user.telegramUsername
+                totalEarned: 0
             }
         };
         
@@ -653,7 +765,15 @@ function showSection(sectionId) {
     document.querySelectorAll('.admin-nav a').forEach(link => {
         link.classList.remove('active');
     });
-    event.target.classList.add('active');
+    
+    // Find and activate the clicked nav link
+    const navLinks = document.querySelectorAll('.admin-nav a');
+    for (let link of navLinks) {
+        if (link.getAttribute('href') === '#' + sectionId) {
+            link.classList.add('active');
+            break;
+        }
+    }
     
     // Load section-specific data
     if (sectionId === 'rewards') {
@@ -704,6 +824,151 @@ function refreshData() {
     alert('✅ Data refreshed!');
 }
 
+// NEW FUNCTIONS FOR BETTER USER DETECTION
+
+// Force reload all data
+function forceReloadAllData() {
+    console.log('🔄 Force reloading ALL data...');
+    
+    // Clear cache
+    localStorage.removeItem('adminUsersCache');
+    allUsers = [];
+    
+    // Reload all users with enhanced detection
+    loadAllUsers();
+    updateAdminStats();
+    updateUsersTable();
+    updateUserSelect();
+    
+    console.log('✅ Force reload complete! Total users:', allUsers.length);
+    alert('✅ All data forcefully reloaded! Found ' + allUsers.length + ' users.');
+}
+
+// Debug user data
+function debugUserData() {
+    console.log('🐛 DEBUG: Checking ALL user data...');
+    
+    // Check all user-related keys
+    const userKeys = Object.keys(localStorage).filter(key => 
+        key.includes('user') || 
+        key.includes('mining') || 
+        key.includes('telegram') ||
+        key.includes('profile')
+    );
+    
+    console.log('📋 User-related keys:', userKeys);
+    
+    userKeys.forEach(key => {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            console.log(`🔍 ${key}:`, {
+                telegram: data.telegramUsername || 'Not found',
+                points: data.userPoints || data.points || 0,
+                level: data.miningLevel || data.level || 1
+            });
+        } catch (e) {
+            console.log(`❌ ${key}:`, localStorage.getItem(key));
+        }
+    });
+    
+    // Count users in allUsers array
+    console.log(`👥 allUsers array has: ${allUsers.length} users`);
+    allUsers.forEach(user => {
+        console.log(`   - ${user.telegramUsername} (${user.id}) - ${user.points} points`);
+    });
+}
+
+// Migrate all user data to new format
+function migrateAllUserData() {
+    console.log('🚚 Migrating ALL user data...');
+    
+    const allKeys = Object.keys(localStorage);
+    let migratedCount = 0;
+    let newUsersFound = 0;
+    
+    allKeys.forEach(key => {
+        try {
+            // Check for various user data patterns
+            if (key.includes('miningState') || 
+                key.includes('userProfile') || 
+                key.includes('telegramUsername') ||
+                key.startsWith('user_') ||
+                (key === 'telegramUsername' && localStorage.getItem(key) !== 'Not set')) {
+                
+                const data = JSON.parse(localStorage.getItem(key));
+                
+                // Extract user ID
+                let userId = '';
+                if (key.startsWith('miningState_')) {
+                    userId = key.replace('miningState_', '');
+                } else if (key.startsWith('userProfile_')) {
+                    userId = key.replace('userProfile_', '');
+                } else if (key === 'telegramUsername') {
+                    userId = localStorage.getItem('userId') || 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                } else {
+                    userId = key;
+                }
+                
+                // Create new user data structure
+                const userData = {
+                    userPoints: data.userPoints || data.points || parseInt(localStorage.getItem('userPoints')) || 0,
+                    miningLevel: data.miningLevel || data.level || parseInt(localStorage.getItem('miningLevel')) || 1,
+                    isMining: data.isMining || false,
+                    totalTasksCompleted: data.totalTasksCompleted || parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+                    totalPointsEarned: data.totalPointsEarned || data.totalEarned || parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+                    todayEarnings: data.todayEarnings || parseInt(localStorage.getItem('todayEarnings')) || 0,
+                    telegramUsername: data.telegramUsername || localStorage.getItem('telegramUsername') || 'Not set',
+                    miningSeconds: data.miningSeconds || parseInt(localStorage.getItem('miningSeconds')) || 0,
+                    totalMiningHours: data.totalMiningHours || parseInt(localStorage.getItem('totalMiningHours')) || 0,
+                    speedLevel: data.speedLevel || 1,
+                    multiplierLevel: data.multiplierLevel || 1,
+                    loginStreak: data.loginStreak || 1,
+                    joinDate: data.joinDate || new Date().toISOString(),
+                    lastActive: data.lastActive || new Date().toISOString(),
+                    referralData: data.referralData || { referredUsers: [], totalEarned: 0 }
+                };
+                
+                // Save with new format
+                localStorage.setItem(`userData_${userId}`, JSON.stringify(userData));
+                migratedCount++;
+                
+                // Check if this is a new user
+                if (!allUsers.find(u => u.id === userId)) {
+                    newUsersFound++;
+                    console.log('🆕 New user found during migration:', userId, userData.telegramUsername);
+                }
+            }
+        } catch (error) {
+            console.error('Migration error for key:', key, error);
+        }
+    });
+    
+    console.log(`✅ ${migratedCount} users migrated, ${newUsersFound} new users found!`);
+    
+    // Reload all data
+    loadAllUsers();
+    updateAdminStats();
+    
+    alert(`✅ ${migratedCount} users migrated!\n🆕 ${newUsersFound} new users found!`);
+    return newUsersFound;
+}
+
+// Add debug buttons to admin panel header
+function addDebugButtons() {
+    const header = document.querySelector('.admin-header');
+    if (header && !document.getElementById('debugButtons')) {
+        const debugDiv = document.createElement('div');
+        debugDiv.id = 'debugButtons';
+        debugDiv.style.marginTop = '10px';
+        debugDiv.innerHTML = `
+            <button class="btn btn-sm btn-warning" onclick="forceReloadAllData()" title="Force reload all data">🔄 Force Reload</button>
+            <button class="btn btn-sm btn-info" onclick="debugUserData()" title="Debug user data">🐛 Debug</button>
+            <button class="btn btn-sm btn-success" onclick="migrateAllUserData()" title="Migrate all user data">🚚 Migrate Data</button>
+        `;
+        header.appendChild(debugDiv);
+    }
+}
+
 // Initialize when page loads
 document.addEventListener('DOMContentLoaded', function() {
     initAdminPanel();
@@ -711,4 +976,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // Load initial data
     loadGlobalSettings();
     updateRewardsTable();
+    
+    // Add debug buttons
+    setTimeout(addDebugButtons, 1000);
+    
+    // Auto debug after 3 seconds
+    setTimeout(debugUserData, 3000);
 });
