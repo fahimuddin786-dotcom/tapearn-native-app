@@ -111,7 +111,7 @@ body {
     width: 0%;
 }
 
-/* Video Watch Modal */
+/* Video Watch Modal - UPDATED */
 .modal {
     display: none;
     position: fixed;
@@ -194,40 +194,49 @@ body {
     object-fit: cover;
 }
 
-.watch-timer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.7);
+/* NEW: Timer Display Below Video */
+.timer-display-container {
+    text-align: center;
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.timer-circle {
-    position: relative;
-    width: 80px;
-    height: 80px;
-}
-
-.timer-progress {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: conic-gradient(#4CAF50 0%, #2E7D32 0%);
-    transition: background 0.3s;
-}
-
-.timer-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 16px;
+.timer-text-large {
+    font-size: 32px;
     font-weight: bold;
-    color: white;
+    color: #4CAF50;
+    margin-bottom: 10px;
+    font-family: 'Courier New', monospace;
+}
+
+.timer-progress-container {
+    margin: 10px 0;
+}
+
+.timer-progress-bar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.timer-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #45a049);
+    border-radius: 4px;
+    transition: width 1s linear;
+    width: 0%;
+}
+
+/* Remove old timer circle styles */
+.watch-timer,
+.timer-circle,
+.timer-progress {
+    display: none !important;
 }
 
 .video-info-modal {
@@ -337,6 +346,25 @@ body {
 .btn-success:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+/* Points Claim Popup Animation */
+@keyframes pointsPopup {
+    0% { 
+        transform: scale(0.8); 
+        opacity: 0; 
+    }
+    50% { 
+        transform: scale(1.05); 
+    }
+    100% { 
+        transform: scale(1); 
+        opacity: 1; 
+    }
+}
+
+.points-claimed {
+    animation: pointsPopup 0.5s ease-out;
 }
 
 /* Wallet History Modal */
@@ -2576,13 +2604,8 @@ body {
         height: 180px;
     }
     
-    .timer-circle {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .timer-text {
-        font-size: 14px;
+    .timer-text-large {
+        font-size: 28px;
     }
     
     /* New responsive styles */
@@ -2677,6 +2700,10 @@ body {
     .video-thumbnail-large {
         height: 160px;
     }
+    
+    .timer-text-large {
+        font-size: 24px;
+    }
 }
 
 /* High contrast support */
@@ -2721,6 +2748,10 @@ body {
     .transaction-item {
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
+    
+    .timer-display-container {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
 }
 
 /* Reduced motion support */
@@ -2763,5 +2794,9 @@ body {
     .earn-stat:hover,
     .stat-card:hover {
         transform: none;
+    }
+    
+    .timer-progress-fill {
+        transition: none;
     }
 }
