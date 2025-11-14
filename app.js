@@ -835,7 +835,7 @@ function switchTab(tabName) {
     updateUI();
 }
 
-// Video Watch System
+// NEW: Video System Improvements
 function openVideoModal(videoId, points, title, thumbnail, channel) {
     if (watchedVideos.includes(videoId)) {
         showNotification('❌ You already earned points for this video!', 'warning');
@@ -859,11 +859,11 @@ function openVideoModal(videoId, points, title, thumbnail, channel) {
     document.getElementById('modalVideoTitle').textContent = title;
     document.getElementById('modalVideoChannel').textContent = channel;
     document.getElementById('modalVideoPoints').textContent = points;
-    document.getElementById('modalTimer').textContent = formatTime(currentVideoTimeLeft);
+    document.getElementById('modalTimerLarge').textContent = formatTime(currentVideoTimeLeft);
     document.getElementById('modalProgressText').textContent = 'Keep watching...';
     
-    // Update progress circle
-    updateTimerProgress(0);
+    // Reset progress bar
+    document.getElementById('timerProgressFill').style.width = '0%';
     
     // Show modal
     document.getElementById('videoWatchModal').classList.add('active');
@@ -889,11 +889,11 @@ function startVideoTimer() {
         currentVideoTimeLeft--;
         
         // Update timer display
-        document.getElementById('modalTimer').textContent = formatTime(currentVideoTimeLeft);
+        document.getElementById('modalTimerLarge').textContent = formatTime(currentVideoTimeLeft);
         
-        // Update progress circle
+        // Update progress bar
         const progress = ((60 - currentVideoTimeLeft) / 60) * 100;
-        updateTimerProgress(progress);
+        document.getElementById('timerProgressFill').style.width = `${progress}%`;
         
         // Update progress text
         if (currentVideoTimeLeft <= 10) {
@@ -907,11 +907,6 @@ function startVideoTimer() {
             completeVideoWatch();
         }
     }, 1000);
-}
-
-function updateTimerProgress(progress) {
-    const progressElement = document.querySelector('.timer-progress');
-    progressElement.style.background = `conic-gradient(#4CAF50 ${progress}%, #2E7D32 ${progress}%)`;
 }
 
 function completeVideoWatch() {
@@ -936,11 +931,11 @@ function completeVideoWatch() {
     updateUI();
     saveMiningState();
     
-    // Close modal
+    // Close video modal
     document.getElementById('videoWatchModal').classList.remove('active');
     
-    // Show success popup
-    showSuccessPopup(`🎉 Video Completed!`, `You earned ${points} points for watching "${title.substring(0, 30)}..."`);
+    // Show points claim popup
+    showPointsClaimPopup(points, title);
     
     // Refresh video list if on video section
     if (document.getElementById('videoResultsContainer')) {
@@ -948,6 +943,21 @@ function completeVideoWatch() {
     }
     
     currentVideoData = null;
+}
+
+// NEW: Points Claim Popup
+function showPointsClaimPopup(points, title) {
+    document.getElementById('claimedPoints').textContent = points;
+    document.getElementById('pointsClaimTitle').textContent = 'Points Claimed!';
+    document.getElementById('pointsClaimMessage').textContent = `You earned ${points} points for watching "${title.substring(0, 30)}..."`;
+    
+    document.getElementById('pointsClaimPopup').classList.add('active');
+    document.getElementById('pointsClaimPopup').classList.add('points-claimed');
+}
+
+function closePointsClaimPopup() {
+    document.getElementById('pointsClaimPopup').classList.remove('active');
+    document.getElementById('pointsClaimPopup').classList.remove('points-claimed');
 }
 
 // Success Popup System
