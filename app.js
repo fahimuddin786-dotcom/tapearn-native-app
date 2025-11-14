@@ -55,6 +55,11 @@ let referralData = {
     totalEarned: 0
 };
 
+// Wallet History System
+let transactionHistory = [];
+let totalEarned = 0;
+let totalSpent = 0;
+
 // YouTube API Configuration
 const YOUTUBE_API_KEYS = [
     'AIzaSyBATxf5D7ZDeiQ61dbEdzEd4Tq72N713Y8',
@@ -96,6 +101,34 @@ function getMiningRate() {
     const turboMultiplier = turboActive ? 2 : 1;
     
     return (baseRate + speedBonus) * multiplier * turboMultiplier;
+}
+
+// Add Transaction to History
+function addTransaction(description, amount, type, category = "other") {
+    const transaction = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        description: description,
+        amount: amount,
+        type: type, // 'earning' or 'spending'
+        category: category,
+        balance: userPoints
+    };
+    
+    transactionHistory.unshift(transaction); // Add to beginning
+    
+    if (type === 'earning') {
+        totalEarned += amount;
+    } else if (type === 'spending') {
+        totalSpent += amount;
+    }
+    
+    // Limit history to 100 transactions
+    if (transactionHistory.length > 100) {
+        transactionHistory = transactionHistory.slice(0, 100);
+    }
+    
+    saveMiningState();
 }
 
 // Storage Functions
@@ -196,6 +229,11 @@ function loadMiningState() {
         totalEarned: 0
     });
     
+    // Load wallet history
+    transactionHistory = getFromStorage('transactionHistory', []);
+    totalEarned = getFromStorage('totalEarned', 0);
+    totalSpent = getFromStorage('totalSpent', 0);
+    
     // Check daily reset for earnings
     checkDailyEarningsReset();
     
@@ -274,6 +312,11 @@ function saveMiningState() {
     // Save profile systems state
     saveToStorage('redeemedRewards', redeemedRewards);
     saveToStorage('referralData', referralData);
+    
+    // Save wallet history
+    saveToStorage('transactionHistory', transactionHistory);
+    saveToStorage('totalEarned', totalEarned);
+    saveToStorage('totalSpent', totalSpent);
 }
 
 // Check Daily Reset for Earnings
@@ -534,6 +577,9 @@ function startMining() {
             todayEarnings += pointsToAdd;
             lastMinuteCheck = currentMinute;
             
+            // Add to transaction history
+            addTransaction('Mining Earnings', pointsToAdd, 'earning', 'mining');
+            
             console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining!`);
             updateUI();
         }
@@ -589,6 +635,9 @@ function upgradeSpeed() {
         userPoints -= upgradeCost;
         speedLevel++;
         
+        // Add to transaction history
+        addTransaction('Speed Upgrade', -upgradeCost, 'spending', 'upgrade');
+        
         console.log('⚡ Speed upgraded to level:', speedLevel);
         showNotification(`⚡ Mining Speed upgraded to Level ${speedLevel}!`, 'success');
         
@@ -605,6 +654,9 @@ function upgradeMultiplier() {
     if (userPoints >= upgradeCost) {
         userPoints -= upgradeCost;
         multiplierLevel++;
+        
+        // Add to transaction history
+        addTransaction('Multiplier Upgrade', -upgradeCost, 'spending', 'upgrade');
         
         console.log('💰 Multiplier upgraded to level:', multiplierLevel);
         showNotification(`💰 Point Multiplier upgraded to Level ${multiplierLevel}!`, 'success');
@@ -623,6 +675,9 @@ function upgradeLevel() {
     if (userPoints >= upgradeCost) {
         userPoints -= upgradeCost;
         miningLevel = nextLevel;
+        
+        // Add to transaction history
+        addTransaction('Level Upgrade', -upgradeCost, 'spending', 'upgrade');
         
         console.log('🏆 Mining level upgraded to:', LEVEL_DATA[miningLevel].name);
         showNotification(`🏆 Congratulations! You are now a ${LEVEL_DATA[miningLevel].name} Miner!`, 'success');
@@ -643,6 +698,9 @@ function activateTurbo() {
         userPoints -= turboCost;
         turboActive = true;
         turboTimeLeft = 300;
+        
+        // Add to transaction history
+        addTransaction('Turbo Boost', -turboCost, 'spending', 'boost');
         
         console.log('🚀 Turbo activated!');
         showNotification('🚀 TURBO MODE ACTIVATED! 2x points for 5 minutes!', 'success');
@@ -686,6 +744,9 @@ function claimDailyBonus() {
     dailyBonusClaimed = true;
     lastBonusClaim = Date.now();
     
+    // Add to transaction history
+    addTransaction('Daily Bonus', bonusAmount, 'earning', 'bonus');
+    
     console.log('🎁 Daily bonus claimed:', bonusAmount);
     showNotification(`🎁 Daily Bonus! +${bonusAmount} Points (Streak: ${loginStreak})`, 'success');
     
@@ -706,6 +767,9 @@ function claimHourlyBonus() {
     hourlyBonusAvailable = false;
     lastHourlyBonus = Date.now();
     
+    // Add to transaction history
+    addTransaction('Hourly Bonus', bonusAmount, 'earning', 'bonus');
+    
     console.log('⏰ Hourly bonus claimed:', bonusAmount);
     showNotification(`⏰ Hourly Bonus! +${bonusAmount} Points`, 'success');
     
@@ -719,6 +783,9 @@ function claimStreakBonus() {
     totalPointsEarned += bonusAmount;
     todayEarnings += bonusAmount;
     
+    // Add to transaction history
+    addTransaction('Streak Bonus', bonusAmount, 'earning', 'bonus');
+    
     console.log('🔥 Streak bonus claimed:', bonusAmount);
     showNotification(`🔥 Streak Bonus! +${bonusAmount} Points (Day ${loginStreak})`, 'success');
     
@@ -731,6 +798,9 @@ function claimBoost() {
     userPoints += boostAmount;
     totalPointsEarned += boostAmount;
     todayEarnings += boostAmount;
+    
+    // Add to transaction history
+    addTransaction('Daily Boost', boostAmount, 'earning', 'bonus');
     
     console.log('🎯 Boost claimed:', boostAmount);
     showNotification(`🎯 Boost! +${boostAmount} Points`, 'success');
@@ -859,6 +929,9 @@ function completeVideoWatch() {
     todayEarnings += points;
     totalTasksCompleted++;
     
+    // Add to transaction history
+    addTransaction(`Video: ${title.substring(0, 20)}...`, points, 'earning', 'video');
+    
     // Update UI
     updateUI();
     saveMiningState();
@@ -866,8 +939,8 @@ function completeVideoWatch() {
     // Close modal
     document.getElementById('videoWatchModal').classList.remove('active');
     
-    // Show success message
-    showNotification(`✅ +${points} Points! "${title.substring(0, 30)}..."`, 'success');
+    // Show success popup
+    showSuccessPopup(`🎉 Video Completed!`, `You earned ${points} points for watching "${title.substring(0, 30)}..."`);
     
     // Refresh video list if on video section
     if (document.getElementById('videoResultsContainer')) {
@@ -875,6 +948,126 @@ function completeVideoWatch() {
     }
     
     currentVideoData = null;
+}
+
+// Success Popup System
+function showSuccessPopup(title, message) {
+    document.getElementById('successTitle').textContent = title;
+    document.getElementById('successMessage').textContent = message;
+    document.getElementById('successPopup').classList.add('active');
+}
+
+function closeSuccessPopup() {
+    document.getElementById('successPopup').classList.remove('active');
+}
+
+// Wallet History System
+function showWalletHistory() {
+    document.getElementById('walletHistoryModal').classList.add('active');
+    showAllHistory();
+}
+
+function closeWalletHistory() {
+    document.getElementById('walletHistoryModal').classList.remove('active');
+}
+
+function showAllHistory() {
+    document.querySelectorAll('.history-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    displayTransactionHistory(transactionHistory);
+    updateHistoryStats();
+}
+
+function showEarningHistory() {
+    document.querySelectorAll('.history-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const earningHistory = transactionHistory.filter(transaction => transaction.type === 'earning');
+    displayTransactionHistory(earningHistory);
+    updateHistoryStats();
+}
+
+function showSpendingHistory() {
+    document.querySelectorAll('.history-tab').forEach(tab => tab.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    const spendingHistory = transactionHistory.filter(transaction => transaction.type === 'spending');
+    displayTransactionHistory(spendingHistory);
+    updateHistoryStats();
+}
+
+function displayTransactionHistory(transactions) {
+    const historyList = document.getElementById('historyList');
+    
+    if (transactions.length === 0) {
+        historyList.innerHTML = '<div class="no-history">No transactions found</div>';
+        return;
+    }
+    
+    let html = '';
+    
+    transactions.forEach(transaction => {
+        const date = new Date(transaction.timestamp);
+        const timeString = date.toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+        });
+        
+        html += `
+            <div class="transaction-item">
+                <div class="transaction-info">
+                    <div class="transaction-title">${transaction.description}</div>
+                    <div class="transaction-desc">${getCategoryIcon(transaction.category)} ${formatCategory(transaction.category)} • ${timeString}</div>
+                </div>
+                <div class="transaction-details">
+                    <div class="transaction-amount ${transaction.type}">
+                        ${transaction.type === 'earning' ? '+' : '-'}${transaction.amount}
+                    </div>
+                    <div class="transaction-time">${date.toLocaleDateString()}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    historyList.innerHTML = html;
+}
+
+function updateHistoryStats() {
+    document.getElementById('totalEarnedHistory').textContent = formatNumber(totalEarned);
+    document.getElementById('todayEarnedHistory').textContent = formatNumber(todayEarnings);
+    document.getElementById('totalSpentHistory').textContent = formatNumber(totalSpent);
+}
+
+function getCategoryIcon(category) {
+    const icons = {
+        'mining': '⛏️',
+        'video': '🎬',
+        'task': '📋',
+        'bonus': '🎁',
+        'upgrade': '⚡',
+        'boost': '🚀',
+        'referral': '👥',
+        'reward': '💰',
+        'other': '📊'
+    };
+    return icons[category] || '📊';
+}
+
+function formatCategory(category) {
+    const categories = {
+        'mining': 'Mining',
+        'video': 'Video',
+        'task': 'Task',
+        'bonus': 'Bonus',
+        'upgrade': 'Upgrade',
+        'boost': 'Boost',
+        'referral': 'Referral',
+        'reward': 'Reward',
+        'other': 'Other'
+    };
+    return categories[category] || 'Other';
 }
 
 // Earning Section Functions
@@ -1184,7 +1377,7 @@ function showHomePage() {
             </div>
 
             <div class="earn-stats">
-                <div class="earn-stat">
+                <div class="earn-stat" onclick="showWalletHistory()">
                     <div class="stat-number" id="totalEarnings">${userPoints}</div>
                     <div class="stat-label">Total Points</div>
                 </div>
@@ -1231,7 +1424,7 @@ function showTasksHomePage() {
             </div>
 
             <div class="earn-stats">
-                <div class="earn-stat">
+                <div class="earn-stat" onclick="showWalletHistory()">
                     <div class="stat-number" id="tasksTotalPoints">${userPoints}</div>
                     <div class="stat-label">Total Points</div>
                 </div>
@@ -1248,7 +1441,7 @@ function showTasksHomePage() {
     `;
 }
 
-// 👥 6. FOLLOW & EARN SYSTEM
+// 👥 FOLLOW & EARN SYSTEM
 function showFollowSection() {
     document.getElementById('tasksAppContent').innerHTML = `
         <div class="earn-page">
@@ -1450,6 +1643,9 @@ function completeFollowTask(taskId, points, username, platform) {
     todayEarnings += points;
     totalPointsEarned += points;
     
+    // Add to transaction history
+    addTransaction(`Follow @${username} on ${platform}`, points, 'earning', 'task');
+    
     showNotification(`✅ +${points} Points! Followed @${username} on ${platform}`, 'success');
     updateUI();
     saveMiningState();
@@ -1461,7 +1657,7 @@ function completeFollowTask(taskId, points, username, platform) {
     }
 }
 
-// 📋 7. DAILY TASKS SYSTEM
+// 📋 DAILY TASKS SYSTEM
 function showDailyTasksSection() {
     document.getElementById('tasksAppContent').innerHTML = `
         <div class="earn-page">
@@ -1607,6 +1803,9 @@ function claimTaskReward(taskId, points, title) {
     todayEarnings += points;
     totalPointsEarned += points;
     
+    // Add to transaction history
+    addTransaction(`Daily Task: ${title}`, points, 'earning', 'task');
+    
     showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
     updateUI();
     saveMiningState();
@@ -1651,7 +1850,7 @@ function getTaskById(taskId) {
     return tasks.find(task => task.id === taskId);
 }
 
-// 🌐 8. SOCIAL TASKS SYSTEM
+// 🌐 SOCIAL TASKS SYSTEM
 function showSocialTasksSection() {
     document.getElementById('tasksAppContent').innerHTML = `
         <div class="earn-page">
@@ -1824,6 +2023,9 @@ function completeSocialTask(taskId, points, title, platform) {
     todayEarnings += points;
     totalPointsEarned += points;
     
+    // Add to transaction history
+    addTransaction(`Social Task: ${title}`, points, 'earning', 'task');
+    
     showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
     updateUI();
     saveMiningState();
@@ -1851,7 +2053,7 @@ function getSocialTaskById(taskId) {
     return tasks.find(task => task.id === taskId);
 }
 
-// 💰 10. REWARDS & CASHIER SYSTEM
+// 💰 REWARDS & CASHIER SYSTEM
 function showCashier() {
     document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
@@ -2020,6 +2222,9 @@ function redeemReward(rewardId, cost, rewardName) {
     userPoints -= cost;
     redeemedRewards.push(rewardId);
     
+    // Add to transaction history
+    addTransaction(`Reward: ${rewardName}`, -cost, 'spending', 'reward');
+    
     showNotification(`🎉 Congratulations! You redeemed ${rewardName}`, 'success');
     updateUI();
     saveMiningState();
@@ -2042,7 +2247,7 @@ function calculateRedeemedValue() {
     }, 0);
 }
 
-// 👥 11. REFERRAL SYSTEM
+// 👥 REFERRAL SYSTEM
 function showReferralSystem() {
     document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
@@ -2160,6 +2365,9 @@ function addReferral() {
     referralData.totalEarned += 50;
     userPoints += 50;
     
+    // Add to transaction history
+    addTransaction('Referral Bonus', 50, 'earning', 'referral');
+    
     showNotification('🎉 +50 Points! New referral added!', 'success');
     updateUI();
     saveMiningState();
@@ -2171,7 +2379,7 @@ function simulateReferral() {
     addReferral();
 }
 
-// 💬 13. SUPPORT SYSTEM
+// 💬 SUPPORT SYSTEM
 function showSupport() {
     document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
@@ -2405,7 +2613,7 @@ function showMiningHelp() {
     showNotification('⛏️ Make sure mining is enabled and you have stable internet connection.', 'info');
 }
 
-// 📄 14. TERMS & CONDITIONS
+// 📄 TERMS & CONDITIONS
 function showTerms() {
     document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
@@ -2496,6 +2704,12 @@ function showProfileHomePage() {
                     <span class="platform-points">+Gift Cards</span>
                     <span class="platform-time">🎁 Redeem</span>
                 </div>
+                <div class="platform-card" onclick="showWalletHistory()">
+                    <span class="platform-icon">📊</span>
+                    <span class="platform-name">Wallet History</span>
+                    <span class="platform-points">All Transactions</span>
+                    <span class="platform-time">📈 View</span>
+                </div>
                 <div class="platform-card" onclick="showReferralSystem()">
                     <span class="platform-icon">👥</span>
                     <span class="platform-name">Refer & Earn</span>
@@ -2508,16 +2722,10 @@ function showProfileHomePage() {
                     <span class="platform-points">Help Center</span>
                     <span class="platform-time">📞 24/7</span>
                 </div>
-                <div class="platform-card" onclick="showTerms()">
-                    <span class="platform-icon">📄</span>
-                    <span class="platform-name">Terms</span>
-                    <span class="platform-points">Legal</span>
-                    <span class="platform-time">⚖️ Info</span>
-                </div>
             </div>
 
             <div class="earn-stats">
-                <div class="earn-stat">
+                <div class="earn-stat" onclick="showWalletHistory()">
                     <div class="stat-number" id="profileTotalPoints">${userPoints}</div>
                     <div class="stat-label">Total Points</div>
                 </div>
@@ -2545,6 +2753,9 @@ function completeTask(taskId, points, taskName) {
     totalPointsEarned += points;
     todayEarnings += points;
     totalTasksCompleted++;
+    
+    // Add to transaction history
+    addTransaction(`Task: ${taskName}`, points, 'earning', 'task');
     
     saveMiningState();
     updateUI();
