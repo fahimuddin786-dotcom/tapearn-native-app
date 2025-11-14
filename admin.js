@@ -31,7 +31,7 @@ function loadAllUsers() {
                 // ✅ ENHANCED: Check for userData_ keys (new Telegram profile system)
                 if (key.startsWith('userData_')) {
                     const user = extractUserDataFromUserData(key, data);
-                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
+                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== '') {
                         // Check if user already exists
                         if (!allUsers.find(u => u.id === user.id)) {
                             allUsers.push(user);
@@ -43,7 +43,7 @@ function loadAllUsers() {
                 // Also check for miningState data (old format)
                 if (key.startsWith('miningState')) {
                     const user = extractUserDataFromMiningState(key, data);
-                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
+                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== '') {
                         // Check if user already exists
                         if (!allUsers.find(u => u.id === user.id)) {
                             allUsers.push(user);
@@ -55,7 +55,7 @@ function loadAllUsers() {
                 // Check for standalone user data
                 if (isUserData(data) && !key.startsWith('userData_') && !key.startsWith('miningState')) {
                     const user = extractUserData(key, data);
-                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
+                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== '') {
                         if (!allUsers.find(u => u.id === user.id)) {
                             allUsers.push(user);
                             console.log('✅ Loaded user from generic data:', user.telegramUsername);
@@ -74,12 +74,16 @@ function loadAllUsers() {
     // Also check for standalone Telegram IDs
     checkStandaloneTelegramIds();
     
-    // ✅ ENHANCED: Only create demo users if NO real users found
-    if (allUsers.length === 0) {
+    // ✅ FIXED: Only create demo users if NO real users found (checking for non-demo users)
+    const realUsersCount = allUsers.filter(user => !user.id.startsWith('demo_')).length;
+    
+    if (realUsersCount === 0) {
         console.log('⚠️ No real users found, creating demo data...');
         createDemoUsers();
     } else {
-        console.log(`🎉 Found ${allUsers.length} real users with Telegram profiles!`);
+        console.log(`🎉 Found ${realUsersCount} real users with Telegram profiles!`);
+        // Remove any demo users if real users exist
+        allUsers = allUsers.filter(user => !user.id.startsWith('demo_'));
     }
     
     console.log(`✅ FINAL LOADED: ${allUsers.length} users`);
@@ -102,7 +106,7 @@ function checkTelegramProfileActivities() {
         
         // Process activities to find new users
         userActivities.forEach(activity => {
-            if (activity.telegramUsername && activity.telegramUsername !== 'Not set') {
+            if (activity.telegramUsername && activity.telegramUsername !== 'Not set' && activity.telegramUsername !== '') {
                 const existingUser = allUsers.find(u => u.id === activity.id);
                 if (!existingUser) {
                     // Create user from activity
@@ -135,7 +139,7 @@ function checkTelegramProfileActivities() {
         adminNotifications.forEach(notification => {
             if (notification.event === 'user_created' && notification.data) {
                 const userData = notification.data;
-                if (userData.telegramUsername && userData.telegramUsername !== 'Not set') {
+                if (userData.telegramUsername && userData.telegramUsername !== 'Not set' && userData.telegramUsername !== '') {
                     const existingUser = allUsers.find(u => u.id === userData.id);
                     if (!existingUser) {
                         const newUser = {
@@ -246,7 +250,7 @@ function extractUserDataFromMiningState(key, data) {
         const userId = key.replace('miningState_', '') || key.replace('miningState', '') || 'user_' + Date.now();
         
         let telegramUsername = 'Not set';
-        if (data.telegramUsername && data.telegramUsername !== 'Not set') {
+        if (data.telegramUsername && data.telegramUsername !== 'Not set' && data.telegramUsername !== '') {
             telegramUsername = data.telegramUsername;
         }
         
@@ -869,13 +873,49 @@ function viewUserDetails(userId) {
     }
 }
 
-// Delete user
+// ✅ FIXED: Delete user function - COMPLETELY REMOVES USER
 function deleteUser(userId) {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone!')) {
-        // Remove from localStorage
-        localStorage.removeItem(`userData_${userId}`);
-        localStorage.removeItem(`miningState_${userId}`);
-        localStorage.removeItem(`userProfile_${userId}`);
+        console.log('🗑️ Deleting user:', userId);
+        
+        // Remove from localStorage - ALL POSSIBLE KEYS
+        const keysToRemove = [
+            `userData_${userId}`,
+            `miningState_${userId}`, 
+            `miningState${userId}`,
+            `userProfile_${userId}`,
+            'telegramUsername',
+            'userId',
+            'userPoints',
+            'miningLevel',
+            'totalTasksCompleted',
+            'totalPointsEarned',
+            'todayEarnings',
+            'miningSeconds',
+            'totalMiningHours'
+        ];
+        
+        keysToRemove.forEach(key => {
+            if (localStorage.getItem(key)) {
+                localStorage.removeItem(key);
+                console.log('✅ Removed:', key);
+            }
+        });
+        
+        // Also remove from activities and notifications
+        try {
+            // Remove from user activities
+            const userActivities = getFromStorage('userActivities', []);
+            const filteredActivities = userActivities.filter(activity => activity.id !== userId);
+            saveToStorage('userActivities', filteredActivities);
+            
+            // Remove from admin notifications
+            const adminNotifications = getFromStorage('adminNotifications', []);
+            const filteredNotifications = adminNotifications.filter(notif => notif.userId !== userId);
+            saveToStorage('adminNotifications', filteredNotifications);
+        } catch (error) {
+            console.error('Error cleaning user activities:', error);
+        }
         
         // Remove from in-memory array
         allUsers = allUsers.filter(u => u.id !== userId);
@@ -885,7 +925,13 @@ function deleteUser(userId) {
         updateUserSelect();
         updateAdminStats();
         
-        alert('✅ User deleted!');
+        console.log('✅ User completely deleted:', userId);
+        alert('✅ User completely deleted!');
+        
+        // Force reload to ensure clean state
+        setTimeout(() => {
+            forceReloadAllData();
+        }, 1000);
     }
 }
 
