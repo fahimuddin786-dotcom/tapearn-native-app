@@ -1,18 +1,18 @@
-// Admin Panel JavaScript - COMPLETE UPDATED VERSION
+// Admin Panel JavaScript - ENHANCED TELEGRAM PROFILE SYSTEM
 let allUsers = [];
 let autoRefreshInterval = null;
 
 // Initialize Admin Panel
 function initAdminPanel() {
-    console.log('🚀 Admin Panel Initialized - COMPLETE FIXED VERSION');
+    console.log('🚀 Admin Panel Initialized - ENHANCED TELEGRAM PROFILE SYSTEM');
     loadAllUsers();
     setupAutoRefresh();
     updateAdminStats();
 }
 
-// Load all users from localStorage with IMPROVED detection
+// 🆕 ENHANCED USER DETECTION WITH TELEGRAM PROFILES
 function loadAllUsers() {
-    console.log('📥 Loading users from storage...');
+    console.log('📥 Loading users with Telegram profile detection...');
     
     allUsers = [];
     
@@ -28,14 +28,14 @@ function loadAllUsers() {
             if (item) {
                 const data = JSON.parse(item);
                 
-                // ✅ IMPROVED: Check for userData_ keys first (new format)
+                // ✅ ENHANCED: Check for userData_ keys (new Telegram profile system)
                 if (key.startsWith('userData_')) {
                     const user = extractUserDataFromUserData(key, data);
                     if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
                         // Check if user already exists
                         if (!allUsers.find(u => u.id === user.id)) {
                             allUsers.push(user);
-                            console.log('✅ Loaded user from userData:', user.telegramUsername, user.points);
+                            console.log('✅ Loaded user from Telegram profile:', user.telegramUsername, user.points);
                         }
                     }
                 }
@@ -68,15 +68,18 @@ function loadAllUsers() {
         }
     });
     
+    // 🆕 ENHANCED: Check for Telegram profile activities
+    checkTelegramProfileActivities();
+    
     // Also check for standalone Telegram IDs
     checkStandaloneTelegramIds();
     
-    // ✅ IMPROVED: Only create demo users if NO real users found
+    // ✅ ENHANCED: Only create demo users if NO real users found
     if (allUsers.length === 0) {
         console.log('⚠️ No real users found, creating demo data...');
         createDemoUsers();
     } else {
-        console.log(`🎉 Found ${allUsers.length} real users!`);
+        console.log(`🎉 Found ${allUsers.length} real users with Telegram profiles!`);
     }
     
     console.log(`✅ FINAL LOADED: ${allUsers.length} users`);
@@ -85,7 +88,88 @@ function loadAllUsers() {
     updateAdminStats();
 }
 
-// Extract user data from userData_ format (NEW - from updated app.js)
+// 🆕 CHECK TELEGRAM PROFILE ACTIVITIES
+function checkTelegramProfileActivities() {
+    console.log('🔍 Checking Telegram profile activities...');
+    
+    try {
+        // Check for user activities
+        const userActivities = getFromStorage('userActivities', []);
+        const adminNotifications = getFromStorage('adminNotifications', []);
+        
+        console.log('📊 User activities found:', userActivities.length);
+        console.log('📢 Admin notifications:', adminNotifications.length);
+        
+        // Process activities to find new users
+        userActivities.forEach(activity => {
+            if (activity.telegramUsername && activity.telegramUsername !== 'Not set') {
+                const existingUser = allUsers.find(u => u.id === activity.id);
+                if (!existingUser) {
+                    // Create user from activity
+                    const newUser = {
+                        id: activity.id,
+                        telegramUsername: activity.telegramUsername,
+                        points: activity.points || 0,
+                        level: activity.level || 1,
+                        miningStatus: activity.miningStatus || 'Inactive',
+                        tasksCompleted: 0,
+                        joinDate: new Date().toLocaleDateString('en-US'),
+                        lastActive: activity.lastActive || new Date().toLocaleString('en-US'),
+                        totalEarned: 0,
+                        todayEarnings: 0,
+                        miningSeconds: 0,
+                        totalMiningHours: 0,
+                        speedLevel: 1,
+                        multiplierLevel: 1,
+                        loginStreak: 1,
+                        profileSource: 'telegram_activity'
+                    };
+                    
+                    allUsers.push(newUser);
+                    console.log('🆕 User added from activity:', activity.telegramUsername);
+                }
+            }
+        });
+        
+        // Process notifications for new user events
+        adminNotifications.forEach(notification => {
+            if (notification.event === 'user_created' && notification.data) {
+                const userData = notification.data;
+                if (userData.telegramUsername && userData.telegramUsername !== 'Not set') {
+                    const existingUser = allUsers.find(u => u.id === userData.id);
+                    if (!existingUser) {
+                        const newUser = {
+                            id: userData.id,
+                            telegramUsername: userData.telegramUsername,
+                            points: userData.points || 0,
+                            level: userData.level || 1,
+                            miningStatus: userData.miningStatus || 'Inactive',
+                            tasksCompleted: userData.tasksCompleted || 0,
+                            joinDate: userData.joinDate || new Date().toLocaleDateString('en-US'),
+                            lastActive: userData.lastActive || new Date().toLocaleString('en-US'),
+                            totalEarned: userData.totalEarned || 0,
+                            todayEarnings: userData.todayEarnings || 0,
+                            miningSeconds: userData.miningSeconds || 0,
+                            totalMiningHours: userData.totalMiningHours || 0,
+                            speedLevel: userData.speedLevel || 1,
+                            multiplierLevel: userData.multiplierLevel || 1,
+                            loginStreak: userData.loginStreak || 1,
+                            profileSource: userData.profileSource || 'telegram_notification'
+                        };
+                        
+                        allUsers.push(newUser);
+                        console.log('🆕 User added from notification:', userData.telegramUsername);
+                    }
+                }
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error checking Telegram activities:', error);
+    }
+}
+
+// Extract user data from userData_ format (NEW - from enhanced Telegram system)
 function extractUserDataFromUserData(key, data) {
     try {
         const userId = key.replace('userData_', '');
@@ -93,19 +177,20 @@ function extractUserDataFromUserData(key, data) {
         const user = {
             id: userId,
             telegramUsername: data.telegramUsername || 'Not set',
-            points: data.userPoints || 0,
-            level: data.miningLevel || 1,
+            points: data.userPoints || data.points || 0,
+            level: data.miningLevel || data.level || 1,
             miningStatus: data.isMining ? 'Active' : 'Inactive',
             tasksCompleted: data.totalTasksCompleted || 0,
             joinDate: data.joinDate || new Date().toLocaleDateString('en-US'),
             lastActive: data.lastActive || new Date().toLocaleString('en-US'),
-            totalEarned: data.totalPointsEarned || 0,
+            totalEarned: data.totalPointsEarned || data.totalEarned || 0,
             todayEarnings: data.todayEarnings || 0,
             miningSeconds: data.miningSeconds || 0,
             totalMiningHours: data.totalMiningHours || 0,
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
-            loginStreak: data.loginStreak || 1
+            loginStreak: data.loginStreak || 1,
+            profileSource: data.profileSource || 'userData'
         };
         
         return user;
@@ -142,7 +227,8 @@ function checkStandaloneTelegramIds() {
                     totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
                     speedLevel: 1,
                     multiplierLevel: 1,
-                    loginStreak: 1
+                    loginStreak: 1,
+                    profileSource: 'standalone_telegram'
                 };
                 
                 allUsers.push(userData);
@@ -179,7 +265,8 @@ function extractUserDataFromMiningState(key, data) {
             totalMiningHours: data.totalMiningHours || 0,
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
-            loginStreak: data.loginStreak || 1
+            loginStreak: data.loginStreak || 1,
+            profileSource: 'miningState'
         };
         
         return user;
@@ -242,7 +329,8 @@ function extractUserData(key, data) {
             totalMiningHours: data.totalMiningHours || 0,
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
-            loginStreak: data.loginStreak || 1
+            loginStreak: data.loginStreak || 1,
+            profileSource: 'generic'
         };
         
         return user;
@@ -270,7 +358,8 @@ function createDemoUsers() {
             totalMiningHours: 10,
             speedLevel: 2,
             multiplierLevel: 1,
-            loginStreak: 5
+            loginStreak: 5,
+            profileSource: 'demo'
         },
         {
             id: 'demo_user_2',
@@ -287,7 +376,8 @@ function createDemoUsers() {
             totalMiningHours: 5,
             speedLevel: 1,
             multiplierLevel: 1,
-            loginStreak: 3
+            loginStreak: 3,
+            profileSource: 'demo'
         },
         {
             id: 'demo_user_3',
@@ -304,7 +394,8 @@ function createDemoUsers() {
             totalMiningHours: 20,
             speedLevel: 3,
             multiplierLevel: 2,
-            loginStreak: 12
+            loginStreak: 12,
+            profileSource: 'demo'
         }
     ];
     
@@ -331,13 +422,14 @@ function createDemoUsers() {
                 referralCode: 'TAPEARN-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
                 referredUsers: [],
                 totalEarned: 0
-            }
+            },
+            profileSource: 'demo'
         };
         
         localStorage.setItem(`userData_${user.id}`, JSON.stringify(userData));
     });
     
-    console.log('✅ Created demo users with Telegram IDs');
+    console.log('✅ Created demo users with Telegram profiles');
 }
 
 // Update admin statistics
@@ -738,6 +830,9 @@ function viewUserDetails(userId) {
                     
                     <div><strong>Tasks Completed:</strong></div>
                     <div>${user.tasksCompleted}</div>
+                    
+                    <div><strong>Profile Source:</strong></div>
+                    <div>${user.profileSource || 'Unknown'}</div>
                 </div>
             </div>
             
@@ -867,17 +962,17 @@ function refreshData() {
     alert('✅ Data refreshed!');
 }
 
-// 🆕 ENHANCED FUNCTIONS FOR BETTER USER DETECTION
+// 🆕 ENHANCED FUNCTIONS FOR TELEGRAM PROFILE DETECTION
 
 // Force reload all data
 function forceReloadAllData() {
-    console.log('🔄 Force reloading ALL data...');
+    console.log('🔄 Force reloading ALL data with Telegram profile detection...');
     
     // Clear cache
     localStorage.removeItem('adminUsersCache');
     allUsers = [];
     
-    // Reload all users with enhanced detection
+    // Reload all users with enhanced Telegram detection
     loadAllUsers();
     updateAdminStats();
     updateUsersTable();
@@ -889,14 +984,16 @@ function forceReloadAllData() {
 
 // Debug user data
 function debugUserData() {
-    console.log('🐛 DEBUG: Checking ALL user data...');
+    console.log('🐛 DEBUG: Checking ALL user data with Telegram profiles...');
     
     // Check all user-related keys
     const userKeys = Object.keys(localStorage).filter(key => 
         key.includes('user') || 
         key.includes('mining') || 
         key.includes('telegram') ||
-        key.includes('profile')
+        key.includes('profile') ||
+        key.includes('activity') ||
+        key.includes('notification')
     );
     
     console.log('📋 User-related keys:', userKeys);
@@ -907,7 +1004,8 @@ function debugUserData() {
             console.log(`🔍 ${key}:`, {
                 telegram: data.telegramUsername || 'Not found',
                 points: data.userPoints || data.points || 0,
-                level: data.miningLevel || data.level || 1
+                level: data.miningLevel || data.level || 1,
+                source: data.profileSource || 'Unknown'
             });
         } catch (e) {
             console.log(`❌ ${key}:`, localStorage.getItem(key));
@@ -917,13 +1015,19 @@ function debugUserData() {
     // Count users in allUsers array
     console.log(`👥 allUsers array has: ${allUsers.length} users`);
     allUsers.forEach(user => {
-        console.log(`   - ${user.telegramUsername} (${user.id}) - ${user.points} points`);
+        console.log(`   - ${user.telegramUsername} (${user.id}) - ${user.points} points - Source: ${user.profileSource}`);
     });
+    
+    // Check activities and notifications
+    const activities = getFromStorage('userActivities', []);
+    const notifications = getFromStorage('adminNotifications', []);
+    console.log('📊 User activities:', activities.length);
+    console.log('📢 Admin notifications:', notifications.length);
 }
 
-// Migrate all user data to new format
+// Migrate all user data to new Telegram profile format
 function migrateAllUserData() {
-    console.log('🚚 Migrating ALL user data to new format...');
+    console.log('🚚 Migrating ALL user data to Telegram profile format...');
     
     const allKeys = Object.keys(localStorage);
     let migratedCount = 0;
@@ -957,7 +1061,7 @@ function migrateAllUserData() {
                     return;
                 }
                 
-                // Create new user data structure
+                // Create new user data structure with Telegram profile
                 const userData = {
                     userPoints: data.userPoints || data.points || parseInt(localStorage.getItem('userPoints')) || 0,
                     miningLevel: data.miningLevel || data.level || parseInt(localStorage.getItem('miningLevel')) || 1,
@@ -973,7 +1077,8 @@ function migrateAllUserData() {
                     loginStreak: data.loginStreak || 1,
                     joinDate: data.joinDate || new Date().toISOString(),
                     lastActive: data.lastActive || new Date().toISOString(),
-                    referralData: data.referralData || { referredUsers: [], totalEarned: 0 }
+                    referralData: data.referralData || { referredUsers: [], totalEarned: 0 },
+                    profileSource: 'migrated_telegram'
                 };
                 
                 // Save with new format
@@ -1016,19 +1121,71 @@ function addDebugButtons() {
             <button class="btn btn-sm btn-info" onclick="debugUserData()" title="Debug user data">🐛 Debug</button>
             <button class="btn btn-sm btn-success" onclick="migrateAllUserData()" title="Migrate all user data">🚚 Migrate Data</button>
             <button class="btn btn-sm btn-primary" onclick="checkDataConsistency()" title="Check data consistency">🔍 Check Data</button>
+            <button class="btn btn-sm btn-secondary" onclick="checkTelegramActivities()" title="Check Telegram activities">📱 Telegram Data</button>
         `;
         header.appendChild(debugDiv);
     }
 }
 
+// 🆕 CHECK TELEGRAM ACTIVITIES
+function checkTelegramActivities() {
+    console.log('📱 Checking Telegram profile activities...');
+    
+    const activities = getFromStorage('userActivities', []);
+    const notifications = getFromStorage('adminNotifications', []);
+    
+    console.log('📊 User Activities:', activities);
+    console.log('📢 Admin Notifications:', notifications);
+    
+    let html = `
+        <div style="margin-bottom: 20px;">
+            <h4>📱 Telegram Profile Activities</h4>
+            <p><strong>Total Activities:</strong> ${activities.length}</p>
+            <p><strong>Total Notifications:</strong> ${notifications.length}</p>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div>
+                <h5>Recent Activities</h5>
+                ${activities.slice(0, 5).map(activity => `
+                    <div style="border: 1px solid #444; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                        <strong>${activity.telegramUsername}</strong><br>
+                        Points: ${activity.points} | Level: ${activity.level}<br>
+                        Last: ${new Date(activity.lastActive).toLocaleString()}
+                    </div>
+                `).join('')}
+            </div>
+            
+            <div>
+                <h5>Recent Notifications</h5>
+                ${notifications.slice(0, 5).map(notif => `
+                    <div style="border: 1px solid #444; padding: 10px; margin: 5px 0; border-radius: 5px;">
+                        <strong>${notif.event}</strong><br>
+                        User: ${notif.telegramUsername}<br>
+                        Time: ${new Date(notif.timestamp).toLocaleString()}
+                    </div>
+                `).join('')}
+            </div>
+        </div>
+    `;
+    
+    // Show in modal
+    const userDetailsContent = document.getElementById('userDetailsContent');
+    userDetailsContent.innerHTML = html;
+    document.getElementById('userDetailsModal').classList.add('active');
+}
+
 // Check data consistency
 function checkDataConsistency() {
-    console.log('🔍 Checking data consistency...');
+    console.log('🔍 Checking data consistency with Telegram profiles...');
     
     const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
     const miningStateKeys = Object.keys(localStorage).filter(key => key.startsWith('miningState_'));
+    const activities = getFromStorage('userActivities', []);
+    const notifications = getFromStorage('adminNotifications', []);
     
     console.log(`📊 userData keys: ${userDataKeys.length}, miningState keys: ${miningStateKeys.length}`);
+    console.log(`📱 Activities: ${activities.length}, Notifications: ${notifications.length}`);
     
     let inconsistentUsers = 0;
     
@@ -1053,10 +1210,21 @@ function checkDataConsistency() {
     
     if (inconsistentUsers === 0) {
         console.log('✅ All user data is consistent!');
-        alert('✅ All user data is consistent!');
+        alert('✅ All user data is consistent with Telegram profiles!');
     } else {
         console.log(`⚠️ Found ${inconsistentUsers} users with inconsistent data`);
         alert(`⚠️ Found ${inconsistentUsers} users with inconsistent data. Check console for details.`);
+    }
+}
+
+// Storage helper function
+function getFromStorage(key, defaultValue = null) {
+    try {
+        const item = localStorage.getItem(key);
+        return item ? JSON.parse(item) : defaultValue;
+    } catch (error) {
+        console.error('Storage read error:', error);
+        return defaultValue;
     }
 }
 
@@ -1077,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Show welcome message with user count
     setTimeout(() => {
         if (allUsers.length > 0 && !allUsers[0].id.startsWith('demo_')) {
-            console.log('🎉 REAL USERS LOADED SUCCESSFULLY!');
+            console.log('🎉 REAL USERS WITH TELEGRAM PROFILES LOADED SUCCESSFULLY!');
         }
     }, 5000);
 });
