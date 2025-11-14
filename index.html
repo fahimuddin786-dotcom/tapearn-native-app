@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <!-- Video Watch Modal - UPDATED -->
+        <!-- Video Watch Modal -->
         <div id="videoWatchModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -40,7 +40,6 @@
                 <div class="video-player">
                     <div class="video-thumbnail-large">
                         <img id="modalVideoThumbnail" src="" alt="Video Thumbnail">
-                        <!-- Progress circle removed from video -->
                     </div>
                     <div class="video-info-modal">
                         <div class="video-title-modal" id="modalVideoTitle"></div>
@@ -51,7 +50,7 @@
                         <div class="watch-requirement">Watch for 1 minute to earn points</div>
                     </div>
                     
-                    <!-- NEW: Timer Display Below Video -->
+                    <!-- Timer Display Below Video -->
                     <div class="timer-display-container">
                         <div class="timer-text-large" id="modalTimerLarge">01:00</div>
                         <div class="timer-progress-container">
@@ -80,7 +79,7 @@
             </div>
         </div>
 
-        <!-- NEW: Points Claim Popup -->
+        <!-- Points Claim Popup -->
         <div id="pointsClaimPopup" class="modal">
             <div class="modal-content success-popup">
                 <div class="success-icon">💰</div>
@@ -122,6 +121,38 @@
                     <div class="history-list" id="historyList">
                         <div class="no-history">No transactions yet</div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Telegram ID Capture Modal -->
+        <div id="telegramIdModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📱 Connect Telegram</h3>
+                </div>
+                <div class="video-player">
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">👤</div>
+                        <h3 style="color: #FFD700; margin-bottom: 10px;">Welcome to TapEarn!</h3>
+                        <p style="margin-bottom: 20px; opacity: 0.8;">To get started, please enter your Telegram username. This helps us track your earnings and rewards.</p>
+                        
+                        <div class="form-group">
+                            <input type="text" class="search-input" id="telegramIdInput" placeholder="Enter your Telegram username (e.g., @username)" style="text-align: center;">
+                        </div>
+                        
+                        <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.3); margin: 15px 0;">
+                            <p style="font-size: 12px; margin: 0; color: #FFD700;">
+                                💡 <strong>How to find your Telegram username:</strong><br>
+                                1. Open Telegram App<br>
+                                2. Go to Settings → Edit Profile<br>
+                                3. Copy your Username (must start with @)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-success" onclick="saveTelegramId()" style="width: 100%;">✅ Save & Continue</button>
                 </div>
             </div>
         </div>
