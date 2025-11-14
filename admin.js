@@ -77,19 +77,8 @@ function extractUserData(key, data) {
             telegramUsername = data.referralData.telegramUsername;
         } else if (data.userData && data.userData.telegramUsername) {
             telegramUsername = data.userData.telegramUsername;
-        }
-        
-        // If still not set, try to extract from other data fields
-        if (telegramUsername === 'Not set') {
-            // Check if there's any data that might contain Telegram info
-            const stringData = JSON.stringify(data).toLowerCase();
-            if (stringData.includes('@')) {
-                const atIndex = stringData.indexOf('@');
-                const possibleUsername = stringData.substring(atIndex, Math.min(atIndex + 20, stringData.length)).split(/[^a-zA-Z0-9_@]/)[0];
-                if (possibleUsername.startsWith('@')) {
-                    telegramUsername = possibleUsername;
-                }
-            }
+        } else if (data.telegramUsername) {
+            telegramUsername = data.telegramUsername;
         }
         
         const user = {
@@ -170,23 +159,6 @@ function createDemoUsers() {
             speedLevel: 3,
             multiplierLevel: 2,
             loginStreak: 12
-        },
-        {
-            id: 'user_' + Date.now() + '_4',
-            telegramUsername: '@crypto_enthusiast',
-            points: 5000,
-            level: 4,
-            miningStatus: 'Active',
-            tasksCompleted: 35,
-            joinDate: '2024-01-05',
-            lastActive: new Date().toLocaleString('en-US'),
-            totalEarned: 6000,
-            todayEarnings: 450,
-            miningSeconds: 10800,
-            totalMiningHours: 30,
-            speedLevel: 4,
-            multiplierLevel: 3,
-            loginStreak: 18
         }
     ];
     
@@ -212,7 +184,8 @@ function createDemoUsers() {
             referralData: {
                 referralCode: 'TAPEARN-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
                 referredUsers: [],
-                totalEarned: 0
+                totalEarned: 0,
+                telegramUsername: user.telegramUsername
             }
         };
         
