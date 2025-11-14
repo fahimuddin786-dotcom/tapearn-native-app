@@ -474,11 +474,11 @@ body {
     margin-bottom: 2px;
 }
 
-.transaction-amount.positive {
+.transaction-amount.earning {
     color: #4CAF50;
 }
 
-.transaction-amount.negative {
+.transaction-amount.spending {
     color: #FF6B6B;
 }
 
@@ -1436,7 +1436,50 @@ body {
     margin-left: 10px;
 }
 
-/* NEW STYLES FOR FOLLOW & EARN, DAILY TASKS, SOCIAL TASKS */
+/* NEW STYLES FOR TELEGRAM ID CARD */
+.telegram-id-card {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 20px;
+}
+
+.telegram-id-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+}
+
+.telegram-icon {
+    font-size: 24px;
+    width: 40px;
+    text-align: center;
+}
+
+.telegram-info {
+    flex: 1;
+}
+
+.telegram-label {
+    font-size: 12px;
+    opacity: 0.8;
+    margin-bottom: 4px;
+}
+
+.telegram-value {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.telegram-edit {
+    font-size: 18px;
+    opacity: 0.7;
+}
 
 /* Follow Platform Tabs */
 .follow-platform-tabs {
@@ -2752,6 +2795,10 @@ body {
     .timer-display-container {
         border: 1px solid rgba(255, 255, 255, 0.3);
     }
+    
+    .telegram-id-card {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
 }
 
 /* Reduced motion support */
@@ -2798,5 +2845,9 @@ body {
     
     .timer-progress-fill {
         transition: none;
+    }
+    
+    .telegram-id-card:hover {
+        transform: none;
     }
 }
