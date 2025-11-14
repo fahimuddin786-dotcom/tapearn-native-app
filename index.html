@@ -12,7 +12,7 @@
         <!-- Header -->
         <div class="app-header">
             <div class="header-content">
-                <div class="wallet" onclick="showWalletDetails()">
+                <div class="wallet" onclick="showWalletHistory()">
                     <span class="wallet-icon">💰</span>
                     <span class="wallet-amount" id="walletPoints">0</span>
                     <span class="wallet-label">Points</span>
@@ -30,7 +30,7 @@
             </div>
         </div>
 
-        <!-- Video Watch Modal -->
+        <!-- Video Watch Modal - UPDATED -->
         <div id="videoWatchModal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -40,12 +40,7 @@
                 <div class="video-player">
                     <div class="video-thumbnail-large">
                         <img id="modalVideoThumbnail" src="" alt="Video Thumbnail">
-                        <div class="watch-timer">
-                            <div class="timer-circle">
-                                <div class="timer-progress"></div>
-                                <div class="timer-text" id="modalTimer">01:00</div>
-                            </div>
-                        </div>
+                        <!-- Progress circle removed from video -->
                     </div>
                     <div class="video-info-modal">
                         <div class="video-title-modal" id="modalVideoTitle"></div>
@@ -54,6 +49,16 @@
                     <div class="video-points-info">
                         <div class="points-earning">Earning: <span id="modalVideoPoints">0</span> points</div>
                         <div class="watch-requirement">Watch for 1 minute to earn points</div>
+                    </div>
+                    
+                    <!-- NEW: Timer Display Below Video -->
+                    <div class="timer-display-container">
+                        <div class="timer-text-large" id="modalTimerLarge">01:00</div>
+                        <div class="timer-progress-container">
+                            <div class="timer-progress-bar">
+                                <div class="timer-progress-fill" id="timerProgressFill"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-actions">
@@ -72,6 +77,16 @@
                 <h3 id="successTitle">Success!</h3>
                 <p id="successMessage">You have earned points successfully!</p>
                 <button class="btn-success" onclick="closeSuccessPopup()">Awesome!</button>
+            </div>
+        </div>
+
+        <!-- NEW: Points Claim Popup -->
+        <div id="pointsClaimPopup" class="modal">
+            <div class="modal-content success-popup">
+                <div class="success-icon">💰</div>
+                <h3 id="pointsClaimTitle">Points Claimed!</h3>
+                <p id="pointsClaimMessage">You have earned <span id="claimedPoints">0</span> points!</p>
+                <button class="btn-success" onclick="closePointsClaimPopup()">Awesome!</button>
             </div>
         </div>
 
