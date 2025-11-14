@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TapEarn Admin Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Sidebar */
+        .admin-sidebar {
+            width: 250px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 20px 0;
+        }
+
+        .admin-logo {
+            text-align: center;
+            padding: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .admin-logo h2 {
+            color: #FFD700;
+            font-size: 24px;
+        }
+
+        .admin-nav {
+            list-style: none;
+            padding: 0 15px;
+        }
+
+        .admin-nav li {
+            margin-bottom: 8px;
+        }
+
+        .admin-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background: rgba(255, 215, 0, 0.1);
+            color: #FFD700;
+        }
+
+        .nav-icon {
+            font-size: 18px;
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .admin-main {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .admin-header h1 {
+            color: #FFD700;
+            font-size: 28px;
+        }
+
+        .admin-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Content Sections */
+        .content-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h3 {
+            color: #FFA726;
+            font-size: 20px;
+        }
+
+        /* Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .data-table th {
+            background: rgba(255, 255, 255, 0.1);
+            color: #FFA726;
+            font-weight: 600;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #FFA726;
+            font-weight: 600;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .btn-warning {
+            background: #FFA726;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #FF9800;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #da190b;
+            transform: translateY(-2px);
+        }
+
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* Search and Filters */
+        .search-box {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+        }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        /* Real-time Updates */
+        .auto-refresh {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #4CAF50;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-header h3 {
+            color: #FFA726;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-container {
+                flex-direction: column;
+            }
+
+            .admin-sidebar {
+                width: 100%;
+                height: auto;
+            }
+
+            .admin-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .data-table {
+                font-size: 12px;
+            }
+
+            .data-table th,
+            .data-table td {
+                padding: 8px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-logo">
+                <h2>🚀 TapEarn Admin</h2>
+            </div>
+            
+            <ul class="admin-nav">
+                <li><a href="#dashboard" class="active" onclick="showSection('dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span>डैशबोर्ड</span>
+                </a></li>
+                <li><a href="#users" onclick="showSection('users')">
+                    <span class="nav-icon">👥</span>
+                    <span>सभी यूजर्स</span>
+                </a></li>
+                <li><a href="#points" onclick="showSection('points')">
+                    <span class="nav-icon">💰</span>
+                    <span>पॉइंट्स मैनेजमेंट</span>
+                </a></li>
+                <li><a href="#settings" onclick="showSection('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span>ग्लोबल सेटिंग्स</span>
+                </a></li>
+                <li><a href="#rewards" onclick="showSection('rewards')">
+                    <span class="nav-icon">🎁</span>
+                    <span>रिवॉर्ड्स</span>
+                </a></li>
+                <li><a href="#analytics" onclick="showSection('analytics')">
+                    <span class="nav-icon">📈</span>
+                    <span>एनालिटिक्स</span>
+                </a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="admin-main">
+            <div class="admin-header">
+                <h1>Admin Dashboard</h1>
+                <div class="auto-refresh">
+                    <span>Auto Refresh:</span>
+                    <label class="switch">
+                        <input type="checkbox" id="autoRefresh" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span id="lastUpdate">Last: Just now</span>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard" class="content-section active">
+                <div class="section-header">
+                    <h3>📊 सारांश</h3>
+                    <button class="btn btn-primary" onclick="refreshData()">🔄 Refresh Data</button>
+                </div>
+
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalUsers">0</div>
+                        <div class="stat-label">कुल यूजर्स</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalPoints">0</div>
+                        <div class="stat-label">कुल पॉइंट्स</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="activeUsers">0</div>
+                        <div class="stat-label">एक्टिव यूजर्स</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayEarnings">0</div>
+                        <div class="stat-label">आज की कमाई</div>
+                    </div>
+                </div>
+
+                <div class="admin-tabs">
+                    <button class="tab-btn active" onclick="showTab('recentUsers')">नए यूजर्स</button>
+                    <button class="tab-btn" onclick="showTab('topUsers')">टॉप यूजर्स</button>
+                    <button class="tab-btn" onclick="showTab('activities')">एक्टिविटीज</button>
+                </div>
+
+                <div id="recentUsers" class="tab-content">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>User ID</th>
+                                <th>Telegram</th>
+                                <th>Points</th>
+                                <th>Level</th>
+                                <th>ज्वाइन किया</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recentUsersTable">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Users Section -->
+            <div id="users" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h3>👥 सभी यूजर्स</h3>
+                    <div class="search-box">
+                        <input type="text" class="search-input" id="userSearch" placeholder="User ID, Telegram या नाम से खोजें...">
+                        <button class="btn btn-primary" onclick="searchUsers()">🔍 Search</button>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>User ID</th>
+                            <th>Telegram Username</th>
+                            <th>Points</th>
+                            <th>Level</th>
+                            <th>Mining Status</th>
+                            <th>Tasks Done</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="allUsersTable">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Points Management Section -->
+            <div id="points" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h3>💰 पॉइंट्स मैनेजमेंट</h3>
+                </div>
+
+                <div class="form-group">
+                    <label>यूजर चुनें:</label>
+                    <select class="form-control" id="userSelect">
+                        <option value="">-- यूजर चुनें --</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>पॉइंट्स एक्शन:</label>
+                    <select class="form-control" id="pointsAction">
+                        <option value="add">पॉइंट्स जोड़ें</option>
+                        <option value="subtract">पॉइंट्स घटाएं</option>
+                        <option value="set">पॉइंट्स सेट करें</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>पॉइंट्स की संख्या:</label>
+                    <input type="number" class="form-control" id="pointsAmount" placeholder="पॉइंट्स की संख्या">
+                </div>
+
+                <div class="form-group">
+                    <label>कारण (Reason):</label>
+                    <input type="text" class="form-control" id="pointsReason" placeholder="पॉइंट्स बदलाव का कारण">
+                </div>
+
+                <button class="btn btn-primary" onclick="updateUserPoints()">💾 पॉइंट्स अपडेट करें</button>
+
+                <div style="margin-top: 30px;">
+                    <h4>ग्लोबल पॉइंट्स सेटिंग्स</h4>
+                    <div class="form-group">
+                        <label>माइनिंग रेट (प्रति मिनट):</label>
+                        <input type="number" class="form-control" id="globalMiningRate" placeholder="Current: 5">
+                    </div>
+                    <button class="btn btn-warning" onclick="updateGlobalSettings()">⚙️ ग्लोबल सेटिंग्स अपडेट</button>
+                </div>
+            </div>
+
+            <!-- Settings Section -->
+            <div id="settings" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h3>⚙️ ग्लोबल सेटिंग्स</h3>
+                </div>
+
+                <div class="form-group">
+                    <label>एप्प का नाम:</label>
+                    <input type="text" class="form-control" id="appName" placeholder="TapEarn">
+                </div>
+
+                <div class="form-group">
+                    <label>वेलकम मैसेज:</label>
+                    <textarea class="form-control" id="welcomeMessage" rows="3" placeholder="Welcome to TapEarn..."></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>मिनिमम विथड्रॉल:</label>
+                    <input type="number" class="form-control" id="minWithdrawal" placeholder="1000">
+                </div>
+
+                <div class="form-group">
+                    <label>रेफरल बोनस:</label>
+                    <input type="number" class="form-control" id="referralBonus" placeholder="50">
+                </div>
+
+                <div class="form-group">
+                    <label>डेली बोनस:</label>
+                    <input type="number" class="form-control" id="dailyBonus" placeholder="100">
+                </div>
+
+                <button class="btn btn-primary" onclick="saveGlobalSettings()">💾 सेटिंग्स सेव करें</button>
+            </div>
+
+            <!-- Rewards Section -->
+            <div id="rewards" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h3>🎁 रिवॉर्ड्स मैनेजमेंट</h3>
+                    <button class="btn btn-primary" onclick="showAddRewardModal()">➕ नया रिवॉर्ड जोड़ें</button>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>रिवॉर्ड नाम</th>
+                            <th>पॉइंट्स कॉस्ट</th>
+                            <th>वैल्यू</th>
+                            <th>टाइप</th>
+                            <th>स्टेटस</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rewardsTable">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="analytics" class="content-section" style="display: none;">
+                <div class="section-header">
+                    <h3>📈 एनालिटिक्स & रिपोर्ट्स</h3>
+                </div>
+
+                <div class="admin-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalMining">0</div>
+                        <div class="stat-label">कुल माइनिंग घंटे</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalTasks">0</div>
+                        <div class="stat-label">कुल टास्क्स</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalVideos">0</div>
+                        <div class="stat-label">कुल विडियोज</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalReferrals">0</div>
+                        <div class="stat-label">कुल रेफरल्स</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 30px;">
+                    <h4>डेली ग्रोथ</h4>
+                    <div id="growthChart" style="height: 300px; background: rgba(255,255,255,0.05); border-radius: 10px; padding: 20px;">
+                        <!-- Chart will be implemented -->
+                        <p style="text-align: center; opacity: 0.7;">ग्रोथ चार्ट यहाँ दिखेगा</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Reward Modal -->
+    <div id="addRewardModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>➕ नया रिवॉर्ड जोड़ें</h3>
+                <button class="modal-close" onclick="closeModal('addRewardModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label>रिवॉर्ड नाम:</label>
+                <input type="text" class="form-control" id="rewardName" placeholder="Amazon Gift Card">
+            </div>
+            <div class="form-group">
+                <label>विवरण:</label>
+                <textarea class="form-control" id="rewardDescription" rows="3" placeholder="Reward description..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>पॉइंट्स कॉस्ट:</label>
+                <input type="number" class="form-control" id="rewardCost" placeholder="1000">
+            </div>
+            <div class="form-group">
+                <label>वैल्यू ($):</label>
+                <input type="number" class="form-control" id="rewardValue" placeholder="5">
+            </div>
+            <div class="form-group">
+                <label>टाइप:</label>
+                <select class="form-control" id="rewardType">
+                    <option value="giftcard">Gift Card</option>
+                    <option value="cash">Cash</option>
+                    <option value="subscription">Subscription</option>
+                    <option value="voucher">Voucher</option>
+                </select>
+            </div>
+            <button class="btn btn-primary" onclick="addNewReward()">💾 रिवॉर्ड जोड़ें</button>
+        </div>
+    </div>
+
+    <script src="admin.js"></script>
+</body>
+</html>
