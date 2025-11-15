@@ -16,6 +16,9 @@ function loadAllUsers() {
     
     allUsers = [];
     
+    // 🆕 FIRST: Check direct Telegram users
+    checkDirectTelegramUsers();
+    
     // Get all keys from localStorage
     const allKeys = Object.keys(localStorage);
     
@@ -107,6 +110,50 @@ function loadAllUsers() {
     updateUsersTable();
     updateUserSelect();
     updateAdminStats();
+}
+
+// 🆕 NEW FUNCTION: Check direct Telegram users from localStorage
+function checkDirectTelegramUsers() {
+    console.log('🔍 Checking direct Telegram users...');
+    
+    // Direct Telegram ID check
+    const telegramUser = localStorage.getItem('telegramUsername');
+    const userId = localStorage.getItem('userId');
+    
+    if (telegramUser && telegramUser !== 'Not set' && telegramUser !== '') {
+        console.log('🎉 DIRECT TELEGRAM USER FOUND:', telegramUser);
+        
+        // Check if already exists in allUsers
+        const existingUser = allUsers.find(u => 
+            u.telegramUsername === telegramUser || u.id === userId
+        );
+        
+        if (!existingUser) {
+            const directUser = {
+                id: userId || 'user_' + Date.now(),
+                telegramUsername: telegramUser,
+                points: parseInt(localStorage.getItem('userPoints')) || 0,
+                level: parseInt(localStorage.getItem('miningLevel')) || 1,
+                miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
+                tasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+                joinDate: new Date().toLocaleDateString('en-US'),
+                lastActive: new Date().toLocaleString('en-US'),
+                totalEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+                todayEarnings: parseInt(localStorage.getItem('todayEarnings')) || 0,
+                miningSeconds: parseInt(localStorage.getItem('miningSeconds')) || 0,
+                totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
+                speedLevel: 1,
+                multiplierLevel: 1,
+                loginStreak: 1,
+                profileSource: 'direct_telegram'
+            };
+            
+            allUsers.push(directUser);
+            console.log('✅ Added direct Telegram user:', telegramUser);
+        }
+    }
+    
+    return allUsers;
 }
 
 // 🆕 CHECK TELEGRAM PROFILE ACTIVITIES
@@ -1194,6 +1241,7 @@ function addDebugButtons() {
             <button class="btn btn-sm btn-success" onclick="migrateAllUserData()" title="Migrate all user data">🚚 Migrate Data</button>
             <button class="btn btn-sm btn-primary" onclick="checkDataConsistency()" title="Check data consistency">🔍 Check Data</button>
             <button class="btn btn-sm btn-secondary" onclick="checkTelegramActivities()" title="Check Telegram activities">📱 Telegram Data</button>
+            <button class="btn btn-sm btn-danger" onclick="cleanupGarbageKeys()" title="Cleanup garbage keys">🧹 Cleanup</button>
         `;
         header.appendChild(debugDiv);
     }
@@ -1287,6 +1335,32 @@ function checkDataConsistency() {
         console.log(`⚠️ Found ${inconsistentUsers} users with inconsistent data`);
         alert(`⚠️ Found ${inconsistentUsers} users with inconsistent data. Check console for details.`);
     }
+}
+
+// 🆕 GARBAGE KEYS CLEANUP FUNCTION
+function cleanupGarbageKeys() {
+    console.log('🧹 Cleaning garbage keys...');
+    const allKeys = Object.keys(localStorage);
+    let removedCount = 0;
+    
+    allKeys.forEach(key => {
+        // लंबी और invalid keys को हटाएं
+        if (key.length > 50 || 
+            key.includes('userData_userData') || 
+            key.includes('default_default') ||
+            key.includes('TAPEARN_')) {
+            localStorage.removeItem(key);
+            removedCount++;
+            console.log('🗑️ Removed:', key);
+        }
+    });
+    
+    console.log(`✅ ${removedCount} garbage keys removed`);
+    alert(`✅ ${removedCount} garbage keys removed!`);
+    
+    // Reload data
+    forceReloadAllData();
+    return removedCount;
 }
 
 // Storage helper function
