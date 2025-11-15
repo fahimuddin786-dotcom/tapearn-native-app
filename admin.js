@@ -42,13 +42,15 @@ function loadAllUsers() {
                 // ✅ ENHANCED: Check for userData_ keys (new Telegram profile system)
                 if (key.startsWith('userData_')) {
                     const user = extractUserDataFromUserData(key, data);
-                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== '') {
-                        // 🆕 FIX: Check if it's NOT a demo user
-                        if (!user.id.startsWith('demo_') && !user.telegramUsername.startsWith('@demo')) {
-                            // Check if user already exists
-                            if (!allUsers.find(u => u.id === user.id)) {
-                                allUsers.push(user);
-                                console.log('✅ Loaded REAL user from Telegram profile:', user.telegramUsername, user.points);
+                    if (user) {
+                        // 🆕 FIX: Validate Telegram username before adding
+                        if (isValidTelegramUsername(user.telegramUsername)) {
+                            if (!user.id.startsWith('demo_') && !user.telegramUsername.startsWith('@demo')) {
+                                // Check if user already exists
+                                if (!allUsers.find(u => u.id === user.id)) {
+                                    allUsers.push(user);
+                                    console.log('✅ Loaded REAL user from Telegram profile:', user.telegramUsername, user.points);
+                                }
                             }
                         }
                     }
@@ -57,13 +59,15 @@ function loadAllUsers() {
                 // Also check for miningState data (old format)
                 if (key.startsWith('miningState')) {
                     const user = extractUserDataFromMiningState(key, data);
-                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== '') {
-                        // 🆕 FIX: Check if it's NOT a demo user
-                        if (!user.id.startsWith('demo_') && !user.telegramUsername.startsWith('@demo')) {
-                            // Check if user already exists
-                            if (!allUsers.find(u => u.id === user.id)) {
-                                allUsers.push(user);
-                                console.log('✅ Loaded REAL user from miningState:', user.telegramUsername);
+                    if (user) {
+                        // 🆕 FIX: Validate Telegram username before adding
+                        if (isValidTelegramUsername(user.telegramUsername)) {
+                            if (!user.id.startsWith('demo_') && !user.telegramUsername.startsWith('@demo')) {
+                                // Check if user already exists
+                                if (!allUsers.find(u => u.id === user.id)) {
+                                    allUsers.push(user);
+                                    console.log('✅ Loaded REAL user from miningState:', user.telegramUsername);
+                                }
                             }
                         }
                     }
@@ -72,12 +76,14 @@ function loadAllUsers() {
                 // Check for standalone user data
                 if (isUserData(data) && !key.startsWith('userData_') && !key.startsWith('miningState')) {
                     const user = extractUserData(key, data);
-                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== '') {
-                        // 🆕 FIX: Check if it's NOT a demo user
-                        if (!user.id.startsWith('demo_') && !user.telegramUsername.startsWith('@demo')) {
-                            if (!allUsers.find(u => u.id === user.id)) {
-                                allUsers.push(user);
-                                console.log('✅ Loaded REAL user from generic data:', user.telegramUsername);
+                    if (user) {
+                        // 🆕 FIX: Validate Telegram username before adding
+                        if (isValidTelegramUsername(user.telegramUsername)) {
+                            if (!user.id.startsWith('demo_') && !user.telegramUsername.startsWith('@demo')) {
+                                if (!allUsers.find(u => u.id === user.id)) {
+                                    allUsers.push(user);
+                                    console.log('✅ Loaded REAL user from generic data:', user.telegramUsername);
+                                }
                             }
                         }
                     }
@@ -93,6 +99,9 @@ function loadAllUsers() {
     
     // Also check for standalone Telegram IDs
     checkStandaloneTelegramIds();
+    
+    // 🆕 FIX: Validate and clean empty Telegram usernames
+    validateAndCleanTelegramUsernames();
     
     // ✅ FIXED: Only create demo users if NO real users found (checking for non-demo users)
     const realUsersCount = allUsers.filter(user => !user.id.startsWith('demo_')).length;
@@ -112,6 +121,73 @@ function loadAllUsers() {
     updateAdminStats();
 }
 
+// 🆕 FIX: Enhanced Telegram username validation and cleanup
+function validateAndCleanTelegramUsernames() {
+    console.log('🔧 Validating and cleaning Telegram usernames...');
+    
+    let fixedCount = 0;
+    
+    allUsers.forEach(user => {
+        if (!user.telegramUsername || 
+            user.telegramUsername === '' || 
+            user.telegramUsername === 'Not set' ||
+            user.telegramUsername.trim() === '') {
+            
+            // Try to find the real Telegram username from other sources
+            const realUsername = findRealTelegramUsername(user.id);
+            if (realUsername && realUsername !== '' && realUsername !== 'Not set') {
+                user.telegramUsername = realUsername;
+                fixedCount++;
+                console.log('✅ Fixed empty Telegram username for user:', user.id, '->', realUsername);
+            } else {
+                // Remove users with empty Telegram usernames
+                console.log('🗑️ Removing user with empty Telegram username:', user.id);
+            }
+        }
+    });
+    
+    // Remove users with empty Telegram usernames
+    allUsers = allUsers.filter(user => 
+        user.telegramUsername && 
+        user.telegramUsername !== '' && 
+        user.telegramUsername !== 'Not set' &&
+        user.telegramUsername.trim() !== ''
+    );
+    
+    console.log(`✅ Fixed ${fixedCount} empty Telegram usernames`);
+    return fixedCount;
+}
+
+// 🆕 Find real Telegram username from localStorage
+function findRealTelegramUsername(userId) {
+    try {
+        // Check userData format
+        const userDataKey = `userData_${userId}`;
+        const userData = JSON.parse(localStorage.getItem(userDataKey));
+        if (userData && userData.telegramUsername && userData.telegramUsername !== 'Not set') {
+            return userData.telegramUsername;
+        }
+        
+        // Check miningState format
+        const miningStateKey = `miningState_${userId}`;
+        const miningState = JSON.parse(localStorage.getItem(miningStateKey));
+        if (miningState && miningState.telegramUsername && miningState.telegramUsername !== 'Not set') {
+            return miningState.telegramUsername;
+        }
+        
+        // Check direct Telegram storage
+        const directTelegram = localStorage.getItem('telegramUsername');
+        if (directTelegram && directTelegram !== 'Not set') {
+            return directTelegram;
+        }
+        
+        return null;
+    } catch (error) {
+        console.error('Error finding Telegram username:', error);
+        return null;
+    }
+}
+
 // 🆕 NEW FUNCTION: Check direct Telegram users from localStorage
 function checkDirectTelegramUsers() {
     console.log('🔍 Checking direct Telegram users...');
@@ -120,7 +196,8 @@ function checkDirectTelegramUsers() {
     const telegramUser = localStorage.getItem('telegramUsername');
     const userId = localStorage.getItem('userId');
     
-    if (telegramUser && telegramUser !== 'Not set' && telegramUser !== '') {
+    // 🆕 FIX: Validate Telegram username before adding
+    if (telegramUser && isValidTelegramUsername(telegramUser)) {
         console.log('🎉 DIRECT TELEGRAM USER FOUND:', telegramUser);
         
         // Check if already exists in allUsers
@@ -151,6 +228,8 @@ function checkDirectTelegramUsers() {
             allUsers.push(directUser);
             console.log('✅ Added direct Telegram user:', telegramUser);
         }
+    } else {
+        console.log('⚠️ Direct Telegram user found but invalid:', telegramUser);
     }
     
     return allUsers;
@@ -170,7 +249,7 @@ function checkTelegramProfileActivities() {
         
         // Process activities to find new users
         userActivities.forEach(activity => {
-            if (activity.telegramUsername && activity.telegramUsername !== 'Not set' && activity.telegramUsername !== '') {
+            if (activity.telegramUsername && isValidTelegramUsername(activity.telegramUsername)) {
                 // 🆕 FIX: Check if it's NOT a demo user
                 if (!activity.id.startsWith('demo_') && !activity.telegramUsername.startsWith('@demo')) {
                     const existingUser = allUsers.find(u => u.id === activity.id);
@@ -206,7 +285,7 @@ function checkTelegramProfileActivities() {
         adminNotifications.forEach(notification => {
             if (notification.event === 'user_created' && notification.data) {
                 const userData = notification.data;
-                if (userData.telegramUsername && userData.telegramUsername !== 'Not set' && userData.telegramUsername !== '') {
+                if (userData.telegramUsername && isValidTelegramUsername(userData.telegramUsername)) {
                     // 🆕 FIX: Check if it's NOT a demo user
                     if (!userData.id.startsWith('demo_') && !userData.telegramUsername.startsWith('@demo')) {
                         const existingUser = allUsers.find(u => u.id === userData.id);
@@ -281,7 +360,7 @@ function checkStandaloneTelegramIds() {
     try {
         // Check for telegramUsername key
         const telegramUsername = localStorage.getItem('telegramUsername');
-        if (telegramUsername && telegramUsername !== 'Not set' && telegramUsername !== '') {
+        if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
             const userId = localStorage.getItem('userId') || 'user_' + Date.now();
             
             // 🆕 FIX: Check if it's NOT a demo user
@@ -415,6 +494,30 @@ function extractUserData(key, data) {
         console.error('Error extracting user data:', error);
         return null;
     }
+}
+
+// 🆕 Validate Telegram username format
+function isValidTelegramUsername(username) {
+    if (!username || username === '' || username === 'Not set') {
+        return false;
+    }
+    
+    // Check if it's a valid Telegram username format
+    const cleanUsername = username.replace('@', '').trim();
+    
+    if (cleanUsername === '') {
+        return false;
+    }
+    
+    // Telegram username validation: 5-32 characters, contains only a-z, 0-9, and underscores
+    const telegramRegex = /^[a-zA-Z0-9_]{5,32}$/;
+    
+    // Also allow demo users for testing
+    if (username.startsWith('@demo') || username.startsWith('demo_')) {
+        return true;
+    }
+    
+    return telegramRegex.test(cleanUsername);
 }
 
 // Create demo users for testing with realistic Telegram usernames
@@ -1101,6 +1204,40 @@ function forceReloadAllData() {
     alert('✅ All data forcefully reloaded! Found ' + allUsers.length + ' users.');
 }
 
+// 🆕 FIX: Debug Telegram username issues
+function debugTelegramUsernames() {
+    console.log('🐛 DEBUG: Checking Telegram username issues...');
+    
+    // Check all Telegram-related storage
+    const telegramKeys = ['telegramUsername', 'userId', 'userPoints', 'miningLevel'];
+    
+    telegramKeys.forEach(key => {
+        const value = localStorage.getItem(key);
+        console.log(`📱 ${key}:`, value);
+    });
+    
+    // Check user data structures
+    const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
+    console.log('📊 UserData keys:', userDataKeys);
+    
+    userDataKeys.forEach(key => {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            console.log(`🔍 ${key}:`, {
+                telegram: data.telegramUsername,
+                points: data.userPoints,
+                level: data.miningLevel,
+                id: data.id
+            });
+        } catch (e) {
+            console.log(`❌ ${key}: Parse error`);
+        }
+    });
+    
+    // Show current allUsers array
+    console.log('👥 Current allUsers:', allUsers);
+}
+
 // Debug user data
 function debugUserData() {
     console.log('🐛 DEBUG: Checking ALL user data with Telegram profiles...');
@@ -1242,6 +1379,8 @@ function addDebugButtons() {
             <button class="btn btn-sm btn-primary" onclick="checkDataConsistency()" title="Check data consistency">🔍 Check Data</button>
             <button class="btn btn-sm btn-secondary" onclick="checkTelegramActivities()" title="Check Telegram activities">📱 Telegram Data</button>
             <button class="btn btn-sm btn-danger" onclick="cleanupGarbageKeys()" title="Cleanup garbage keys">🧹 Cleanup</button>
+            <button class="btn btn-sm btn-light" onclick="debugTelegramUsernames()" title="Debug Telegram usernames">📝 Debug Telegram</button>
+            <button class="btn btn-sm btn-dark" onclick="validateAndCleanTelegramUsernames()" title="Fix empty Telegram usernames">🔧 Fix Telegram</button>
         `;
         header.appendChild(debugDiv);
     }
@@ -1344,7 +1483,7 @@ function cleanupGarbageKeys() {
     let removedCount = 0;
     
     allKeys.forEach(key => {
-        // लंबी और invalid keys को हटाएं
+        // Remove long and invalid keys
         if (key.length > 50 || 
             key.includes('userData_userData') || 
             key.includes('default_default') ||
