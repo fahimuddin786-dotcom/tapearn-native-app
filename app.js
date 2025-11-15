@@ -136,7 +136,7 @@ function addTransaction(description, amount, type, category = "other") {
     saveMiningState();
 }
 
-// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM
+// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - ADMIN PANEL SYNC
 function captureTelegramId() {
     const savedTelegramId = getFromStorage('telegramUsername', '');
     const savedUserId = getFromStorage('userId', '');
@@ -151,8 +151,10 @@ function captureTelegramId() {
     } else {
         telegramUsername = savedTelegramId;
         console.log('✅ Telegram ID loaded:', telegramUsername);
-        // 🆕 Create user profile immediately
+        // 🆕 Create user profile immediately with ADMIN PANEL SYNC
         createUserProfileFromTelegram(savedTelegramId, userId);
+        // 🆕 Sync to Admin Panel format
+        syncToAdminPanel();
     }
 }
 
@@ -211,6 +213,9 @@ function createUserProfileFromTelegram(telegramId, userId) {
     
     // 🆕 Notify admin panel
     notifyAdminPanel('user_created', userProfileData);
+    
+    // 🆕 SYNC TO ADMIN PANEL
+    syncToAdminPanel();
 }
 
 function showTelegramIdModal() {
@@ -282,6 +287,9 @@ function saveTelegramId() {
     
     // Update UI
     updateUI();
+    
+    // 🆕 SYNC TO ADMIN PANEL
+    syncToAdminPanel();
 }
 
 // 🆕 NOTIFY ADMIN PANEL
@@ -338,6 +346,49 @@ function updateUserActivity() {
     }
     
     saveToStorage('userActivities', filteredActivities);
+}
+
+// 🆕 SYNC TO ADMIN PANEL - NEW FUNCTION
+function syncToAdminPanel() {
+    if (!telegramUsername || telegramUsername === 'Not set') {
+        console.log('⏭️ Skipping admin panel sync - no Telegram ID');
+        return;
+    }
+    
+    console.log('🔄 Syncing data to Admin Panel format...');
+    
+    // Create admin panel compatible data
+    const adminPanelData = {
+        id: userId,
+        telegramUsername: telegramUsername,
+        points: userPoints,
+        level: miningLevel,
+        miningStatus: isMining ? 'Active' : 'Inactive',
+        tasksCompleted: totalTasksCompleted,
+        joinDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        totalEarned: totalPointsEarned,
+        todayEarnings: todayEarnings,
+        miningSeconds: miningSeconds,
+        totalMiningHours: totalMiningHours,
+        speedLevel: speedLevel,
+        multiplierLevel: multiplierLevel,
+        loginStreak: loginStreak,
+        profileSource: 'app_sync',
+        isVerified: true
+    };
+    
+    // Save in formats that Admin Panel can read
+    saveToStorage(`userData_${userId}`, adminPanelData);
+    saveToStorage(`miningState_${userId}`, adminPanelData);
+    
+    // Also save in simple format for direct access
+    saveToStorage('currentUserData', adminPanelData);
+    
+    console.log('✅ Data synced to Admin Panel:', telegramUsername);
+    
+    // Update user activity
+    updateUserActivity();
 }
 
 function isValidTelegramUsername(username) {
@@ -485,6 +536,11 @@ function loadMiningState() {
     }
     
     updateUI();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON LOAD
+    setTimeout(() => {
+        syncToAdminPanel();
+    }, 2000);
 }
 
 // Save Complete State
@@ -562,6 +618,9 @@ function saveMiningState() {
     
     // 🆕 Update user activity
     updateUserActivity();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON EVERY SAVE
+    syncToAdminPanel();
 }
 
 // Check Daily Reset for Earnings
@@ -651,6 +710,9 @@ function updateUI() {
     
     // 🆕 Update user activity
     updateUserActivity();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON UI UPDATE
+    setTimeout(syncToAdminPanel, 1000);
 }
 
 // Update Level UI
@@ -805,6 +867,9 @@ function toggleMining() {
     } else {
         startMining();
     }
+    
+    // 🆕 SYNC TO ADMIN PANEL ON MINING ACTION
+    syncToAdminPanel();
 }
 
 // Start Mining
@@ -844,6 +909,9 @@ function startMining() {
             
             console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining!`);
             updateUI();
+            
+            // 🆕 SYNC TO ADMIN PANEL ON POINTS EARN
+            syncToAdminPanel();
         }
         
         if (currentHour > lastHourCheck) {
@@ -905,6 +973,9 @@ function upgradeSpeed() {
         
         saveMiningState();
         updateUI();
+        
+        // 🆕 SYNC TO ADMIN PANEL ON UPGRADE
+        syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for speed upgrade!', 'warning');
     }
@@ -925,6 +996,9 @@ function upgradeMultiplier() {
         
         saveMiningState();
         updateUI();
+        
+        // 🆕 SYNC TO ADMIN PANEL ON UPGRADE
+        syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for multiplier upgrade!', 'warning');
     }
@@ -946,6 +1020,9 @@ function upgradeLevel() {
         
         saveMiningState();
         updateUI();
+        
+        // 🆕 SYNC TO ADMIN PANEL ON UPGRADE
+        syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for level upgrade!', 'warning');
     }
@@ -970,6 +1047,9 @@ function activateTurbo() {
         startTurboCountdown();
         saveMiningState();
         updateUI();
+        
+        // 🆕 SYNC TO ADMIN PANEL ON TURBO
+        syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for turbo boost!', 'warning');
     }
@@ -987,6 +1067,9 @@ function startTurboCountdown() {
             showNotification('🔄 Turbo mode ended. Points back to normal rate.', 'info');
             saveMiningState();
             updateUI();
+            
+            // 🆕 SYNC TO ADMIN PANEL ON TURBO END
+            syncToAdminPanel();
         }
     }, 1000);
 }
@@ -1014,6 +1097,9 @@ function claimDailyBonus() {
     
     saveMiningState();
     updateUI();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON BONUS
+    syncToAdminPanel();
 }
 
 function claimHourlyBonus() {
@@ -1037,6 +1123,9 @@ function claimHourlyBonus() {
     
     saveMiningState();
     updateUI();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON BONUS
+    syncToAdminPanel();
 }
 
 function claimStreakBonus() {
@@ -1053,6 +1142,9 @@ function claimStreakBonus() {
     
     saveMiningState();
     updateUI();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON BONUS
+    syncToAdminPanel();
 }
 
 function claimBoost() {
@@ -1069,6 +1161,9 @@ function claimBoost() {
     
     saveMiningState();
     updateUI();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON BOOST
+    syncToAdminPanel();
 }
 
 // Tab Switching Function
@@ -1205,6 +1300,9 @@ function completeVideoWatch() {
     }
     
     currentVideoData = null;
+    
+    // 🆕 SYNC TO ADMIN PANEL ON VIDEO COMPLETION
+    syncToAdminPanel();
 }
 
 // Points Claim Popup
@@ -1922,6 +2020,9 @@ function completeFollowTask(taskId, points, username, platform) {
     updateUI();
     saveMiningState();
     
+    // 🆕 SYNC TO ADMIN PANEL ON TASK COMPLETION
+    syncToAdminPanel();
+    
     // Refresh current view
     const activeTab = document.querySelector('.platform-tab.active');
     if (activeTab) {
@@ -2081,6 +2182,10 @@ function claimTaskReward(taskId, points, title) {
     showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
     updateUI();
     saveMiningState();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON TASK REWARD
+    syncToAdminPanel();
+    
     showDailyTasksSection();
 }
 
@@ -2301,6 +2406,10 @@ function completeSocialTask(taskId, points, title, platform) {
     showNotification(`✅ +${points} Points! "${title}" completed!`, 'success');
     updateUI();
     saveMiningState();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON SOCIAL TASK
+    syncToAdminPanel();
+    
     showSocialTasksSection();
 }
 
@@ -2500,6 +2609,10 @@ function redeemReward(rewardId, cost, rewardName) {
     showNotification(`🎉 Congratulations! You redeemed ${rewardName}`, 'success');
     updateUI();
     saveMiningState();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON REWARD REDEMPTION
+    syncToAdminPanel();
+    
     showCashier();
 }
 
@@ -2643,6 +2756,10 @@ function addReferral() {
     showNotification('🎉 +50 Points! New referral added!', 'success');
     updateUI();
     saveMiningState();
+    
+    // 🆕 SYNC TO ADMIN PANEL ON REFERRAL
+    syncToAdminPanel();
+    
     showReferralSystem();
 }
 
@@ -2979,6 +3096,9 @@ function completeTask(taskId, points, taskName) {
     saveMiningState();
     updateUI();
     
+    // 🆕 SYNC TO ADMIN PANEL ON TASK COMPLETION
+    syncToAdminPanel();
+    
     showNotification(`✅ +${points} Points! ${taskName}`, 'success');
     
     // Refresh the current section to update task states
@@ -3239,4 +3359,11 @@ document.addEventListener('DOMContentLoaded', function() {
     setInterval(() => {
         checkDailyEarningsReset();
     }, 3600000);
+    
+    // 🆕 Auto-sync to Admin Panel every 30 seconds
+    setInterval(() => {
+        if (telegramUsername && telegramUsername !== 'Not set') {
+            syncToAdminPanel();
+        }
+    }, 30000);
 });
