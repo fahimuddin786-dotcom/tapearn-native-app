@@ -1285,27 +1285,46 @@ function claimBoost() {
     syncToAdminPanel();
 }
 
-// Tab Switching Function
+// Tab Switching Function - FIXED
 function switchTab(tabName) {
+    // Hide all content pages
     document.querySelectorAll('.content-page').forEach(page => {
         page.classList.remove('active');
     });
     
+    // Remove active class from all nav buttons
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
     });
     
-    document.getElementById(tabName + 'Content').classList.add('active');
+    // Show the selected content page
+    const contentPage = document.getElementById(tabName + 'Content');
+    if (contentPage) {
+        contentPage.classList.add('active');
+    }
     
-    // Set active nav button based on tab name
+    // Set active nav button
+    const navButtons = document.querySelectorAll('.nav-btn');
     if (tabName === 'mining') {
-        document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
+        navButtons[0].classList.add('active');
     } else if (tabName === 'earn') {
-        document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
+        navButtons[1].classList.add('active');
+        // Initialize Earn section if empty
+        if (document.getElementById('earnAppContent').innerHTML.trim() === '') {
+            showHomePage();
+        }
     } else if (tabName === 'tasks') {
-        document.querySelector('.nav-btn:nth-child(3)').classList.add('active');
+        navButtons[2].classList.add('active');
+        // Initialize Tasks section if empty
+        if (document.getElementById('tasksAppContent').innerHTML.trim() === '') {
+            showTasksHomePage();
+        }
     } else if (tabName === 'profile') {
-        document.querySelector('.nav-btn:nth-child(4)').classList.add('active');
+        navButtons[3].classList.add('active');
+        // Initialize Profile section if empty
+        if (document.getElementById('profileAppContent').innerHTML.trim() === '') {
+            showProfileHomePage();
+        }
     }
     
     updateUI();
