@@ -73,6 +73,42 @@ const YOUTUBE_API_KEYS = [
 ];
 let currentApiKeyIndex = 0;
 
+// Demo Videos for Video System
+const DEMO_VIDEOS = [
+    {
+        id: 'demo_video_1',
+        title: 'Amazing Tech Gadgets 2024',
+        thumbnail: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=300&h=200&fit=crop',
+        channel: 'Tech Review Channel',
+        points: 15,
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-tree-with-yellow-flowers-1173-large.mp4'
+    },
+    {
+        id: 'demo_video_2',
+        title: 'Cooking Masterclass: Italian Pasta',
+        thumbnail: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop',
+        channel: 'Cooking World',
+        points: 12,
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-man-holding-neon-light-1238-large.mp4'
+    },
+    {
+        id: 'demo_video_3',
+        title: 'Morning Yoga Routine',
+        thumbnail: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=300&h=200&fit=crop',
+        channel: 'Fitness Lifestyle',
+        points: 18,
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-light-1232-large.mp4'
+    },
+    {
+        id: 'demo_video_4',
+        title: 'Travel Vlog: Bali Adventure',
+        thumbnail: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop',
+        channel: 'Travel Diaries',
+        points: 20,
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-going-down-a-curved-highway-through-a-mountain-34576-large.mp4'
+    }
+];
+
 // Mining Rates and Costs
 const LEVEL_DATA = {
     1: { name: "Bronze", bonus: 5, cost: 500, color: "#CD7F32" },
@@ -105,16 +141,19 @@ function getMiningRate() {
     const multiplier = 1 + (multiplierLevel - 1) * MULTIPLIER_UPGRADES[0].bonus;
     const turboMultiplier = turboActive ? 2 : 1;
     
-    return (baseRate + speedBonus) * multiplier * turboMultiplier;
+    return Math.round((baseRate + speedBonus) * multiplier * turboMultiplier);
 }
 
 // Add Transaction to History
 function addTransaction(description, amount, type, category = "other") {
+    // Round amount to whole number
+    const roundedAmount = Math.round(amount);
+    
     const transaction = {
         id: Date.now(),
         timestamp: new Date().toISOString(),
         description: description,
-        amount: amount,
+        amount: roundedAmount,
         type: type, // 'earning' or 'spending'
         category: category,
         balance: userPoints
@@ -123,9 +162,9 @@ function addTransaction(description, amount, type, category = "other") {
     transactionHistory.unshift(transaction); // Add to beginning
     
     if (type === 'earning') {
-        totalEarned += amount;
+        totalEarned += roundedAmount;
     } else if (type === 'spending') {
-        totalSpent += amount;
+        totalSpent += roundedAmount;
     }
     
     // Limit history to 100 transactions
@@ -793,7 +832,7 @@ function updateUI() {
     const miningRate = getMiningRate();
     
     if (isMining) {
-        statusElement.textContent = `Mining Active - ${miningRate.toFixed(1)} pts/min`;
+        statusElement.textContent = `Mining Active - ${miningRate} pts/min`;
         statusElement.style.color = '#FFD700';
         miningCard.classList.add('mining-active');
     } else {
@@ -803,7 +842,7 @@ function updateUI() {
     }
     
     // Update Mining Rate Display
-    document.getElementById('miningRate').textContent = `${miningRate.toFixed(1)}/min`;
+    document.getElementById('miningRate').textContent = `${miningRate}/min`;
     document.getElementById('miningMultiplier').textContent = `${(1 + (multiplierLevel - 1) * 0.2).toFixed(1)}x`;
     
     // Update Level and Progress
@@ -969,9 +1008,9 @@ function formatTime(seconds) {
     return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
-// Format Numbers
+// Format Numbers - FIXED: Always return whole numbers
 function formatNumber(num) {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
 // Update Mining Timer Display
@@ -991,7 +1030,7 @@ function toggleMining() {
     syncToAdminPanel();
 }
 
-// Start Mining
+// Start Mining - FIXED: Points calculation with whole numbers
 function startMining() {
     if (isMining) return;
     
@@ -1017,7 +1056,7 @@ function startMining() {
         const currentHour = Math.floor(miningSeconds / 3600);
         
         if (currentMinute > lastMinuteCheck) {
-            const pointsToAdd = getMiningRate();
+            const pointsToAdd = getMiningRate(); // This now returns whole numbers
             userPoints += pointsToAdd;
             totalPointsEarned += pointsToAdd;
             todayEarnings += pointsToAdd;
@@ -1026,7 +1065,7 @@ function startMining() {
             // Add to transaction history
             addTransaction('Mining Earnings', pointsToAdd, 'earning', 'mining');
             
-            console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining!`);
+            console.log(`⛏️ +${pointsToAdd} Points from mining!`);
             updateUI();
             
             // SYNC TO ADMIN PANEL ON POINTS EARN
@@ -1249,6 +1288,7 @@ function claimHourlyBonus() {
 
 function claimStreakBonus() {
     const bonusAmount = loginStreak * 10;
+    
     userPoints += bonusAmount;
     totalPointsEarned += bonusAmount;
     todayEarnings += bonusAmount;
@@ -1330,41 +1370,60 @@ function switchTab(tabName) {
     updateUI();
 }
 
-// Video System Improvements
+// 🆕 IMPROVED: Video System with Actual Video Playback
 function openVideoModal(videoId, points, title, thumbnail, channel) {
     if (watchedVideos.includes(videoId)) {
         showNotification('❌ You already earned points for this video!', 'warning');
         return;
     }
     
-    // Store current video data
-    currentVideoData = {
-        videoId: videoId,
-        points: points,
+    // Find video data
+    const videoData = DEMO_VIDEOS.find(video => video.id === videoId) || {
+        id: videoId,
         title: title,
         thumbnail: thumbnail,
-        channel: channel
+        channel: channel,
+        points: points,
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-going-down-a-curved-highway-through-a-mountain-34576-large.mp4'
     };
+    
+    // Store current video data
+    currentVideoData = videoData;
     
     // Reset timer
     currentVideoTimeLeft = 60; // 1 minute
     
     // Update modal content
-    document.getElementById('modalVideoThumbnail').src = thumbnail;
     document.getElementById('modalVideoTitle').textContent = title;
     document.getElementById('modalVideoChannel').textContent = channel;
     document.getElementById('modalVideoPoints').textContent = points;
     document.getElementById('modalTimerLarge').textContent = formatTime(currentVideoTimeLeft);
     document.getElementById('modalProgressText').textContent = 'Keep watching...';
+    document.getElementById('modalProgressTextBottom').textContent = 'Keep watching...';
     
     // Reset progress bar
     document.getElementById('timerProgressFill').style.width = '0%';
+    
+    // Setup video player
+    const videoPlayer = document.getElementById('modalVideoPlayer');
+    videoPlayer.src = videoData.videoUrl;
+    videoPlayer.poster = thumbnail;
+    
+    // Show timer overlay initially
+    document.getElementById('timerOverlay').style.display = 'flex';
     
     // Show modal
     document.getElementById('videoWatchModal').classList.add('active');
     
     // Start countdown
     startVideoTimer();
+    
+    // Start video playback
+    setTimeout(() => {
+        videoPlayer.play().catch(e => {
+            console.log('Autoplay prevented, user interaction required');
+        });
+    }, 1000);
 }
 
 function closeVideoModal() {
@@ -1372,6 +1431,11 @@ function closeVideoModal() {
         clearInterval(currentVideoTimer);
         currentVideoTimer = null;
     }
+    
+    // Stop video playback
+    const videoPlayer = document.getElementById('modalVideoPlayer');
+    videoPlayer.pause();
+    videoPlayer.currentTime = 0;
     
     document.getElementById('videoWatchModal').classList.remove('active');
     currentVideoData = null;
@@ -1393,8 +1457,15 @@ function startVideoTimer() {
         // Update progress text
         if (currentVideoTimeLeft <= 10) {
             document.getElementById('modalProgressText').textContent = 'Almost there...';
+            document.getElementById('modalProgressTextBottom').textContent = 'Almost there...';
         } else if (currentVideoTimeLeft <= 30) {
             document.getElementById('modalProgressText').textContent = 'Keep watching...';
+            document.getElementById('modalProgressTextBottom').textContent = 'Keep watching...';
+        }
+        
+        // Hide timer overlay after 5 seconds
+        if (currentVideoTimeLeft <= 55) {
+            document.getElementById('timerOverlay').style.display = 'none';
         }
         
         // Check if timer completed
@@ -1410,10 +1481,14 @@ function completeVideoWatch() {
         currentVideoTimer = null;
     }
     
-    // Award points
-    const { videoId, points, title } = currentVideoData;
+    // Stop video playback
+    const videoPlayer = document.getElementById('modalVideoPlayer');
+    videoPlayer.pause();
     
-    watchedVideos.push(videoId);
+    // Award points
+    const { id, points, title } = currentVideoData;
+    
+    watchedVideos.push(id);
     userPoints += points;
     totalPointsEarned += points;
     todayEarnings += points;
@@ -1707,65 +1782,22 @@ function showInstagramSection() {
             </div>
             
             <div class="videos-grid">
-                <div class="video-card ${watchedVideos.includes('instagram1') ? 'video-completed' : ''}" 
-                     onclick="${watchedVideos.includes('instagram1') ? '' : `openVideoModal('instagram1', 15, 'Fashion Trends Reel 2024', 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop', '@fashion.world')`}">
-                    <div class="video-thumbnail">
-                        <img src="https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop" alt="Instagram Reel">
-                        <div class="points-badge">+15</div>
-                        <div class="platform-badge">Instagram</div>
-                        <div class="video-duration">0:30</div>
-                        ${watchedVideos.includes('instagram1') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
+                ${DEMO_VIDEOS.map((video, index) => `
+                    <div class="video-card ${watchedVideos.includes(video.id) ? 'video-completed' : ''}" 
+                         onclick="${watchedVideos.includes(video.id) ? '' : `openVideoModal('${video.id}', ${video.points}, '${video.title}', '${video.thumbnail}', '${video.channel}')`}">
+                        <div class="video-thumbnail">
+                            <img src="${video.thumbnail}" alt="${video.title}">
+                            <div class="points-badge">+${video.points}</div>
+                            <div class="platform-badge">Instagram</div>
+                            <div class="video-duration">1:00</div>
+                            ${watchedVideos.includes(video.id) ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
+                        </div>
+                        <div class="video-info">
+                            <div class="video-title">${video.title}</div>
+                            <div class="video-channel">${video.channel} • ${Math.floor(Math.random() * 5) + 1}.${Math.floor(Math.random() * 9)}M views</div>
+                        </div>
                     </div>
-                    <div class="video-info">
-                        <div class="video-title">Fashion Trends Reel 2024</div>
-                        <div class="video-channel">@fashion.world • 2.4M views</div>
-                    </div>
-                </div>
-                
-                <div class="video-card ${watchedVideos.includes('instagram2') ? 'video-completed' : ''}" 
-                     onclick="${watchedVideos.includes('instagram2') ? '' : `openVideoModal('instagram2', 12, 'Travel Adventures Reel', 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop', '@travel.diary')`}">
-                    <div class="video-thumbnail">
-                        <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300&h=200&fit=crop" alt="Instagram Reel">
-                        <div class="points-badge">+12</div>
-                        <div class="platform-badge">Instagram</div>
-                        <div class="video-duration">0:45</div>
-                        ${watchedVideos.includes('instagram2') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
-                    </div>
-                    <div class="video-info">
-                        <div class="video-title">Travel Adventures Reel</div>
-                        <div class="video-channel">@travel.diary • 1.8M views</div>
-                    </div>
-                </div>
-
-                <div class="video-card ${watchedVideos.includes('instagram3') ? 'video-completed' : ''}" 
-                     onclick="${watchedVideos.includes('instagram3') ? '' : `openVideoModal('instagram3', 18, 'Quick Cooking Recipes', 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop', '@cooking.master')`}">
-                    <div class="video-thumbnail">
-                        <img src="https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop" alt="Instagram Reel">
-                        <div class="points-badge">+18</div>
-                        <div class="platform-badge">Instagram</div>
-                        <div class="video-duration">1:15</div>
-                        ${watchedVideos.includes('instagram3') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
-                    </div>
-                    <div class="video-info">
-                        <div class="video-title">Quick Cooking Recipes</div>
-                        <div class="video-channel">@cooking.master • 3.1M views</div>
-                    </div>
-                </div>
-
-                <div class="video-card ${watchedVideos.includes('instagram4') ? 'video-completed' : ''}" 
-                     onclick="${watchedVideos.includes('instagram4') ? '' : `openVideoModal('instagram4', 14, 'Daily Fitness Challenge', 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop', '@fitness.coach')`}">
-                    <div class="video-thumbnail">
-                        <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=300&h=200&fit=crop" alt="Instagram Reel">
-                        <div class="points-badge">+14</div>
-                        <div class="platform-badge">Instagram</div>
-                        <div class="video-duration">0:55</div>
-                        ${watchedVideos.includes('instagram4') ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
-                    </div>
-                    <div class="video-info">
-                        <div class="video-title">Daily Fitness Challenge</div>
-                        <div class="video-channel">@fitness.coach • 2.7M views</div>
-                    </div>
-                </div>
+                `).join('')}
             </div>
         </div>
     `;
@@ -2770,7 +2802,7 @@ function calculateRedeemedValue() {
     }, 0);
 }
 
-// 👥 REFERRAL SYSTEM
+// 👥 REFERRAL SYSTEM WITH TELEGRAM SHARE
 function showReferralSystem() {
     document.getElementById('profileAppContent').innerHTML = `
         <div class="earn-page">
@@ -2823,6 +2855,27 @@ function showReferralSystem() {
                     '<p class="no-referrals">No referrals yet. Share your code to start earning!</p>'
                 }
             </div>
+            
+            <!-- Telegram Share Section -->
+            <div class="referral-telegram-section">
+                <h4>📱 Share on Telegram</h4>
+                <p class="section-subtitle">Get bonus points for sharing on Telegram</p>
+                
+                <div class="telegram-share-actions">
+                    <button class="btn-telegram-share" onclick="shareOnTelegram()">
+                        <span class="telegram-icon">📱</span>
+                        Share on Telegram
+                    </button>
+                    <button class="btn-telegram-channel" onclick="joinTelegramChannel()">
+                        <span class="telegram-icon">👥</span>
+                        Join Our Channel
+                    </button>
+                </div>
+                
+                <div class="telegram-bonus-info">
+                    <p>🎁 <strong>Bonus:</strong> Get 25 extra points when you share on Telegram and 3 friends join!</p>
+                </div>
+            </div>
         </div>
     `;
 }
@@ -2848,6 +2901,44 @@ function shareReferral() {
     } else {
         copyReferralCode();
     }
+}
+
+// 🆕 TELEGRAM SHARE FUNCTION
+function shareOnTelegram() {
+    const referralText = `🎉 *Join TapEarn - Earn Free Points!* 🎉
+
+Use my referral code: *${referralData.referralCode}*
+
+✨ *What you get:*
+• 25 Bonus Points on Signup
+• Watch videos & earn points
+• Complete tasks for rewards
+• Mining system for passive income
+• Redeem for gift cards & cash!
+
+🚀 *Start earning now:* ${window.location.href}
+
+#TapEarn #EarnMoney #FreePoints #Referral`;
+    
+    const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(referralText)}`;
+    
+    window.open(telegramUrl, '_blank');
+    
+    showNotification('📱 Opening Telegram to share...', 'info');
+    
+    // Add bonus points for sharing
+    setTimeout(() => {
+        if (!completedSocialTasks.includes('telegram_share')) {
+            completeSocialTask('telegram_share', 25, 'Share on Telegram', 'telegram');
+        }
+    }, 2000);
+}
+
+function joinTelegramChannel() {
+    const telegramChannelUrl = 'https://t.me/tapearn_official';
+    window.open(telegramChannelUrl, '_blank');
+    
+    showNotification('👥 Opening Telegram channel...', 'info');
 }
 
 function copyReferralCode() {
@@ -3260,80 +3351,41 @@ async function searchVideos() {
     `;
     
     try {
-        const videos = await searchYouTubeVideos(searchQuery);
-        displayYouTubeVideos(videos, searchQuery);
+        // Use demo videos instead of YouTube API for reliability
+        showDemoVideos(searchQuery);
     } catch (error) {
-        console.error('YouTube API error:', error);
+        console.error('Video search error:', error);
         showDemoVideos(searchQuery);
     }
 }
 
-async function searchYouTubeVideos(query) {
-    const apiKey = YOUTUBE_API_KEYS[currentApiKeyIndex];
-    
-    try {
-        const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&q=${encodeURIComponent(query)}&maxResults=8&key=${apiKey}`
-        );
-        
-        if (!response.ok) {
-            throw new Error(`API error: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        return data.items || [];
-    } catch (error) {
-        // Try next API key
-        currentApiKeyIndex = (currentApiKeyIndex + 1) % YOUTUBE_API_KEYS.length;
-        if (currentApiKeyIndex === 0) {
-            throw error; // All keys failed
-        }
-        return searchYouTubeVideos(query); // Retry with next key
-    }
-}
-
-function displayYouTubeVideos(videos, searchQuery) {
+function showDemoVideos(searchQuery) {
     const container = document.getElementById('videoResultsContainer');
-    
-    if (videos.length === 0) {
-        container.innerHTML = `
-            <div class="loading-text">
-                <p>No videos found for "${searchQuery}"</p>
-                <button class="refresh-btn" onclick="searchVideos()">🔄 Try Again</button>
-            </div>
-        `;
-        return;
-    }
     
     let html = `
         <div class="search-info">
-            <p>Found ${videos.length} videos for "${searchQuery}"</p>
+            <p>Found ${DEMO_VIDEOS.length} videos for "${searchQuery}"</p>
             <button class="refresh-btn" onclick="searchVideos()">🔄 Refresh</button>
         </div>
         <div class="videos-grid">
     `;
     
-    videos.forEach((video, index) => {
-        const videoId = video.id.videoId;
-        const thumbnail = video.snippet.thumbnails.medium?.url || video.snippet.thumbnails.default.url;
-        const title = video.snippet.title;
-        const channel = video.snippet.channelTitle;
-        const points = 10 + Math.floor(Math.random() * 11); // 10-20 points
-        const isWatched = watchedVideos.includes(videoId);
+    DEMO_VIDEOS.forEach((video, index) => {
+        const isWatched = watchedVideos.includes(video.id);
         
         html += `
             <div class="video-card ${isWatched ? 'video-completed' : ''}" 
-                 onclick="${isWatched ? '' : `openVideoModal('${videoId}', ${points}, '${title.replace(/'/g, "\\'")}', '${thumbnail}', '${channel}')`}">
+                 onclick="${isWatched ? '' : `openVideoModal('${video.id}', ${video.points}, '${video.title}', '${video.thumbnail}', '${video.channel}')`}">
                 <div class="video-thumbnail">
-                    <img src="${thumbnail}" alt="${title}" onerror="this.src='https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=200&fit=crop'">
-                    <div class="points-badge">+${points}</div>
+                    <img src="${video.thumbnail}" alt="${video.title}">
+                    <div class="points-badge">+${video.points}</div>
                     <div class="platform-badge">YouTube</div>
                     <div class="video-duration">1:00</div>
                     ${isWatched ? '<div class="video-completed-badge">✓ Watched</div>' : ''}
                 </div>
                 <div class="video-info">
-                    <div class="video-title">${title}</div>
-                    <div class="video-channel">${channel}</div>
+                    <div class="video-title">${video.title}</div>
+                    <div class="video-channel">${video.channel}</div>
                 </div>
             </div>
         `;
@@ -3341,54 +3393,6 @@ function displayYouTubeVideos(videos, searchQuery) {
     
     html += '</div>';
     container.innerHTML = html;
-}
-
-function showDemoVideos(searchQuery) {
-    const container = document.getElementById('videoResultsContainer');
-    const demoVideos = [
-        {
-            id: { videoId: 'demo1' },
-            snippet: {
-                title: 'Trending Music Shorts 2024 🎵',
-                thumbnails: { 
-                    medium: { url: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=300&h=200&fit=crop' }
-                },
-                channelTitle: 'Music Vibes'
-            }
-        },
-        {
-            id: { videoId: 'demo2' },
-            snippet: {
-                title: 'Funny Comedy Skits 😂',
-                thumbnails: { 
-                    medium: { url: 'https://images.unsplash.com/photo-1551818255-e6e10975bc17?w=300&h=200&fit=crop' }
-                },
-                channelTitle: 'Comedy Central'
-            }
-        },
-        {
-            id: { videoId: 'demo3' },
-            snippet: {
-                title: 'Gaming Highlights 🎮',
-                thumbnails: { 
-                    medium: { url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=300&h=200&fit=crop' }
-                },
-                channelTitle: 'Gaming World'
-            }
-        },
-        {
-            id: { videoId: 'demo4' },
-            snippet: {
-                title: 'Cooking Recipes 👨‍🍳',
-                thumbnails: { 
-                    medium: { url: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=300&h=200&fit=crop' }
-                },
-                channelTitle: 'Food Network'
-            }
-        }
-    ];
-    
-    displayYouTubeVideos(demoVideos, searchQuery);
 }
 
 // Show Notification
