@@ -136,34 +136,82 @@ function addTransaction(description, amount, type, category = "other") {
     saveMiningState();
 }
 
-// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - ADMIN PANEL SYNC WITH DUPLICATE CHECK
+// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - ONLY FOR EXISTING USERS
 function captureTelegramId() {
     const savedTelegramId = getFromStorage('telegramUsername', '');
     const savedUserId = getFromStorage('userId', '');
     
     userId = savedUserId || generateUserId();
     
-    if (!savedTelegramId || savedTelegramId === 'Not set' || savedTelegramId === '') {
-        // Show modal to capture Telegram ID
+    // If user already has a valid Telegram ID saved
+    if (savedTelegramId && isValidTelegramUsername(savedTelegramId)) {
+        telegramUsername = savedTelegramId;
+        console.log('✅ Existing user detected, auto-login:', telegramUsername);
+        
+        // Check if user exists in system
+        if (checkIfUserExists(savedTelegramId)) {
+            // Show popup for existing users
+            showExistingUserPopup(savedTelegramId);
+        } else {
+            // Create profile for existing Telegram ID
+            createUserProfileFromTelegram(savedTelegramId, userId);
+        }
+    } else {
+        // New user - show modal to capture Telegram ID
         setTimeout(() => {
             showTelegramIdModal();
         }, 1500);
-    } else {
-        telegramUsername = savedTelegramId;
-        console.log('✅ Telegram ID loaded:', telegramUsername);
-        
-        // 🆕 Check if user already exists before creating profile
-        if (!checkIfUserExists(savedTelegramId)) {
-            // 🆕 Create user profile immediately with ADMIN PANEL SYNC
-            createUserProfileFromTelegram(savedTelegramId, userId);
-            // 🆕 Sync to Admin Panel format
-            syncToAdminPanel();
-        } else {
-            console.log('ℹ️ User already exists:', savedTelegramId);
-            // Just sync existing data
-            syncToAdminPanel();
-        }
     }
+}
+
+// 🆕 NEW: Show popup for existing users
+function showExistingUserPopup(telegramId) {
+    console.log('🔄 Existing user detected, showing welcome back popup:', telegramId);
+    
+    // Create and show existing user popup
+    const existingUserPopup = document.createElement('div');
+    existingUserPopup.className = 'modal active';
+    existingUserPopup.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>👋 Welcome Back!</h3>
+            </div>
+            <div class="video-player">
+                <div style="text-align: center; padding: 20px;">
+                    <div style="font-size: 48px; margin-bottom: 15px;">🎉</div>
+                    <h3 style="color: #4CAF50; margin-bottom: 10px;">Account Found!</h3>
+                    <p style="margin-bottom: 20px; opacity: 0.8;">
+                        We found your existing account with Telegram ID:<br>
+                        <strong style="color: #FFD700; font-size: 18px;">${telegramId}</strong>
+                    </p>
+                    <div style="background: rgba(76,175,80,0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(76,175,80,0.3); margin: 15px 0;">
+                        <p style="font-size: 12px; margin: 0; color: #4CAF50;">
+                            ✅ Your account has been automatically logged in<br>
+                            ✅ All your points and progress are restored<br>
+                            ✅ Continue earning right where you left off!
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-success" onclick="closeExistingUserPopup()" style="width: 100%;">
+                    🚀 Continue to TapEarn
+                </button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(existingUserPopup);
+}
+
+// 🆕 NEW: Close existing user popup
+function closeExistingUserPopup() {
+    const popup = document.querySelector('.modal.active');
+    if (popup && popup.innerHTML.includes('Welcome Back')) {
+        popup.remove();
+    }
+    // Sync to admin panel after login
+    syncToAdminPanel();
 }
 
 // 🆕 NEW: Check if user already exists with this Telegram ID
@@ -208,16 +256,9 @@ function checkIfUserExists(telegramId) {
     }
 }
 
-// ✅ FIXED: Enhanced user profile creation for admin panel with duplicate prevention
+// 🆕 UPDATED: Enhanced user profile creation for admin panel
 function createUserProfileFromTelegram(telegramId, userId) {
     console.log('🆕 Creating user profile from Telegram:', telegramId);
-    
-    // 🆕 DOUBLE CHECK: Ensure user doesn't already exist
-    if (checkIfUserExists(telegramId)) {
-        console.log('⚠️ User already exists, skipping profile creation:', telegramId);
-        showNotification('ℹ️ Welcome back! Your existing account has been loaded.', 'info');
-        return;
-    }
     
     const userProfileData = {
         id: userId,
@@ -239,7 +280,7 @@ function createUserProfileFromTelegram(telegramId, userId) {
         isVerified: true
     };
     
-    // 🆕 IMPROVED: Save in multiple formats for better admin panel detection
+    // Save in multiple formats for better admin panel detection
     saveToStorage(`userData_${userId}`, userProfileData);
     
     // Also save in miningState format for compatibility
@@ -268,19 +309,19 @@ function createUserProfileFromTelegram(telegramId, userId) {
     
     console.log('✅ User profile created for admin panel:', telegramId);
     
-    // 🆕 Notify admin panel
+    // Notify admin panel
     notifyAdminPanel('user_created', userProfileData);
     
-    // 🆕 SYNC TO ADMIN PANEL
+    // SYNC TO ADMIN PANEL
     syncToAdminPanel();
-    
-    showNotification('✅ Account created successfully!', 'success');
 }
 
 function showTelegramIdModal() {
-    // Don't show if already shown and closed
-    const telegramModalShown = getFromStorage('telegramModalShown', false);
-    if (telegramModalShown) return;
+    // Don't show if user already has valid Telegram ID
+    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+        console.log('ℹ️ User already has Telegram ID, skipping modal');
+        return;
+    }
     
     document.getElementById('telegramIdModal').classList.add('active');
     // Focus on input field
@@ -326,7 +367,7 @@ function saveTelegramId() {
     saveToStorage('userId', userId);
     saveToStorage('telegramModalShown', true);
     
-    // 🆕 Create complete user profile
+    // Create complete user profile
     createUserProfileFromTelegram(formattedTelegramId, userId);
     
     // Also update referral data
@@ -355,7 +396,7 @@ function saveTelegramId() {
     // Update UI
     updateUI();
     
-    // 🆕 SYNC TO ADMIN PANEL
+    // SYNC TO ADMIN PANEL
     syncToAdminPanel();
 }
 
@@ -415,7 +456,7 @@ function updateUserActivity() {
     saveToStorage('userActivities', filteredActivities);
 }
 
-// 🆕 SYNC TO ADMIN PANEL - NEW FUNCTION
+// 🆕 SYNC TO ADMIN PANEL
 function syncToAdminPanel() {
     if (!telegramUsername || telegramUsername === 'Not set' || telegramUsername === '' || !isValidTelegramUsername(telegramUsername)) {
         console.log('⏭️ Skipping admin panel sync - no valid Telegram ID');
@@ -593,15 +634,6 @@ function loadMiningState() {
     telegramUsername = getFromStorage('telegramUsername', '');
     userId = getFromStorage('userId', generateUserId());
     
-    // 🆕 Create user profile if Telegram ID exists and is valid AND doesn't already exist
-    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
-        if (!checkIfUserExists(telegramUsername)) {
-            createUserProfileFromTelegram(telegramUsername, userId);
-        } else {
-            console.log('ℹ️ Existing user detected, loading data...');
-        }
-    }
-    
     // Check daily reset for earnings
     checkDailyEarningsReset();
     
@@ -622,7 +654,7 @@ function loadMiningState() {
     
     updateUI();
     
-    // 🆕 SYNC TO ADMIN PANEL ON LOAD
+    // SYNC TO ADMIN PANEL ON LOAD
     setTimeout(() => {
         syncToAdminPanel();
     }, 2000);
@@ -696,17 +728,17 @@ function saveMiningState() {
     saveToStorage('telegramUsername', telegramUsername);
     saveToStorage('userId', userId);
     
-    // 🆕 Update user profile for admin panel
+    // Update user profile for admin panel
     if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
         if (!checkIfUserExists(telegramUsername)) {
             createUserProfileFromTelegram(telegramUsername, userId);
         }
     }
     
-    // 🆕 Update user activity
+    // Update user activity
     updateUserActivity();
     
-    // 🆕 SYNC TO ADMIN PANEL ON EVERY SAVE
+    // SYNC TO ADMIN PANEL ON EVERY SAVE
     syncToAdminPanel();
 }
 
@@ -795,10 +827,10 @@ function updateUI() {
     // Update Profile UI
     updateProfileUI();
     
-    // 🆕 Update user activity
+    // Update user activity
     updateUserActivity();
     
-    // 🆕 SYNC TO ADMIN PANEL ON UI UPDATE
+    // SYNC TO ADMIN PANEL ON UI UPDATE
     setTimeout(syncToAdminPanel, 1000);
 }
 
@@ -909,7 +941,7 @@ function updateTasksUI() {
 function updateProfileUI() {
     const profileTelegramId = document.getElementById('profileTelegramId');
     
-    // 🆕 Display Telegram ID in profile
+    // Display Telegram ID in profile
     if (profileTelegramId) {
         if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
             profileTelegramId.textContent = telegramUsername;
@@ -955,7 +987,7 @@ function toggleMining() {
         startMining();
     }
     
-    // 🆕 SYNC TO ADMIN PANEL ON MINING ACTION
+    // SYNC TO ADMIN PANEL ON MINING ACTION
     syncToAdminPanel();
 }
 
@@ -997,7 +1029,7 @@ function startMining() {
             console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining!`);
             updateUI();
             
-            // 🆕 SYNC TO ADMIN PANEL ON POINTS EARN
+            // SYNC TO ADMIN PANEL ON POINTS EARN
             syncToAdminPanel();
         }
         
@@ -1061,7 +1093,7 @@ function upgradeSpeed() {
         saveMiningState();
         updateUI();
         
-        // 🆕 SYNC TO ADMIN PANEL ON UPGRADE
+        // SYNC TO ADMIN PANEL ON UPGRADE
         syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for speed upgrade!', 'warning');
@@ -1084,7 +1116,7 @@ function upgradeMultiplier() {
         saveMiningState();
         updateUI();
         
-        // 🆕 SYNC TO ADMIN PANEL ON UPGRADE
+        // SYNC TO ADMIN PANEL ON UPGRADE
         syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for multiplier upgrade!', 'warning');
@@ -1108,7 +1140,7 @@ function upgradeLevel() {
         saveMiningState();
         updateUI();
         
-        // 🆕 SYNC TO ADMIN PANEL ON UPGRADE
+        // SYNC TO ADMIN PANEL ON UPGRADE
         syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for level upgrade!', 'warning');
@@ -1135,7 +1167,7 @@ function activateTurbo() {
         saveMiningState();
         updateUI();
         
-        // 🆕 SYNC TO ADMIN PANEL ON TURBO
+        // SYNC TO ADMIN PANEL ON TURBO
         syncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for turbo boost!', 'warning');
@@ -1155,7 +1187,7 @@ function startTurboCountdown() {
             saveMiningState();
             updateUI();
             
-            // 🆕 SYNC TO ADMIN PANEL ON TURBO END
+            // SYNC TO ADMIN PANEL ON TURBO END
             syncToAdminPanel();
         }
     }, 1000);
@@ -1185,7 +1217,7 @@ function claimDailyBonus() {
     saveMiningState();
     updateUI();
     
-    // 🆕 SYNC TO ADMIN PANEL ON BONUS
+    // SYNC TO ADMIN PANEL ON BONUS
     syncToAdminPanel();
 }
 
@@ -1211,7 +1243,7 @@ function claimHourlyBonus() {
     saveMiningState();
     updateUI();
     
-    // 🆕 SYNC TO ADMIN PANEL ON BONUS
+    // SYNC TO ADMIN PANEL ON BONUS
     syncToAdminPanel();
 }
 
@@ -1230,7 +1262,7 @@ function claimStreakBonus() {
     saveMiningState();
     updateUI();
     
-    // 🆕 SYNC TO ADMIN PANEL ON BONUS
+    // SYNC TO ADMIN PANEL ON BONUS
     syncToAdminPanel();
 }
 
@@ -1249,7 +1281,7 @@ function claimBoost() {
     saveMiningState();
     updateUI();
     
-    // 🆕 SYNC TO ADMIN PANEL ON BOOST
+    // SYNC TO ADMIN PANEL ON BOOST
     syncToAdminPanel();
 }
 
@@ -1388,7 +1420,7 @@ function completeVideoWatch() {
     
     currentVideoData = null;
     
-    // 🆕 SYNC TO ADMIN PANEL ON VIDEO COMPLETION
+    // SYNC TO ADMIN PANEL ON VIDEO COMPLETION
     syncToAdminPanel();
 }
 
@@ -2107,7 +2139,7 @@ function completeFollowTask(taskId, points, username, platform) {
     updateUI();
     saveMiningState();
     
-    // 🆕 SYNC TO ADMIN PANEL ON TASK COMPLETION
+    // SYNC TO ADMIN PANEL ON TASK COMPLETION
     syncToAdminPanel();
     
     // Refresh current view
@@ -2270,7 +2302,7 @@ function claimTaskReward(taskId, points, title) {
     updateUI();
     saveMiningState();
     
-    // 🆕 SYNC TO ADMIN PANEL ON TASK REWARD
+    // SYNC TO ADMIN PANEL ON TASK REWARD
     syncToAdminPanel();
     
     showDailyTasksSection();
@@ -2494,7 +2526,7 @@ function completeSocialTask(taskId, points, title, platform) {
     updateUI();
     saveMiningState();
     
-    // 🆕 SYNC TO ADMIN PANEL ON SOCIAL TASK
+    // SYNC TO ADMIN PANEL ON SOCIAL TASK
     syncToAdminPanel();
     
     showSocialTasksSection();
@@ -2697,7 +2729,7 @@ function redeemReward(rewardId, cost, rewardName) {
     updateUI();
     saveMiningState();
     
-    // 🆕 SYNC TO ADMIN PANEL ON REWARD REDEMPTION
+    // SYNC TO ADMIN PANEL ON REWARD REDEMPTION
     syncToAdminPanel();
     
     showCashier();
@@ -2844,7 +2876,7 @@ function addReferral() {
     updateUI();
     saveMiningState();
     
-    // 🆕 SYNC TO ADMIN PANEL ON REFERRAL
+    // SYNC TO ADMIN PANEL ON REFERRAL
     syncToAdminPanel();
     
     showReferralSystem();
@@ -3183,7 +3215,7 @@ function completeTask(taskId, points, taskName) {
     saveMiningState();
     updateUI();
     
-    // 🆕 SYNC TO ADMIN PANEL ON TASK COMPLETION
+    // SYNC TO ADMIN PANEL ON TASK COMPLETION
     syncToAdminPanel();
     
     showNotification(`✅ +${points} Points! ${taskName}`, 'success');
@@ -3447,7 +3479,7 @@ document.addEventListener('DOMContentLoaded', function() {
         checkDailyEarningsReset();
     }, 3600000);
     
-    // 🆕 Auto-sync to Admin Panel every 30 seconds
+    // Auto-sync to Admin Panel every 30 seconds
     setInterval(() => {
         if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
             syncToAdminPanel();
