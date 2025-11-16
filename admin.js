@@ -1317,6 +1317,66 @@ function deleteUser(userId) {
     }
 }
 
+// 🆕 NEW: Delete inactive users
+function deleteInactiveUsers() {
+    const inactiveUsers = allUsers.filter(user => user.miningStatus === 'Inactive');
+    
+    if (inactiveUsers.length === 0) {
+        alert('ℹ️ No inactive users found!');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${inactiveUsers.length} inactive users? This action cannot be undone!`)) {
+        let deletedCount = 0;
+        
+        inactiveUsers.forEach(user => {
+            deleteUser(user.id);
+            deletedCount++;
+        });
+        
+        console.log(`🗑️ Deleted ${deletedCount} inactive users`);
+        alert(`✅ ${deletedCount} inactive users deleted!`);
+    }
+}
+
+// 🆕 NEW: Delete duplicate users
+function deleteDuplicateUsers() {
+    const duplicates = findDuplicateUsers();
+    
+    if (duplicates.length === 0) {
+        alert('ℹ️ No duplicate users found!');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ${duplicates.length} duplicate users? This action cannot be undone!`)) {
+        let deletedCount = 0;
+        
+        duplicates.forEach(user => {
+            deleteUser(user.id);
+            deletedCount++;
+        });
+        
+        console.log(`🗑️ Deleted ${deletedCount} duplicate users`);
+        alert(`✅ ${deletedCount} duplicate users deleted!`);
+    }
+}
+
+// 🆕 NEW: Find duplicate users
+function findDuplicateUsers() {
+    const seen = new Set();
+    const duplicates = [];
+    
+    allUsers.forEach(user => {
+        if (seen.has(user.telegramUsername)) {
+            duplicates.push(user);
+        } else {
+            seen.add(user.telegramUsername);
+        }
+    });
+    
+    return duplicates;
+}
+
 // Show section
 function showSection(sectionId) {
     // Hide all sections
@@ -1587,6 +1647,8 @@ function addDebugButtons() {
             <button class="btn btn-sm btn-danger" onclick="cleanupGarbageKeys()" title="Cleanup garbage keys">🧹 Cleanup</button>
             <button class="btn btn-sm btn-light" onclick="debugTelegramUsernames()" title="Debug Telegram usernames">📝 Debug Telegram</button>
             <button class="btn btn-sm btn-dark" onclick="validateAndCleanTelegramUsernames()" title="Fix empty Telegram usernames">🔧 Fix Telegram</button>
+            <button class="btn btn-sm btn-danger" onclick="deleteInactiveUsers()" title="Delete all inactive users">🗑️ Delete Inactive</button>
+            <button class="btn btn-sm btn-warning" onclick="deleteDuplicateUsers()" title="Delete duplicate users">🔄 Delete Duplicates</button>
         `;
         header.appendChild(debugDiv);
     }
