@@ -136,7 +136,7 @@ function addTransaction(description, amount, type, category = "other") {
     saveMiningState();
 }
 
-// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - ADMIN PANEL SYNC
+// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - ADMIN PANEL SYNC WITH DUPLICATE CHECK
 function captureTelegramId() {
     const savedTelegramId = getFromStorage('telegramUsername', '');
     const savedUserId = getFromStorage('userId', '');
@@ -151,16 +151,73 @@ function captureTelegramId() {
     } else {
         telegramUsername = savedTelegramId;
         console.log('✅ Telegram ID loaded:', telegramUsername);
-        // 🆕 Create user profile immediately with ADMIN PANEL SYNC
-        createUserProfileFromTelegram(savedTelegramId, userId);
-        // 🆕 Sync to Admin Panel format
-        syncToAdminPanel();
+        
+        // 🆕 Check if user already exists before creating profile
+        if (!checkIfUserExists(savedTelegramId)) {
+            // 🆕 Create user profile immediately with ADMIN PANEL SYNC
+            createUserProfileFromTelegram(savedTelegramId, userId);
+            // 🆕 Sync to Admin Panel format
+            syncToAdminPanel();
+        } else {
+            console.log('ℹ️ User already exists:', savedTelegramId);
+            // Just sync existing data
+            syncToAdminPanel();
+        }
     }
 }
 
-// ✅ FIXED: Enhanced user profile creation for admin panel
+// 🆕 NEW: Check if user already exists with this Telegram ID
+function checkIfUserExists(telegramId) {
+    try {
+        // Check all userData entries in localStorage
+        const allKeys = Object.keys(localStorage);
+        
+        for (let key of allKeys) {
+            if (key.startsWith('userData_')) {
+                try {
+                    const userData = JSON.parse(localStorage.getItem(key));
+                    if (userData && userData.telegramUsername === telegramId) {
+                        console.log('✅ User already exists with Telegram ID:', telegramId);
+                        return true;
+                    }
+                } catch (e) {
+                    // Skip invalid entries
+                }
+            }
+        }
+        
+        // Check miningState entries
+        for (let key of allKeys) {
+            if (key.startsWith('miningState')) {
+                try {
+                    const miningState = JSON.parse(localStorage.getItem(key));
+                    if (miningState && miningState.telegramUsername === telegramId) {
+                        console.log('✅ User already exists in miningState:', telegramId);
+                        return true;
+                    }
+                } catch (e) {
+                    // Skip invalid entries
+                }
+            }
+        }
+        
+        return false;
+    } catch (error) {
+        console.error('Error checking existing user:', error);
+        return false;
+    }
+}
+
+// ✅ FIXED: Enhanced user profile creation for admin panel with duplicate prevention
 function createUserProfileFromTelegram(telegramId, userId) {
     console.log('🆕 Creating user profile from Telegram:', telegramId);
+    
+    // 🆕 DOUBLE CHECK: Ensure user doesn't already exist
+    if (checkIfUserExists(telegramId)) {
+        console.log('⚠️ User already exists, skipping profile creation:', telegramId);
+        showNotification('ℹ️ Welcome back! Your existing account has been loaded.', 'info');
+        return;
+    }
     
     const userProfileData = {
         id: userId,
@@ -216,6 +273,8 @@ function createUserProfileFromTelegram(telegramId, userId) {
     
     // 🆕 SYNC TO ADMIN PANEL
     syncToAdminPanel();
+    
+    showNotification('✅ Account created successfully!', 'success');
 }
 
 function showTelegramIdModal() {
@@ -251,6 +310,14 @@ function saveTelegramId() {
     
     // Ensure it starts with @
     const formattedTelegramId = telegramIdInput.startsWith('@') ? telegramIdInput : '@' + telegramIdInput;
+    
+    // 🆕 CHECK FOR EXISTING USER BEFORE SAVING
+    if (checkIfUserExists(formattedTelegramId)) {
+        showNotification('❌ This Telegram ID is already registered! Please use a different ID or contact support if this is your account.', 'warning');
+        document.getElementById('telegramIdInput').value = '';
+        document.getElementById('telegramIdInput').focus();
+        return;
+    }
     
     telegramUsername = formattedTelegramId;
     
@@ -526,9 +593,13 @@ function loadMiningState() {
     telegramUsername = getFromStorage('telegramUsername', '');
     userId = getFromStorage('userId', generateUserId());
     
-    // 🆕 Create user profile if Telegram ID exists and is valid
+    // 🆕 Create user profile if Telegram ID exists and is valid AND doesn't already exist
     if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
-        createUserProfileFromTelegram(telegramUsername, userId);
+        if (!checkIfUserExists(telegramUsername)) {
+            createUserProfileFromTelegram(telegramUsername, userId);
+        } else {
+            console.log('ℹ️ Existing user detected, loading data...');
+        }
     }
     
     // Check daily reset for earnings
@@ -627,7 +698,9 @@ function saveMiningState() {
     
     // 🆕 Update user profile for admin panel
     if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
-        createUserProfileFromTelegram(telegramUsername, userId);
+        if (!checkIfUserExists(telegramUsername)) {
+            createUserProfileFromTelegram(telegramUsername, userId);
+        }
     }
     
     // 🆕 Update user activity
