@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TapEarn - Login Required</title>
+    <title>TapEarn - Mining & Earning</title>
     <style>
         * {
             margin: 0;
@@ -183,6 +183,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            cursor: pointer;
         }
 
         .wallet-icon {
@@ -235,6 +236,14 @@
             padding: 20px;
             max-height: 60vh;
             overflow-y: auto;
+        }
+
+        .content-page {
+            display: none;
+        }
+
+        .content-page.active {
+            display: block;
         }
 
         .page-header {
@@ -330,6 +339,11 @@
             background: rgba(255, 255, 255, 0.15);
         }
 
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .btn-icon {
             font-size: 20px;
             margin-bottom: 5px;
@@ -353,6 +367,7 @@
             padding: 15px;
             text-align: center;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
         }
 
         .stat-number {
@@ -362,7 +377,103 @@
             color: #FFD700;
         }
 
-        .stat-label {
+        .upgrades-section {
+            margin-bottom: 20px;
+        }
+
+        .upgrades-section h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .upgrade-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .upgrade-info {
+            flex: 1;
+        }
+
+        .upgrade-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .upgrade-level {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .upgrade-btn {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upgrade-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .upgrade-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+        }
+
+        .bonuses-section {
+            margin-bottom: 20px;
+        }
+
+        .bonuses-section h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .bonus-cards {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .bonus-card {
+            flex: 1;
+            margin: 0 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .bonus-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .bonus-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .bonus-amount {
+            font-size: 16px;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #FFD700;
+        }
+
+        .bonus-status {
             font-size: 12px;
             opacity: 0.7;
         }
@@ -396,6 +507,91 @@
             margin-bottom: 5px;
         }
 
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            width: 90%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 20px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .success-popup {
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .success-popup h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #FFD700;
+        }
+
+        .success-popup p {
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            color: #1a1a2e;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 30px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Notification */
         .notification {
             position: fixed;
             top: 20px;
@@ -427,6 +623,18 @@
             color: white;
         }
 
+        /* Turbo Indicator */
+        .turbo-indicator {
+            background: linear-gradient(135deg, #FF0000 0%, #FF4500 100%);
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            margin-top: 15px;
+            font-weight: 700;
+            animation: pulse 1.5s infinite;
+        }
+
         /* Responsive */
         @media (max-width: 480px) {
             .app-container {
@@ -443,6 +651,20 @@
             
             .login-title {
                 font-size: 24px;
+            }
+            
+            .mining-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .quick-stats, .bonus-cards {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .stat-card, .bonus-card {
+                margin: 0;
             }
         }
     </style>
@@ -527,6 +749,11 @@
                             <div class="stat-label">Multiplier</div>
                         </div>
                     </div>
+
+                    <!-- Turbo Indicator -->
+                    <div class="turbo-indicator" id="turboIndicator" style="display: none;">
+                        🚀 TURBO ACTIVE: <span id="turboTime">00:00</span>
+                    </div>
                 </div>
 
                 <!-- Mining Controls -->
@@ -556,6 +783,164 @@
                         <div class="stat-label">Points Earned</div>
                     </div>
                 </div>
+
+                <!-- Upgrades Section -->
+                <div class="upgrades-section">
+                    <h3>⚡ Upgrades</h3>
+                    
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Mining Speed</div>
+                            <div class="upgrade-level">Level <span id="speedLevel">1</span></div>
+                        </div>
+                        <button class="upgrade-btn" onclick="upgradeSpeed()" id="speedUpgradeBtn">
+                            <span class="btn-cost" id="speedCost">100</span>
+                        </button>
+                    </div>
+
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Point Multiplier</div>
+                            <div class="upgrade-level">Level <span id="multiplierLevel">1</span></div>
+                        </div>
+                        <button class="upgrade-btn" onclick="upgradeMultiplier()" id="multiplierUpgradeBtn">
+                            <span class="btn-cost" id="multiplierCost">200</span>
+                        </button>
+                    </div>
+
+                    <div class="upgrade-item">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">Mining Level</div>
+                            <div class="upgrade-level" id="levelName">Bronze</div>
+                        </div>
+                        <button class="upgrade-btn level-up" onclick="upgradeLevel()" id="levelUpgradeBtn">
+                            <span class="btn-cost" id="levelCost">500</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bonuses Section -->
+                <div class="bonuses-section">
+                    <h3>🎁 Daily Bonuses</h3>
+                    <div class="bonus-cards">
+                        <div class="bonus-card" onclick="claimDailyBonus()">
+                            <div class="bonus-icon">📅</div>
+                            <div class="bonus-amount">+100</div>
+                            <div class="bonus-status" id="dailyBonusStatus">Available</div>
+                        </div>
+                        <div class="bonus-card" onclick="claimHourlyBonus()">
+                            <div class="bonus-icon">⏰</div>
+                            <div class="bonus-amount">+25</div>
+                            <div class="bonus-status" id="hourlyBonusStatus">Available</div>
+                        </div>
+                        <div class="bonus-card" onclick="claimStreakBonus()">
+                            <div class="bonus-icon">🔥</div>
+                            <div class="bonus-amount">+50</div>
+                            <div class="bonus-status" id="streakBonusStatus">Day 1</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Earn Content -->
+            <div id="earnContent" class="content-page">
+                <div class="page-header">
+                    <h2>💰 Earn</h2>
+                    <p class="page-subtitle">Complete tasks to earn points</p>
+                </div>
+
+                <div class="welcome-section">
+                    <div class="welcome-icon">🚀</div>
+                    <h3>Welcome to TapEarn!</h3>
+                    <p>Complete tasks to earn more points</p>
+                    
+                    <div class="quick-stats">
+                        <div class="stat-card" onclick="showWalletHistory()">
+                            <div class="stat-number" id="totalEarnings">0</div>
+                            <div class="stat-label">Total Points</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="totalTasks">0</div>
+                            <div class="stat-label">Tasks Done</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="todayEarnings">0</div>
+                            <div class="stat-label">Today's Points</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bonus-cards">
+                        <div class="bonus-card" onclick="completeTask('task1', 50, 'Daily Login')">
+                            <div class="bonus-icon">📱</div>
+                            <div class="bonus-amount">+50</div>
+                            <div class="bonus-status">Daily Login</div>
+                        </div>
+                        <div class="bonus-card" onclick="completeTask('task2', 25, 'Watch Ad')">
+                            <div class="bonus-icon">📺</div>
+                            <div class="bonus-amount">+25</div>
+                            <div class="bonus-status">Watch Ad</div>
+                        </div>
+                        <div class="bonus-card" onclick="completeTask('task3', 75, 'Refer Friend')">
+                            <div class="bonus-icon">👥</div>
+                            <div class="bonus-amount">+75</div>
+                            <div class="bonus-status">Refer Friend</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Profile Content -->
+            <div id="profileContent" class="content-page">
+                <div class="page-header">
+                    <h2>👤 Profile</h2>
+                    <p class="page-subtitle">Manage your account and rewards</p>
+                </div>
+
+                <div class="welcome-section">
+                    <div class="welcome-icon">👤</div>
+                    <h3>Your Profile</h3>
+                    <p>Manage your account, rewards, and settings</p>
+                    
+                    <!-- Telegram ID Display Card -->
+                    <div class="bonus-card" onclick="showTelegramIdModal()">
+                        <div class="bonus-icon">📱</div>
+                        <div class="bonus-amount" id="profileTelegramId">Not Set</div>
+                        <div class="bonus-status">Telegram ID</div>
+                    </div>
+                    
+                    <div class="quick-stats">
+                        <div class="stat-card" onclick="showWalletHistory()">
+                            <div class="stat-number" id="profileTotalPoints">0</div>
+                            <div class="stat-label">Total Points</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="profileReferrals">0</div>
+                            <div class="stat-label">Referrals</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="profileRewards">0</div>
+                            <div class="stat-label">Rewards</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bonus-cards">
+                        <div class="bonus-card" onclick="showWalletHistory()">
+                            <div class="bonus-icon">📊</div>
+                            <div class="bonus-amount">History</div>
+                            <div class="bonus-status">Wallet</div>
+                        </div>
+                        <div class="bonus-card" onclick="showReferralSystem()">
+                            <div class="bonus-icon">👥</div>
+                            <div class="bonus-amount">Refer</div>
+                            <div class="bonus-status">Earn More</div>
+                        </div>
+                        <div class="bonus-card" onclick="logout()">
+                            <div class="bonus-icon">🚪</div>
+                            <div class="bonus-amount">Logout</div>
+                            <div class="bonus-status">Switch Account</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -569,14 +954,81 @@
                 <span class="nav-icon">💰</span>
                 <span class="nav-label">Earn</span>
             </button>
-            <button class="nav-btn" onclick="switchTab('tasks')">
-                <span class="nav-icon">📋</span>
-                <span class="nav-label">Tasks</span>
-            </button>
             <button class="nav-btn" onclick="switchTab('profile')">
                 <span class="nav-icon">👤</span>
                 <span class="nav-label">Profile</span>
             </button>
+        </div>
+    </div>
+
+    <!-- Telegram ID Modal -->
+    <div id="telegramIdModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📱 Update Telegram ID</h3>
+                <button class="modal-close" onclick="closeTelegramIdModal()">×</button>
+            </div>
+            <div style="text-align: center; padding: 20px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">👤</div>
+                <h3 style="color: #FFD700; margin-bottom: 10px;">Update Telegram ID</h3>
+                <p style="margin-bottom: 20px; opacity: 0.8;">Change your Telegram username for this account</p>
+                
+                <div class="form-group">
+                    <input type="text" class="form-input" id="telegramIdInput" placeholder="Enter your Telegram username (e.g., @username)" style="text-align: center;">
+                </div>
+                
+                <div class="login-help">
+                    <div class="login-help-title">How to find your Telegram username:</div>
+                    <div class="login-help-steps">
+                        1. Open Telegram App<br>
+                        2. Go to Settings → Edit Profile<br>
+                        3. Copy your Username (must start with @)
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn-success" onclick="updateTelegramId()" style="width: 100%;">✅ Update Telegram ID</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Popup Modal -->
+    <div id="successPopup" class="modal">
+        <div class="modal-content success-popup">
+            <div class="success-icon">🎉</div>
+            <h3 id="successTitle">Success!</h3>
+            <p id="successMessage">You have earned points successfully!</p>
+            <button class="btn-success" onclick="closeSuccessPopup()">Awesome!</button>
+        </div>
+    </div>
+
+    <!-- Wallet History Modal -->
+    <div id="walletHistoryModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📊 Wallet History</h3>
+                <button class="modal-close" onclick="closeWalletHistory()">×</button>
+            </div>
+            <div class="wallet-history-content">
+                <div class="quick-stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalEarnedHistory">0</div>
+                        <div class="stat-label">Total Earned</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todayEarnedHistory">0</div>
+                        <div class="stat-label">Today's Earnings</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalSpentHistory">0</div>
+                        <div class="stat-label">Total Spent</div>
+                    </div>
+                </div>
+                
+                <div id="historyList" style="margin-top: 20px;">
+                    <div class="no-history" style="text-align: center; opacity: 0.7; padding: 20px;">No transactions yet</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -595,6 +1047,16 @@
         let multiplierLevel = 1;
         let turboActive = false;
         let turboTimeLeft = 0;
+        let dailyBonusClaimed = false;
+        let hourlyBonusAvailable = true;
+        let loginStreak = 1;
+        let lastLoginDate = null;
+        let todayEarnings = 0;
+        let lastEarningDate = null;
+        let completedTasks = [];
+        let transactionHistory = [];
+        let totalEarned = 0;
+        let totalSpent = 0;
 
         // Mining Rates and Costs
         const LEVEL_DATA = {
@@ -605,9 +1067,43 @@
             5: { name: "Diamond", bonus: 25, cost: 10000, color: "#B9F2FF" }
         };
 
+        const SPEED_UPGRADES = [
+            { cost: 100, bonus: 1 },
+            { cost: 200, bonus: 1 },
+            { cost: 400, bonus: 1 },
+            { cost: 800, bonus: 1 },
+            { cost: 1600, bonus: 1 }
+        ];
+
+        const MULTIPLIER_UPGRADES = [
+            { cost: 200, bonus: 0.2 },
+            { cost: 400, bonus: 0.2 },
+            { cost: 800, bonus: 0.2 },
+            { cost: 1600, bonus: 0.2 },
+            { cost: 3200, bonus: 0.2 }
+        ];
+
         // Check if user is logged in on app start
         document.addEventListener('DOMContentLoaded', function() {
             checkUserLogin();
+            
+            // Auto-save every minute
+            setInterval(() => {
+                if (telegramUsername) saveMiningState();
+            }, 60000);
+            
+            // Check hourly bonus every minute
+            setInterval(() => {
+                if (telegramUsername) {
+                    hourlyBonusAvailable = true;
+                    updateUI();
+                }
+            }, 3600000);
+            
+            // Check daily reset every hour
+            setInterval(() => {
+                if (telegramUsername) checkDailyEarningsReset();
+            }, 3600000);
         });
 
         // Check if user has valid Telegram ID
@@ -622,6 +1118,7 @@
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('appContent').style.display = 'block';
                 updateUI();
+                showNotification('✅ Welcome back to TapEarn!', 'success');
             } else {
                 // User needs to log in
                 document.getElementById('loginScreen').style.display = 'flex';
@@ -672,6 +1169,27 @@
             // Load mining state and update UI
             loadMiningState();
             updateUI();
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                // Stop mining if active
+                if (isMining) stopMining();
+                
+                // Clear user session
+                telegramUsername = '';
+                userId = '';
+                
+                // Show login screen
+                document.getElementById('loginScreen').style.display = 'flex';
+                document.getElementById('appContent').style.display = 'none';
+                
+                // Clear login fields
+                document.getElementById('telegramId').value = '';
+                
+                showNotification('👋 Logged out successfully. Come back soon!', 'info');
+            }
         }
 
         // Validate Telegram username
@@ -822,6 +1340,7 @@
             
             const savedState = getFromStorage('miningState');
             const savedUpgrades = getFromStorage('miningUpgrades');
+            const savedBonuses = getFromStorage('miningBonuses');
             
             // Load basic state
             if (savedState) {
@@ -841,11 +1360,38 @@
                 turboTimeLeft = savedUpgrades.turboTimeLeft || 0;
             }
             
+            // Load bonuses
+            if (savedBonuses) {
+                dailyBonusClaimed = savedBonuses.dailyBonusClaimed || false;
+                hourlyBonusAvailable = savedBonuses.hourlyBonusAvailable !== false;
+                loginStreak = savedBonuses.loginStreak || 1;
+                lastLoginDate = savedBonuses.lastLoginDate;
+            }
+            
+            // Load other data
+            completedTasks = getFromStorage('completedTasks', []);
+            transactionHistory = getFromStorage('transactionHistory', []);
+            totalEarned = getFromStorage('totalEarned', 0);
+            totalSpent = getFromStorage('totalSpent', 0);
+            todayEarnings = getFromStorage('todayEarnings', 0);
+            lastEarningDate = getFromStorage('lastEarningDate', null);
+            
+            // Check daily reset for earnings
+            checkDailyEarningsReset();
+            
+            // Check daily login
+            checkDailyLogin();
+            
             console.log('✅ Mining state loaded');
             
             if (isMining) {
                 console.log('⛏️ Resuming mining session...');
                 startMining();
+            }
+            
+            if (turboActive && turboTimeLeft > 0) {
+                console.log('🚀 Resuming turbo mode...');
+                startTurboCountdown();
             }
             
             updateUI();
@@ -871,18 +1417,91 @@
                 turboTimeLeft: turboTimeLeft
             };
             
+            const miningBonuses = {
+                dailyBonusClaimed: dailyBonusClaimed,
+                hourlyBonusAvailable: hourlyBonusAvailable,
+                loginStreak: loginStreak,
+                lastLoginDate: lastLoginDate
+            };
+            
             saveToStorage('miningState', miningState);
             saveToStorage('miningUpgrades', miningUpgrades);
+            saveToStorage('miningBonuses', miningBonuses);
+            saveToStorage('completedTasks', completedTasks);
+            saveToStorage('transactionHistory', transactionHistory);
+            saveToStorage('totalEarned', totalEarned);
+            saveToStorage('totalSpent', totalSpent);
+            saveToStorage('todayEarnings', todayEarnings);
+            saveToStorage('lastEarningDate', lastEarningDate);
+        }
+
+        // Check Daily Reset for Earnings
+        function checkDailyEarningsReset() {
+            const today = new Date().toDateString();
+            if (lastEarningDate !== today) {
+                todayEarnings = 0;
+                lastEarningDate = today;
+                dailyBonusClaimed = false;
+                console.log('📅 New day - earnings and bonuses reset');
+                saveMiningState();
+            }
+        }
+
+        // Check Daily Login
+        function checkDailyLogin() {
+            const today = new Date().toDateString();
+            if (lastLoginDate !== today) {
+                lastLoginDate = today;
+                
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                if (lastLoginDate === yesterday.toDateString()) {
+                    loginStreak++;
+                } else {
+                    loginStreak = 1;
+                }
+                
+                console.log('📅 New day detected. Streak:', loginStreak);
+                saveMiningState();
+            }
         }
 
         // Calculate Mining Rate
         function getMiningRate() {
             const baseRate = LEVEL_DATA[miningLevel].bonus;
-            const speedBonus = (speedLevel - 1) * 1;
-            const multiplier = 1 + (multiplierLevel - 1) * 0.2;
+            const speedBonus = (speedLevel - 1) * SPEED_UPGRADES[0].bonus;
+            const multiplier = 1 + (multiplierLevel - 1) * MULTIPLIER_UPGRADES[0].bonus;
             const turboMultiplier = turboActive ? 2 : 1;
             
             return (baseRate + speedBonus) * multiplier * turboMultiplier;
+        }
+
+        // Add Transaction to History
+        function addTransaction(description, amount, type, category = "other") {
+            const transaction = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                description: description,
+                amount: amount,
+                type: type, // 'earning' or 'spending'
+                category: category,
+                balance: userPoints
+            };
+            
+            transactionHistory.unshift(transaction); // Add to beginning
+            
+            if (type === 'earning') {
+                totalEarned += amount;
+            } else if (type === 'spending') {
+                totalSpent += amount;
+            }
+            
+            // Limit history to 100 transactions
+            if (transactionHistory.length > 100) {
+                transactionHistory = transactionHistory.slice(0, 100);
+            }
+            
+            saveMiningState();
         }
 
         // Update UI
@@ -890,6 +1509,8 @@
             // Update Points and Level
             document.getElementById('walletPoints').textContent = formatNumber(userPoints);
             document.getElementById('totalPoints').textContent = formatNumber(userPoints);
+            document.getElementById('totalEarnings').textContent = formatNumber(userPoints);
+            document.getElementById('profileTotalPoints').textContent = formatNumber(userPoints);
             
             // Update Mining Stats
             document.getElementById('miningHours').textContent = totalMiningHours;
@@ -919,8 +1540,20 @@
             // Update Level and Progress
             updateLevelUI();
             
+            // Update Upgrades UI
+            updateUpgradesUI();
+            
+            // Update Bonuses UI
+            updateBonusesUI();
+            
             // Update Turbo UI
             updateTurboUI();
+            
+            // Update Earning UI
+            updateEarningUI();
+            
+            // Update Profile UI
+            updateProfileUI();
         }
 
         // Update Level UI
@@ -937,25 +1570,110 @@
             document.getElementById('miningTitle').textContent = `${levelData.name} Mining`;
         }
 
+        // Update Upgrades UI
+        function updateUpgradesUI() {
+            // Speed Upgrade
+            const speedData = SPEED_UPGRADES[speedLevel - 1] || SPEED_UPGRADES[SPEED_UPGRADES.length - 1];
+            document.getElementById('speedLevel').textContent = speedLevel;
+            document.getElementById('speedCost').textContent = speedData ? speedData.cost : 'MAX';
+            
+            const speedBtn = document.getElementById('speedUpgradeBtn');
+            if (speedLevel > SPEED_UPGRADES.length) {
+                speedBtn.textContent = 'MAX LEVEL';
+                speedBtn.disabled = true;
+            } else {
+                speedBtn.disabled = userPoints < speedData.cost;
+            }
+            
+            // Multiplier Upgrade
+            const multiplierData = MULTIPLIER_UPGRADES[multiplierLevel - 1] || MULTIPLIER_UPGRADES[MULTIPLIER_UPGRADES.length - 1];
+            document.getElementById('multiplierLevel').textContent = multiplierLevel;
+            document.getElementById('multiplierCost').textContent = multiplierData ? multiplierData.cost : 'MAX';
+            
+            const multiplierBtn = document.getElementById('multiplierUpgradeBtn');
+            if (multiplierLevel > MULTIPLIER_UPGRADES.length) {
+                multiplierBtn.textContent = 'MAX LEVEL';
+                multiplierBtn.disabled = true;
+            } else {
+                multiplierBtn.disabled = userPoints < multiplierData.cost;
+            }
+            
+            // Level Upgrade
+            const nextLevel = miningLevel + 1;
+            const levelData = LEVEL_DATA[nextLevel];
+            document.getElementById('levelName').textContent = levelData ? levelData.name : 'MAX LEVEL';
+            document.getElementById('levelCost').textContent = levelData ? levelData.cost : 'MAX';
+            
+            const levelBtn = document.getElementById('levelUpgradeBtn');
+            if (miningLevel >= 5) {
+                levelBtn.textContent = 'MAX LEVEL';
+                levelBtn.disabled = true;
+            } else {
+                levelBtn.disabled = userPoints < levelData.cost;
+            }
+        }
+
+        // Update Bonuses UI
+        function updateBonusesUI() {
+            const dailyStatus = document.getElementById('dailyBonusStatus');
+            dailyStatus.textContent = dailyBonusClaimed ? 'Claimed' : 'Available';
+            dailyStatus.style.color = dailyBonusClaimed ? '#FF6B6B' : '#4CAF50';
+            
+            const hourlyStatus = document.getElementById('hourlyBonusStatus');
+            hourlyStatus.textContent = hourlyBonusAvailable ? 'Available' : 'Coming Soon';
+            hourlyStatus.style.color = hourlyBonusAvailable ? '#4CAF50' : '#FFA726';
+            
+            const streakStatus = document.getElementById('streakBonusStatus');
+            streakStatus.textContent = `Day ${loginStreak}`;
+            streakStatus.style.color = '#FFD700';
+        }
+
         // Update Turbo UI
         function updateTurboUI() {
+            const turboIndicator = document.getElementById('turboIndicator');
             const turboBtn = document.getElementById('turboBtn');
             
             if (turboActive) {
-                turboBtn.innerHTML = '<span class="btn-icon">🚀</span><span class="btn-text">Active</span>';
+                turboIndicator.style.display = 'block';
+                document.getElementById('turboTime').textContent = formatTime(turboTimeLeft);
                 turboBtn.disabled = true;
+                turboBtn.innerHTML = '<span class="btn-icon">🚀</span><span class="btn-text">Active</span>';
             } else {
+                turboIndicator.style.display = 'none';
                 turboBtn.innerHTML = '<span class="btn-icon">🚀</span><span class="btn-text">Turbo</span>';
                 turboBtn.disabled = userPoints < 200;
             }
         }
 
+        // Update Earning UI
+        function updateEarningUI() {
+            document.getElementById('totalTasks').textContent = completedTasks.length;
+            document.getElementById('todayEarnings').textContent = todayEarnings;
+        }
+
+        // Update Profile UI
+        function updateProfileUI() {
+            const profileTelegramId = document.getElementById('profileTelegramId');
+            
+            // Display Telegram ID in profile
+            if (profileTelegramId) {
+                if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+                    profileTelegramId.textContent = telegramUsername;
+                } else {
+                    profileTelegramId.textContent = 'Not Set';
+                }
+            }
+            
+            // Update other profile stats
+            document.getElementById('profileReferrals').textContent = '0';
+            document.getElementById('profileRewards').textContent = '0';
+        }
+
         // Format Time
         function formatTime(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
+            const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
-            return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
         // Format Numbers
@@ -989,22 +1707,37 @@
             }
             
             let lastMinuteCheck = Math.floor(miningSeconds / 60);
+            let lastHourCheck = Math.floor(miningSeconds / 3600);
             
             miningInterval = setInterval(() => {
                 miningSeconds++;
-                totalMiningTime++;
                 
                 updateMiningTimerDisplay();
                 
                 const currentMinute = Math.floor(miningSeconds / 60);
+                const currentHour = Math.floor(miningSeconds / 3600);
                 
                 if (currentMinute > lastMinuteCheck) {
                     const pointsToAdd = getMiningRate();
                     userPoints += pointsToAdd;
                     totalPointsEarned += pointsToAdd;
+                    todayEarnings += pointsToAdd;
                     lastMinuteCheck = currentMinute;
                     
+                    // Add to transaction history
+                    addTransaction('Mining Earnings', pointsToAdd, 'earning', 'mining');
+                    
                     console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining!`);
+                    updateUI();
+                }
+                
+                if (currentHour > lastHourCheck) {
+                    totalMiningHours++;
+                    lastHourCheck = currentHour;
+                    hourlyBonusAvailable = true;
+                    
+                    console.log('⏰ Hour completed! Hourly bonus available.');
+                    showNotification('⏰ Hour completed! Claim your hourly bonus!', 'info');
                     updateUI();
                 }
                 
@@ -1036,6 +1769,68 @@
             updateUI();
         }
 
+        // Upgrade Functions
+        function upgradeSpeed() {
+            const upgradeCost = SPEED_UPGRADES[speedLevel - 1].cost;
+            
+            if (userPoints >= upgradeCost) {
+                userPoints -= upgradeCost;
+                speedLevel++;
+                
+                // Add to transaction history
+                addTransaction('Speed Upgrade', -upgradeCost, 'spending', 'upgrade');
+                
+                console.log('⚡ Speed upgraded to level:', speedLevel);
+                showNotification(`⚡ Mining Speed upgraded to Level ${speedLevel}!`, 'success');
+                
+                saveMiningState();
+                updateUI();
+            } else {
+                showNotification('❌ Not enough points for speed upgrade!', 'warning');
+            }
+        }
+
+        function upgradeMultiplier() {
+            const upgradeCost = MULTIPLIER_UPGRADES[multiplierLevel - 1].cost;
+            
+            if (userPoints >= upgradeCost) {
+                userPoints -= upgradeCost;
+                multiplierLevel++;
+                
+                // Add to transaction history
+                addTransaction('Multiplier Upgrade', -upgradeCost, 'spending', 'upgrade');
+                
+                console.log('💰 Multiplier upgraded to level:', multiplierLevel);
+                showNotification(`💰 Point Multiplier upgraded to Level ${multiplierLevel}!`, 'success');
+                
+                saveMiningState();
+                updateUI();
+            } else {
+                showNotification('❌ Not enough points for multiplier upgrade!', 'warning');
+            }
+        }
+
+        function upgradeLevel() {
+            const nextLevel = miningLevel + 1;
+            const upgradeCost = LEVEL_DATA[nextLevel].cost;
+            
+            if (userPoints >= upgradeCost) {
+                userPoints -= upgradeCost;
+                miningLevel = nextLevel;
+                
+                // Add to transaction history
+                addTransaction('Level Upgrade', -upgradeCost, 'spending', 'upgrade');
+                
+                console.log('🏆 Mining level upgraded to:', LEVEL_DATA[miningLevel].name);
+                showNotification(`🏆 Congratulations! You are now a ${LEVEL_DATA[miningLevel].name} Miner!`, 'success');
+                
+                saveMiningState();
+                updateUI();
+            } else {
+                showNotification('❌ Not enough points for level upgrade!', 'warning');
+            }
+        }
+
         // Turbo System
         function activateTurbo() {
             if (turboActive) return;
@@ -1045,6 +1840,9 @@
                 userPoints -= turboCost;
                 turboActive = true;
                 turboTimeLeft = 300;
+                
+                // Add to transaction history
+                addTransaction('Turbo Boost', -turboCost, 'spending', 'boost');
                 
                 console.log('🚀 Turbo activated!');
                 showNotification('🚀 TURBO MODE ACTIVATED! 2x points for 5 minutes!', 'success');
@@ -1073,17 +1871,103 @@
             }, 1000);
         }
 
-        // Claim Boost
+        // Bonus Functions
+        function claimDailyBonus() {
+            if (dailyBonusClaimed) {
+                showNotification('❌ Daily bonus already claimed!', 'warning');
+                return;
+            }
+            
+            const bonusAmount = 100 + (loginStreak * 10);
+            
+            userPoints += bonusAmount;
+            totalPointsEarned += bonusAmount;
+            todayEarnings += bonusAmount;
+            dailyBonusClaimed = true;
+            
+            // Add to transaction history
+            addTransaction('Daily Bonus', bonusAmount, 'earning', 'bonus');
+            
+            console.log('🎁 Daily bonus claimed:', bonusAmount);
+            showNotification(`🎁 Daily Bonus! +${bonusAmount} Points (Streak: ${loginStreak})`, 'success');
+            
+            saveMiningState();
+            updateUI();
+        }
+
+        function claimHourlyBonus() {
+            if (!hourlyBonusAvailable) {
+                showNotification('❌ Hourly bonus not available yet!', 'warning');
+                return;
+            }
+            
+            const bonusAmount = 25;
+            userPoints += bonusAmount;
+            totalPointsEarned += bonusAmount;
+            todayEarnings += bonusAmount;
+            hourlyBonusAvailable = false;
+            
+            // Add to transaction history
+            addTransaction('Hourly Bonus', bonusAmount, 'earning', 'bonus');
+            
+            console.log('⏰ Hourly bonus claimed:', bonusAmount);
+            showNotification(`⏰ Hourly Bonus! +${bonusAmount} Points`, 'success');
+            
+            saveMiningState();
+            updateUI();
+        }
+
+        function claimStreakBonus() {
+            const bonusAmount = loginStreak * 10;
+            userPoints += bonusAmount;
+            totalPointsEarned += bonusAmount;
+            todayEarnings += bonusAmount;
+            
+            // Add to transaction history
+            addTransaction('Streak Bonus', bonusAmount, 'earning', 'bonus');
+            
+            console.log('🔥 Streak bonus claimed:', bonusAmount);
+            showNotification(`🔥 Streak Bonus! +${bonusAmount} Points (Day ${loginStreak})`, 'success');
+            
+            saveMiningState();
+            updateUI();
+        }
+
         function claimBoost() {
             const boostAmount = 50;
             userPoints += boostAmount;
             totalPointsEarned += boostAmount;
+            todayEarnings += boostAmount;
+            
+            // Add to transaction history
+            addTransaction('Daily Boost', boostAmount, 'earning', 'bonus');
             
             console.log('🎯 Boost claimed:', boostAmount);
             showNotification(`🎯 Boost! +${boostAmount} Points`, 'success');
             
             saveMiningState();
             updateUI();
+        }
+
+        // Complete Task
+        function completeTask(taskId, points, taskName) {
+            if (completedTasks.includes(taskId)) {
+                showNotification('❌ You already completed this task!', 'warning');
+                return;
+            }
+            
+            completedTasks.push(taskId);
+            userPoints += points;
+            totalPointsEarned += points;
+            todayEarnings += points;
+            
+            // Add to transaction history
+            addTransaction(`Task: ${taskName}`, points, 'earning', 'task');
+            
+            saveMiningState();
+            updateUI();
+            
+            showNotification(`✅ +${points} Points! ${taskName}`, 'success');
         }
 
         // Tab Switching Function
@@ -1103,18 +1987,149 @@
                 document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
             } else if (tabName === 'earn') {
                 document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
-            } else if (tabName === 'tasks') {
-                document.querySelector('.nav-btn:nth-child(3)').classList.add('active');
             } else if (tabName === 'profile') {
-                document.querySelector('.nav-btn:nth-child(4)').classList.add('active');
+                document.querySelector('.nav-btn:nth-child(3)').classList.add('active');
             }
             
             updateUI();
         }
 
-        // Show Wallet History
+        // Telegram ID Modal Functions
+        function showTelegramIdModal() {
+            document.getElementById('telegramIdInput').value = telegramUsername;
+            document.getElementById('telegramIdModal').classList.add('active');
+        }
+
+        function closeTelegramIdModal() {
+            document.getElementById('telegramIdModal').classList.remove('active');
+        }
+
+        function updateTelegramId() {
+            const telegramIdInput = document.getElementById('telegramIdInput').value.trim();
+            
+            if (!telegramIdInput) {
+                showNotification('❌ Please enter your Telegram username!', 'warning');
+                return;
+            }
+            
+            // Validate Telegram username format
+            if (!isValidTelegramUsername(telegramIdInput)) {
+                showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
+                return;
+            }
+            
+            // Ensure it starts with @
+            const formattedTelegramId = telegramIdInput.startsWith('@') ? telegramIdInput : '@' + telegramIdInput;
+            
+            // Check for existing user (excluding current user)
+            if (checkIfUserExists(formattedTelegramId) && formattedTelegramId !== telegramUsername) {
+                showNotification('❌ This Telegram ID is already registered by another user!', 'warning');
+                return;
+            }
+            
+            // Update Telegram ID
+            telegramUsername = formattedTelegramId;
+            saveToStorage('telegramUsername', formattedTelegramId);
+            
+            // Update user profile
+            createUserProfileFromTelegram(formattedTelegramId, userId);
+            
+            console.log('✅ Telegram ID updated:', formattedTelegramId);
+            showNotification('✅ Telegram ID updated successfully!', 'success');
+            
+            closeTelegramIdModal();
+            updateUI();
+        }
+
+        // Wallet History System
         function showWalletHistory() {
-            showNotification('📊 Wallet History feature coming soon!', 'info');
+            document.getElementById('walletHistoryModal').classList.add('active');
+            updateHistoryStats();
+            displayTransactionHistory();
+        }
+
+        function closeWalletHistory() {
+            document.getElementById('walletHistoryModal').classList.remove('active');
+        }
+
+        function updateHistoryStats() {
+            document.getElementById('totalEarnedHistory').textContent = formatNumber(totalEarned);
+            document.getElementById('todayEarnedHistory').textContent = formatNumber(todayEarnings);
+            document.getElementById('totalSpentHistory').textContent = formatNumber(totalSpent);
+        }
+
+        function displayTransactionHistory() {
+            const historyList = document.getElementById('historyList');
+            
+            if (transactionHistory.length === 0) {
+                historyList.innerHTML = '<div class="no-history" style="text-align: center; opacity: 0.7; padding: 20px;">No transactions yet</div>';
+                return;
+            }
+            
+            let html = '';
+            
+            transactionHistory.forEach(transaction => {
+                const date = new Date(transaction.timestamp);
+                const timeString = date.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: true 
+                });
+                
+                html += `
+                    <div class="upgrade-item" style="margin-bottom: 10px;">
+                        <div class="upgrade-info">
+                            <div class="upgrade-name">${transaction.description}</div>
+                            <div class="upgrade-level">${getCategoryIcon(transaction.category)} ${formatCategory(transaction.category)} • ${timeString}</div>
+                        </div>
+                        <div class="upgrade-btn" style="background: ${transaction.type === 'earning' ? '#4CAF50' : '#FF6B6B'};">
+                            ${transaction.type === 'earning' ? '+' : '-'}${transaction.amount}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            historyList.innerHTML = html;
+        }
+
+        function getCategoryIcon(category) {
+            const icons = {
+                'mining': '⛏️',
+                'task': '📋',
+                'bonus': '🎁',
+                'upgrade': '⚡',
+                'boost': '🚀',
+                'other': '📊'
+            };
+            return icons[category] || '📊';
+        }
+
+        function formatCategory(category) {
+            const categories = {
+                'mining': 'Mining',
+                'task': 'Task',
+                'bonus': 'Bonus',
+                'upgrade': 'Upgrade',
+                'boost': 'Boost',
+                'other': 'Other'
+            };
+            return categories[category] || 'Other';
+        }
+
+        // Referral System
+        function showReferralSystem() {
+            showNotification('👥 Referral system coming soon!', 'info');
+        }
+
+        // Success Popup System
+        function showSuccessPopup(title, message) {
+            document.getElementById('successTitle').textContent = title;
+            document.getElementById('successMessage').textContent = message;
+            document.getElementById('successPopup').classList.add('active');
+        }
+
+        function closeSuccessPopup() {
+            document.getElementById('successPopup').classList.remove('active');
         }
 
         // Show Notification
@@ -1137,6 +2152,13 @@
         document.getElementById('telegramId').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 loginWithTelegram();
+            }
+        });
+
+        // Allow Enter key in Telegram ID modal
+        document.getElementById('telegramIdInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                updateTelegramId();
             }
         });
     </script>
