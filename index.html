@@ -4,721 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TapEarn - Mining & Earning</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        /* Login Screen Styles */
-        #loginScreen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            z-index: 1000;
-        }
-
-        .login-container {
-            width: 100%;
-            max-width: 500px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px 30px;
-            text-align: center;
-        }
-
-        .login-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); }
-        }
-
-        .login-title {
-            font-size: 28px;
-            margin-bottom: 10px;
-            color: #FFD700;
-            font-weight: 700;
-        }
-
-        .login-subtitle {
-            font-size: 16px;
-            margin-bottom: 30px;
-            opacity: 0.8;
-            line-height: 1.5;
-        }
-
-        .login-form {
-            width: 100%;
-            max-width: 350px;
-            margin: 0 auto;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .form-input {
-            width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            transition: all 0.3s;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #FFD700;
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .form-input::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-        .btn-primary {
-            width: 100%;
-            padding: 15px;
-            border-radius: 10px;
-            border: none;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            color: #1a1a2e;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
-        }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .login-help {
-            background: rgba(255, 215, 0, 0.1);
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            margin: 20px 0;
-            text-align: left;
-        }
-
-        .login-help-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #FFD700;
-            margin-bottom: 8px;
-        }
-
-        .login-help-steps {
-            font-size: 12px;
-            line-height: 1.5;
-            opacity: 0.9;
-        }
-
-        .login-footer {
-            margin-top: 30px;
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        /* App Styles */
-        .app-container {
-            width: 100%;
-            max-width: 500px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            display: none;
-        }
-
-        .app-header {
-            background: linear-gradient(135deg, #0f3460 0%, #1a1a2e 100%);
-            padding: 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .wallet {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-        }
-
-        .wallet-icon {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .wallet-amount {
-            font-size: 24px;
-            font-weight: 700;
-            color: #FFD700;
-        }
-
-        .wallet-label {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        .user-info {
-            text-align: right;
-        }
-
-        .user-level {
-            font-size: 18px;
-            font-weight: 700;
-            color: #FFD700;
-        }
-
-        .user-stats {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        .level-progress {
-            width: 100%;
-            height: 6px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 3px;
-            width: 30%;
-        }
-
-        .app-content {
-            padding: 20px;
-            max-height: 60vh;
-            overflow-y: auto;
-        }
-
-        .content-page {
-            display: none;
-        }
-
-        .content-page.active {
-            display: block;
-        }
-
-        .page-header {
-            margin-bottom: 20px;
-        }
-
-        .page-header h2 {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .page-subtitle {
-            font-size: 14px;
-            opacity: 0.7;
-        }
-
-        .main-mining-card {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 165, 0, 0.1) 100%);
-            border-radius: 15px;
-            padding: 25px;
-            text-align: center;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .main-mining-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(255, 215, 0, 0.2);
-        }
-
-        .mining-icon {
-            font-size: 50px;
-            margin-bottom: 15px;
-        }
-
-        .mining-title {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .mining-status {
-            font-size: 14px;
-            opacity: 0.8;
-            margin-bottom: 20px;
-        }
-
-        .mining-stats {
-            display: flex;
-            justify-content: space-around;
-        }
-
-        .mining-stat {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        .mining-controls {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .control-btn {
-            flex: 1;
-            margin: 0 5px;
-            padding: 12px;
-            border-radius: 10px;
-            border: none;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .control-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-        .control-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .btn-icon {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-
-        .btn-text {
-            font-size: 12px;
-        }
-
-        .quick-stats {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            flex: 1;
-            margin: 0 5px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-        }
-
-        .stat-number {
-            font-size: 20px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            color: #FFD700;
-        }
-
-        .upgrades-section {
-            margin-bottom: 20px;
-        }
-
-        .upgrades-section h3 {
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .upgrade-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .upgrade-info {
-            flex: 1;
-        }
-
-        .upgrade-name {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .upgrade-level {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        .upgrade-btn {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            color: #1a1a2e;
-            border: none;
-            border-radius: 8px;
-            padding: 8px 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .upgrade-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .upgrade-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-        }
-
-        .bonuses-section {
-            margin-bottom: 20px;
-        }
-
-        .bonuses-section h3 {
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .bonus-cards {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .bonus-card {
-            flex: 1;
-            margin: 0 5px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .bonus-card:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .bonus-icon {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-
-        .bonus-amount {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 5px;
-            color: #FFD700;
-        }
-
-        .bonus-status {
-            font-size: 12px;
-            opacity: 0.7;
-        }
-
-        .bottom-nav {
-            display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .nav-btn {
-            flex: 1;
-            padding: 15px 0;
-            border: none;
-            background: transparent;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .nav-btn.active {
-            color: #FFD700;
-        }
-
-        .nav-icon {
-            font-size: 20px;
-            margin-bottom: 5px;
-        }
-
-        /* Modal Styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            width: 90%;
-            max-width: 500px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .modal-header h3 {
-            font-size: 20px;
-        }
-
-        .modal-close {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-        }
-
-        .success-popup {
-            text-align: center;
-        }
-
-        .success-icon {
-            font-size: 60px;
-            margin-bottom: 20px;
-        }
-
-        .success-popup h3 {
-            font-size: 24px;
-            margin-bottom: 10px;
-            color: #FFD700;
-        }
-
-        .success-popup p {
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            color: #1a1a2e;
-            border: none;
-            border-radius: 10px;
-            padding: 12px 30px;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-success:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Turbo Indicator */
-        .turbo-indicator {
-            background: linear-gradient(135deg, #FF0000 0%, #FF4500 100%);
-            color: white;
-            padding: 10px;
-            border-radius: 10px;
-            text-align: center;
-            margin-top: 15px;
-            font-weight: 700;
-            animation: pulse 1.5s infinite;
-        }
-
-        /* Notification */
-        .notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.9);
-            color: #1a1a2e;
-            padding: 15px 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-            z-index: 1000;
-            font-weight: 500;
-            max-width: 90%;
-            text-align: center;
-        }
-
-        .notification.success {
-            background: rgba(76, 175, 80, 0.9);
-            color: white;
-        }
-
-        .notification.warning {
-            background: rgba(255, 152, 0, 0.9);
-            color: white;
-        }
-
-        .notification.info {
-            background: rgba(33, 150, 243, 0.9);
-            color: white;
-        }
-
-        /* Responsive */
-        @media (max-width: 480px) {
-            .app-container {
-                border-radius: 15px;
-            }
-            
-            .login-container {
-                padding: 30px 20px;
-            }
-            
-            .login-icon {
-                font-size: 60px;
-            }
-            
-            .login-title {
-                font-size: 24px;
-            }
-            
-            .mining-stats {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .quick-stats, .bonus-cards {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .stat-card, .bonus-card {
-                margin: 0;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- Login Screen (Shown First) -->
-    <div id="loginScreen">
-        <div class="login-container">
-            <div class="login-icon">⛏️</div>
-            <h1 class="login-title">Welcome to TapEarn</h1>
-            <p class="login-subtitle">Enter your Telegram ID to start earning points</p>
-            
-            <div class="login-form">
-                <div class="form-group">
-                    <label for="telegramId">Telegram Username</label>
-                    <input type="text" id="telegramId" class="form-input" placeholder="@username" autocomplete="off">
-                </div>
-                
-                <div class="login-help">
-                    <div class="login-help-title">How to find your Telegram username:</div>
-                    <div class="login-help-steps">
-                        1. Open Telegram App<br>
-                        2. Go to Settings → Edit Profile<br>
-                        3. Copy your Username (must start with @)
-                    </div>
-                </div>
-                
-                <button class="btn-primary" onclick="loginWithTelegram()">Start Earning</button>
-            </div>
-            
-            <div class="login-footer">
-                By continuing, you agree to our Terms & Privacy Policy
-            </div>
-        </div>
-    </div>
-
-    <!-- Main App Content (Hidden Initially) -->
+    <!-- Main App Container -->
     <div class="app-container">
         <!-- Header -->
         <div class="app-header">
@@ -735,7 +24,136 @@
             </div>
             
             <div class="level-progress">
-                <div class="progress-fill" id="levelProgress"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="levelProgress"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Watch Modal -->
+        <div id="videoWatchModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>🎬 Watching Video</h3>
+                    <button class="modal-close" onclick="closeVideoModal()">×</button>
+                </div>
+                <div class="video-player">
+                    <div class="video-thumbnail-large">
+                        <img id="modalVideoThumbnail" src="" alt="Video Thumbnail">
+                    </div>
+                    <div class="video-info-modal">
+                        <div class="video-title-modal" id="modalVideoTitle"></div>
+                        <div class="video-channel-modal" id="modalVideoChannel"></div>
+                    </div>
+                    <div class="video-points-info">
+                        <div class="points-earning">Earning: <span id="modalVideoPoints">0</span> points</div>
+                        <div class="watch-requirement">Watch for 1 minute to earn points</div>
+                    </div>
+                    
+                    <!-- Timer Display Below Video -->
+                    <div class="timer-display-container">
+                        <div class="timer-text-large" id="modalTimerLarge">01:00</div>
+                        <div class="timer-progress-container">
+                            <div class="timer-progress-bar">
+                                <div class="timer-progress-fill" id="timerProgressFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" onclick="closeVideoModal()">Cancel</button>
+                    <div class="watch-progress">
+                        <div class="progress-text" id="modalProgressText">Keep watching...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Success Popup Modal -->
+        <div id="successPopup" class="modal">
+            <div class="modal-content success-popup">
+                <div class="success-icon">🎉</div>
+                <h3 id="successTitle">Success!</h3>
+                <p id="successMessage">You have earned points successfully!</p>
+                <button class="btn-success" onclick="closeSuccessPopup()">Awesome!</button>
+            </div>
+        </div>
+
+        <!-- Points Claim Popup -->
+        <div id="pointsClaimPopup" class="modal">
+            <div class="modal-content success-popup">
+                <div class="success-icon">💰</div>
+                <h3 id="pointsClaimTitle">Points Claimed!</h3>
+                <p id="pointsClaimMessage">You have earned <span id="claimedPoints">0</span> points!</p>
+                <button class="btn-success" onclick="closePointsClaimPopup()">Awesome!</button>
+            </div>
+        </div>
+
+        <!-- Wallet History Modal -->
+        <div id="walletHistoryModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📊 Wallet History</h3>
+                    <button class="modal-close" onclick="closeWalletHistory()">×</button>
+                </div>
+                <div class="wallet-history-content">
+                    <div class="history-stats">
+                        <div class="history-stat">
+                            <div class="stat-number" id="totalEarnedHistory">0</div>
+                            <div class="stat-label">Total Earned</div>
+                        </div>
+                        <div class="history-stat">
+                            <div class="stat-number" id="todayEarnedHistory">0</div>
+                            <div class="stat-label">Today's Earnings</div>
+                        </div>
+                        <div class="history-stat">
+                            <div class="stat-number" id="totalSpentHistory">0</div>
+                            <div class="stat-label">Total Spent</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-tabs">
+                        <button class="history-tab active" onclick="showAllHistory()">All</button>
+                        <button class="history-tab" onclick="showEarningHistory()">Earnings</button>
+                        <button class="history-tab" onclick="showSpendingHistory()">Spending</button>
+                    </div>
+                    
+                    <div class="history-list" id="historyList">
+                        <div class="no-history">No transactions yet</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Telegram ID Capture Modal -->
+        <div id="telegramIdModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>📱 Connect Telegram</h3>
+                </div>
+                <div class="video-player">
+                    <div style="text-align: center; padding: 20px;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">👤</div>
+                        <h3 style="color: #FFD700; margin-bottom: 10px;">Welcome to TapEarn!</h3>
+                        <p style="margin-bottom: 20px; opacity: 0.8;">To get started, please enter your Telegram username. This helps us track your earnings and rewards.</p>
+                        
+                        <div class="form-group">
+                            <input type="text" class="search-input" id="telegramIdInput" placeholder="Enter your Telegram username (e.g., @username)" style="text-align: center;">
+                        </div>
+                        
+                        <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,215,0,0.3); margin: 15px 0;">
+                            <p style="font-size: 12px; margin: 0; color: #FFD700;">
+                                💡 <strong>How to find your Telegram username:</strong><br>
+                                1. Open Telegram App<br>
+                                2. Go to Settings → Edit Profile<br>
+                                3. Copy your Username (must start with @)
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-success" onclick="saveTelegramId()" style="width: 100%;">✅ Save & Continue</button>
+                </div>
             </div>
         </div>
 
@@ -868,41 +286,108 @@
                     <p class="page-subtitle">Complete tasks to earn points</p>
                 </div>
 
-                <div class="welcome-section">
-                    <div class="welcome-icon">🚀</div>
-                    <h3>Welcome to TapEarn!</h3>
-                    <p>Complete tasks to earn more points</p>
-                    
-                    <div class="quick-stats">
-                        <div class="stat-card" onclick="showWalletHistory()">
-                            <div class="stat-number" id="totalEarnings">0</div>
-                            <div class="stat-label">Total Points</div>
+                <!-- Earning Content Area -->
+                <div id="earnAppContent">
+                    <!-- Default Home Content -->
+                    <div class="welcome-section">
+                        <div class="welcome-icon">🚀</div>
+                        <h3>Welcome to TapEarn!</h3>
+                        <p>Click any platform to start earning points instantly</p>
+                        
+                        <div class="platforms-grid">
+                            <div class="platform-card" onclick="showVideoSection()">
+                                <span class="platform-icon">🎬</span>
+                                <span class="platform-name">YouTube Videos</span>
+                                <span class="platform-points">+10-20 points</span>
+                                <span class="platform-time">⏱️ 1 min watch</span>
+                            </div>
+                            <div class="platform-card" onclick="showTelegramSection()">
+                                <span class="platform-icon">📱</span>
+                                <span class="platform-name">Telegram Tasks</span>
+                                <span class="platform-points">+15-30 points</span>
+                                <span class="platform-time">⚡ Instant</span>
+                            </div>
+                            <div class="platform-card" onclick="showInstagramSection()">
+                                <span class="platform-icon">📷</span>
+                                <span class="platform-name">Instagram Reels</span>
+                                <span class="platform-points">+12-25 points</span>
+                                <span class="platform-time">⏱️ 1 min watch</span>
+                            </div>
+                            <div class="platform-card" onclick="showTwitterSection()">
+                                <span class="platform-icon">🐦</span>
+                                <span class="platform-name">Twitter Tasks</span>
+                                <span class="platform-points">+8-20 points</span>
+                                <span class="platform-time">⚡ Instant</span>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="totalTasks">0</div>
-                            <div class="stat-label">Tasks Done</div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="todayEarnings">0</div>
-                            <div class="stat-label">Today's Points</div>
+
+                        <div class="earn-stats">
+                            <div class="earn-stat" onclick="showWalletHistory()">
+                                <div class="stat-number" id="totalEarnings">0</div>
+                                <div class="stat-label">Total Points</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="totalTasks">0</div>
+                                <div class="stat-label">Tasks Done</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="todayEarnings">0</div>
+                                <div class="stat-label">Today's Points</div>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="bonus-cards">
-                        <div class="bonus-card" onclick="completeTask('task1', 50, 'Daily Login')">
-                            <div class="bonus-icon">📱</div>
-                            <div class="bonus-amount">+50</div>
-                            <div class="bonus-status">Daily Login</div>
+                </div>
+            </div>
+
+            <!-- Tasks Content -->
+            <div id="tasksContent" class="content-page">
+                <div class="page-header">
+                    <h2>📋 Tasks</h2>
+                    <p class="page-subtitle">Complete various tasks to earn more points</p>
+                </div>
+
+                <!-- Tasks Content Area -->
+                <div id="tasksAppContent">
+                    <!-- Default Tasks Home Content -->
+                    <div class="welcome-section">
+                        <div class="welcome-icon">📋</div>
+                        <h3>Task Center</h3>
+                        <p>Complete different types of tasks to maximize your earnings</p>
+                        
+                        <div class="platforms-grid">
+                            <div class="platform-card" onclick="showFollowSection()">
+                                <span class="platform-icon">👥</span>
+                                <span class="platform-name">Follow & Earn</span>
+                                <span class="platform-points">+20-35 points</span>
+                                <span class="platform-time">⚡ Instant</span>
+                            </div>
+                            <div class="platform-card" onclick="showDailyTasksSection()">
+                                <span class="platform-icon">📅</span>
+                                <span class="platform-name">Daily Tasks</span>
+                                <span class="platform-points">+15-50 points</span>
+                                <span class="platform-time">📅 Daily</span>
+                            </div>
+                            <div class="platform-card" onclick="showSocialTasksSection()">
+                                <span class="platform-icon">🌐</span>
+                                <span class="platform-name">Social Tasks</span>
+                                <span class="platform-points">+20-50 points</span>
+                                <span class="platform-time">⚡ Instant</span>
+                            </div>
                         </div>
-                        <div class="bonus-card" onclick="completeTask('task2', 25, 'Watch Ad')">
-                            <div class="bonus-icon">📺</div>
-                            <div class="bonus-amount">+25</div>
-                            <div class="bonus-status">Watch Ad</div>
-                        </div>
-                        <div class="bonus-card" onclick="completeTask('task3', 75, 'Refer Friend')">
-                            <div class="bonus-icon">👥</div>
-                            <div class="bonus-amount">+75</div>
-                            <div class="bonus-status">Refer Friend</div>
+
+                        <div class="earn-stats">
+                            <div class="earn-stat" onclick="showWalletHistory()">
+                                <div class="stat-number" id="tasksTotalPoints">0</div>
+                                <div class="stat-label">Total Points</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksCompleted">0</div>
+                                <div class="stat-label">Tasks Done</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="tasksToday">0</div>
+                                <div class="stat-label">Today's Tasks</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -915,48 +400,64 @@
                     <p class="page-subtitle">Manage your account and rewards</p>
                 </div>
 
-                <div class="welcome-section">
-                    <div class="welcome-icon">👤</div>
-                    <h3>Your Profile</h3>
-                    <p>Manage your account, rewards, and settings</p>
-                    
-                    <!-- Telegram ID Display Card -->
-                    <div class="bonus-card" onclick="showTelegramIdModal()">
-                        <div class="bonus-icon">📱</div>
-                        <div class="bonus-amount" id="profileTelegramId">Not Set</div>
-                        <div class="bonus-status">Telegram ID</div>
-                    </div>
-                    
-                    <div class="quick-stats">
-                        <div class="stat-card" onclick="showWalletHistory()">
-                            <div class="stat-number" id="profileTotalPoints">0</div>
-                            <div class="stat-label">Total Points</div>
+                <!-- Profile Content Area -->
+                <div id="profileAppContent">
+                    <!-- Updated Profile Home Content with Telegram ID -->
+                    <div class="welcome-section">
+                        <div class="welcome-icon">👤</div>
+                        <h3>Your Profile</h3>
+                        <p>Manage your account, rewards, and settings</p>
+                        
+                        <!-- 🆕 Telegram ID Display Card -->
+                        <div class="telegram-id-card" onclick="showTelegramIdModal()">
+                            <div class="telegram-icon">📱</div>
+                            <div class="telegram-info">
+                                <div class="telegram-label">Telegram ID</div>
+                                <div class="telegram-value" id="profileTelegramId">Not Set - Tap to Set</div>
+                            </div>
+                            <div class="telegram-edit">✏️</div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="profileReferrals">0</div>
-                            <div class="stat-label">Referrals</div>
+                        
+                        <div class="platforms-grid">
+                            <div class="platform-card" onclick="showCashier()">
+                                <span class="platform-icon">💰</span>
+                                <span class="platform-name">Rewards Center</span>
+                                <span class="platform-points">+Gift Cards</span>
+                                <span class="platform-time">🎁 Redeem</span>
+                            </div>
+                            <div class="platform-card" onclick="showWalletHistory()">
+                                <span class="platform-icon">📊</span>
+                                <span class="platform-name">Wallet History</span>
+                                <span class="platform-points">All Transactions</span>
+                                <span class="platform-time">📈 View</span>
+                            </div>
+                            <div class="platform-card" onclick="showReferralSystem()">
+                                <span class="platform-icon">👥</span>
+                                <span class="platform-name">Refer & Earn</span>
+                                <span class="platform-points">+50 points</span>
+                                <span class="platform-time">⚡ Per Referral</span>
+                            </div>
+                            <div class="platform-card" onclick="showSupport()">
+                                <span class="platform-icon">💬</span>
+                                <span class="platform-name">Support</span>
+                                <span class="platform-points">Help Center</span>
+                                <span class="platform-time">📞 24/7</span>
+                            </div>
                         </div>
-                        <div class="stat-card">
-                            <div class="stat-number" id="profileRewards">0</div>
-                            <div class="stat-label">Rewards</div>
-                        </div>
-                    </div>
-                    
-                    <div class="bonus-cards">
-                        <div class="bonus-card" onclick="showWalletHistory()">
-                            <div class="bonus-icon">📊</div>
-                            <div class="bonus-amount">History</div>
-                            <div class="bonus-status">Wallet</div>
-                        </div>
-                        <div class="bonus-card" onclick="showReferralSystem()">
-                            <div class="bonus-icon">👥</div>
-                            <div class="bonus-amount">Refer</div>
-                            <div class="bonus-status">Earn More</div>
-                        </div>
-                        <div class="bonus-card" onclick="logout()">
-                            <div class="bonus-icon">🚪</div>
-                            <div class="bonus-amount">Logout</div>
-                            <div class="bonus-status">Switch Account</div>
+
+                        <div class="earn-stats">
+                            <div class="earn-stat" onclick="showWalletHistory()">
+                                <div class="stat-number" id="profileTotalPoints">0</div>
+                                <div class="stat-label">Total Points</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="profileReferrals">0</div>
+                                <div class="stat-label">Referrals</div>
+                            </div>
+                            <div class="earn-stat">
+                                <div class="stat-number" id="profileRewards">0</div>
+                                <div class="stat-label">Rewards</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -973,6 +474,10 @@
                 <span class="nav-icon">💰</span>
                 <span class="nav-label">Earn</span>
             </button>
+            <button class="nav-btn" onclick="switchTab('tasks')">
+                <span class="nav-icon">📋</span>
+                <span class="nav-label">Tasks</span>
+            </button>
             <button class="nav-btn" onclick="switchTab('profile')">
                 <span class="nav-icon">👤</span>
                 <span class="nav-label">Profile</span>
@@ -980,1206 +485,6 @@
         </div>
     </div>
 
-    <!-- Telegram ID Modal -->
-    <div id="telegramIdModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📱 Update Telegram ID</h3>
-                <button class="modal-close" onclick="closeTelegramIdModal()">×</button>
-            </div>
-            <div style="text-align: center; padding: 20px;">
-                <div style="font-size: 48px; margin-bottom: 15px;">👤</div>
-                <h3 style="color: #FFD700; margin-bottom: 10px;">Update Telegram ID</h3>
-                <p style="margin-bottom: 20px; opacity: 0.8;">Change your Telegram username for this account</p>
-                
-                <div class="form-group">
-                    <input type="text" class="form-input" id="telegramIdInput" placeholder="Enter your Telegram username (e.g., @username)" style="text-align: center;">
-                </div>
-                
-                <div class="login-help">
-                    <div class="login-help-title">How to find your Telegram username:</div>
-                    <div class="login-help-steps">
-                        1. Open Telegram App<br>
-                        2. Go to Settings → Edit Profile<br>
-                        3. Copy your Username (must start with @)
-                    </div>
-                </div>
-            </div>
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn-success" onclick="updateTelegramId()" style="width: 100%;">✅ Update Telegram ID</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Success Popup Modal -->
-    <div id="successPopup" class="modal">
-        <div class="modal-content success-popup">
-            <div class="success-icon">🎉</div>
-            <h3 id="successTitle">Success!</h3>
-            <p id="successMessage">You have earned points successfully!</p>
-            <button class="btn-success" onclick="closeSuccessPopup()">Awesome!</button>
-        </div>
-    </div>
-
-    <!-- Wallet History Modal -->
-    <div id="walletHistoryModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📊 Wallet History</h3>
-                <button class="modal-close" onclick="closeWalletHistory()">×</button>
-            </div>
-            <div class="wallet-history-content">
-                <div class="quick-stats">
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalEarnedHistory">0</div>
-                        <div class="stat-label">Total Earned</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="todayEarnedHistory">0</div>
-                        <div class="stat-label">Today's Earnings</div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-number" id="totalSpentHistory">0</div>
-                        <div class="stat-label">Total Spent</div>
-                    </div>
-                </div>
-                
-                <div id="historyList" style="margin-top: 20px;">
-                    <div class="no-history" style="text-align: center; opacity: 0.7; padding: 20px;">No transactions yet</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // App State
-        let isMining = false;
-        let miningSeconds = 0;
-        let miningInterval = null;
-        let userPoints = 0;
-        let totalMiningHours = 0;
-        let totalPointsEarned = 0;
-        let telegramUsername = '';
-        let userId = '';
-        let miningLevel = 1;
-        let speedLevel = 1;
-        let multiplierLevel = 1;
-        let turboActive = false;
-        let turboTimeLeft = 0;
-        let dailyBonusClaimed = false;
-        let hourlyBonusAvailable = true;
-        let loginStreak = 1;
-        let lastLoginDate = null;
-        let todayEarnings = 0;
-        let lastEarningDate = null;
-        let completedTasks = [];
-        let transactionHistory = [];
-        let totalEarned = 0;
-        let totalSpent = 0;
-
-        // Mining Rates and Costs
-        const LEVEL_DATA = {
-            1: { name: "Bronze", bonus: 5, cost: 500, color: "#CD7F32" },
-            2: { name: "Silver", bonus: 8, cost: 1000, color: "#C0C0C0" },
-            3: { name: "Gold", bonus: 12, cost: 2500, color: "#FFD700" },
-            4: { name: "Platinum", bonus: 18, cost: 5000, color: "#E5E4E2" },
-            5: { name: "Diamond", bonus: 25, cost: 10000, color: "#B9F2FF" }
-        };
-
-        const SPEED_UPGRADES = [
-            { cost: 100, bonus: 1 },
-            { cost: 200, bonus: 1 },
-            { cost: 400, bonus: 1 },
-            { cost: 800, bonus: 1 },
-            { cost: 1600, bonus: 1 }
-        ];
-
-        const MULTIPLIER_UPGRADES = [
-            { cost: 200, bonus: 0.2 },
-            { cost: 400, bonus: 0.2 },
-            { cost: 800, bonus: 0.2 },
-            { cost: 1600, bonus: 0.2 },
-            { cost: 3200, bonus: 0.2 }
-        ];
-
-        // Check if user is logged in on app start
-        document.addEventListener('DOMContentLoaded', function() {
-            checkUserLogin();
-            
-            // Auto-save every minute
-            setInterval(() => {
-                if (telegramUsername) saveMiningState();
-            }, 60000);
-            
-            // Check hourly bonus every minute
-            setInterval(() => {
-                if (telegramUsername) {
-                    hourlyBonusAvailable = true;
-                    updateUI();
-                }
-            }, 3600000);
-            
-            // Check daily reset every hour
-            setInterval(() => {
-                if (telegramUsername) checkDailyEarningsReset();
-            }, 3600000);
-        });
-
-        // Check if user has valid Telegram ID
-        function checkUserLogin() {
-            const savedTelegramId = getFromStorage('telegramUsername', '');
-            
-            if (savedTelegramId && isValidTelegramUsername(savedTelegramId)) {
-                // User is logged in, show app
-                telegramUsername = savedTelegramId;
-                userId = getFromStorage('userId', generateUserId());
-                loadMiningState();
-                document.getElementById('loginScreen').style.display = 'none';
-                document.querySelector('.app-container').style.display = 'block';
-                updateUI();
-                showNotification('✅ Welcome back to TapEarn!', 'success');
-            } else {
-                // User needs to log in
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.querySelector('.app-container').style.display = 'none';
-            }
-        }
-
-        // Login with Telegram ID
-        function loginWithTelegram() {
-            const telegramIdInput = document.getElementById('telegramId').value.trim();
-            
-            if (!telegramIdInput) {
-                showNotification('❌ Please enter your Telegram username!', 'warning');
-                return;
-            }
-            
-            // Validate Telegram username format
-            if (!isValidTelegramUsername(telegramIdInput)) {
-                showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
-                return;
-            }
-            
-            // Ensure it starts with @
-            const formattedTelegramId = telegramIdInput.startsWith('@') ? telegramIdInput : '@' + telegramIdInput;
-            
-            // Check for existing user
-            if (checkIfUserExists(formattedTelegramId)) {
-                showNotification('❌ This Telegram ID is already registered!', 'warning');
-                return;
-            }
-            
-            // Save user data
-            telegramUsername = formattedTelegramId;
-            userId = generateUserId();
-            
-            saveToStorage('telegramUsername', formattedTelegramId);
-            saveToStorage('userId', userId);
-            
-            // Create user profile
-            createUserProfileFromTelegram(formattedTelegramId, userId);
-            
-            // Show app
-            document.getElementById('loginScreen').style.display = 'none';
-            document.querySelector('.app-container').style.display = 'block';
-            
-            showNotification('✅ Welcome to TapEarn! Start earning points now.', 'success');
-            
-            // Load mining state and update UI
-            loadMiningState();
-            updateUI();
-        }
-
-        // Logout function
-        function logout() {
-            if (confirm('Are you sure you want to logout?')) {
-                // Stop mining if active
-                if (isMining) stopMining();
-                
-                // Clear user session
-                telegramUsername = '';
-                userId = '';
-                
-                // Show login screen
-                document.getElementById('loginScreen').style.display = 'flex';
-                document.querySelector('.app-container').style.display = 'none';
-                
-                // Clear login fields
-                document.getElementById('telegramId').value = '';
-                
-                showNotification('👋 Logged out successfully. Come back soon!', 'info');
-            }
-        }
-
-        // Validate Telegram username
-        function isValidTelegramUsername(username) {
-            if (!username || username === '' || username === 'Not set') {
-                return false;
-            }
-            
-            // Remove @ for validation
-            const cleanUsername = username.replace('@', '').trim();
-            
-            if (cleanUsername === '') {
-                return false;
-            }
-            
-            // Telegram username validation: 5-32 characters, contains only a-z, 0-9, and underscores
-            const telegramRegex = /^[a-zA-Z0-9_]{5,32}$/;
-            
-            // Also allow demo users for testing
-            if (username.startsWith('@demo') || username.startsWith('demo_')) {
-                return true;
-            }
-            
-            return telegramRegex.test(cleanUsername);
-        }
-
-        // Check if user already exists
-        function checkIfUserExists(telegramId) {
-            try {
-                // Check all userData entries in localStorage
-                const allKeys = Object.keys(localStorage);
-                
-                for (let key of allKeys) {
-                    if (key.startsWith('userData_')) {
-                        try {
-                            const userData = JSON.parse(localStorage.getItem(key));
-                            if (userData && userData.telegramUsername === telegramId) {
-                                return true;
-                            }
-                        } catch (e) {
-                            // Skip invalid entries
-                        }
-                    }
-                }
-                
-                // Check miningState entries
-                for (let key of allKeys) {
-                    if (key.startsWith('miningState')) {
-                        try {
-                            const miningState = JSON.parse(localStorage.getItem(key));
-                            if (miningState && miningState.telegramUsername === telegramId) {
-                                return true;
-                            }
-                        } catch (e) {
-                            // Skip invalid entries
-                        }
-                    }
-                }
-                
-                return false;
-            } catch (error) {
-                console.error('Error checking existing user:', error);
-                return false;
-            }
-        }
-
-        // Create user profile
-        function createUserProfileFromTelegram(telegramId, userId) {
-            console.log('🆕 Creating user profile from Telegram:', telegramId);
-            
-            // DOUBLE CHECK: Ensure user doesn't already exist
-            if (checkIfUserExists(telegramId)) {
-                console.log('⚠️ User already exists, skipping profile creation:', telegramId);
-                return;
-            }
-            
-            const userProfileData = {
-                id: userId,
-                telegramUsername: telegramId,
-                points: userPoints,
-                level: miningLevel,
-                miningStatus: isMining ? 'Active' : 'Inactive',
-                joinDate: new Date().toISOString(),
-                lastActive: new Date().toISOString(),
-                totalEarned: totalPointsEarned,
-                miningSeconds: miningSeconds,
-                totalMiningHours: totalMiningHours,
-                speedLevel: speedLevel,
-                multiplierLevel: multiplierLevel,
-                profileSource: 'telegram_direct',
-                isVerified: true
-            };
-            
-            // Save user data
-            saveToStorage(`userData_${userId}`, userProfileData);
-            
-            // Also save in miningState format for compatibility
-            const miningStateData = {
-                telegramUsername: telegramId,
-                userPoints: userPoints,
-                miningLevel: miningLevel,
-                isMining: isMining,
-                totalPointsEarned: totalPointsEarned,
-                miningSeconds: miningSeconds,
-                totalMiningHours: totalMiningHours,
-                speedLevel: speedLevel,
-                multiplierLevel: multiplierLevel,
-                userId: userId,
-                joinDate: new Date().toISOString(),
-                lastActive: new Date().toISOString()
-            };
-            saveToStorage(`miningState_${userId}`, miningStateData);
-            
-            console.log('✅ User profile created for admin panel:', telegramId);
-        }
-
-        // Generate unique user ID
-        function generateUserId() {
-            return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        // Storage Functions
-        function saveToStorage(key, value) {
-            try {
-                localStorage.setItem(key, JSON.stringify(value));
-                return true;
-            } catch (error) {
-                console.error('❌ Storage error:', error);
-                showNotification('❌ Storage error!', 'warning');
-                return false;
-            }
-        }
-
-        function getFromStorage(key, defaultValue = null) {
-            try {
-                const item = localStorage.getItem(key);
-                const value = item ? JSON.parse(item) : defaultValue;
-                return value;
-            } catch (error) {
-                console.error('❌ Storage read error:', error);
-                return defaultValue;
-            }
-        }
-
-        // Load mining state
-        function loadMiningState() {
-            console.log('🔄 Loading mining state...');
-            
-            const savedState = getFromStorage('miningState');
-            const savedUpgrades = getFromStorage('miningUpgrades');
-            const savedBonuses = getFromStorage('miningBonuses');
-            
-            // Load basic state
-            if (savedState) {
-                isMining = savedState.isMining || false;
-                miningSeconds = savedState.miningSeconds || 0;
-                userPoints = savedState.userPoints || 0;
-                totalMiningHours = savedState.totalMiningHours || 0;
-                totalPointsEarned = savedState.totalPointsEarned || 0;
-            }
-            
-            // Load upgrades
-            if (savedUpgrades) {
-                miningLevel = savedUpgrades.miningLevel || 1;
-                speedLevel = savedUpgrades.speedLevel || 1;
-                multiplierLevel = savedUpgrades.multiplierLevel || 1;
-                turboActive = savedUpgrades.turboActive || false;
-                turboTimeLeft = savedUpgrades.turboTimeLeft || 0;
-            }
-            
-            // Load bonuses
-            if (savedBonuses) {
-                dailyBonusClaimed = savedBonuses.dailyBonusClaimed || false;
-                hourlyBonusAvailable = savedBonuses.hourlyBonusAvailable !== false;
-                loginStreak = savedBonuses.loginStreak || 1;
-                lastLoginDate = savedBonuses.lastLoginDate;
-            }
-            
-            // Load other data
-            completedTasks = getFromStorage('completedTasks', []);
-            transactionHistory = getFromStorage('transactionHistory', []);
-            totalEarned = getFromStorage('totalEarned', 0);
-            totalSpent = getFromStorage('totalSpent', 0);
-            todayEarnings = getFromStorage('todayEarnings', 0);
-            lastEarningDate = getFromStorage('lastEarningDate', null);
-            
-            // Check daily reset for earnings
-            checkDailyEarningsReset();
-            
-            // Check daily login
-            checkDailyLogin();
-            
-            console.log('✅ Mining state loaded');
-            
-            if (isMining) {
-                console.log('⛏️ Resuming mining session...');
-                startMining();
-            }
-            
-            if (turboActive && turboTimeLeft > 0) {
-                console.log('🚀 Resuming turbo mode...');
-                startTurboCountdown();
-            }
-            
-            updateUI();
-        }
-
-        // Save mining state
-        function saveMiningState() {
-            const miningState = {
-                isMining: isMining,
-                miningSeconds: miningSeconds,
-                userPoints: userPoints,
-                totalMiningHours: totalMiningHours,
-                totalPointsEarned: totalPointsEarned,
-                telegramUsername: telegramUsername,
-                lastSaved: new Date().toISOString()
-            };
-            
-            const miningUpgrades = {
-                miningLevel: miningLevel,
-                speedLevel: speedLevel,
-                multiplierLevel: multiplierLevel,
-                turboActive: turboActive,
-                turboTimeLeft: turboTimeLeft
-            };
-            
-            const miningBonuses = {
-                dailyBonusClaimed: dailyBonusClaimed,
-                hourlyBonusAvailable: hourlyBonusAvailable,
-                loginStreak: loginStreak,
-                lastLoginDate: lastLoginDate
-            };
-            
-            saveToStorage('miningState', miningState);
-            saveToStorage('miningUpgrades', miningUpgrades);
-            saveToStorage('miningBonuses', miningBonuses);
-            saveToStorage('completedTasks', completedTasks);
-            saveToStorage('transactionHistory', transactionHistory);
-            saveToStorage('totalEarned', totalEarned);
-            saveToStorage('totalSpent', totalSpent);
-            saveToStorage('todayEarnings', todayEarnings);
-            saveToStorage('lastEarningDate', lastEarningDate);
-        }
-
-        // Check Daily Reset for Earnings
-        function checkDailyEarningsReset() {
-            const today = new Date().toDateString();
-            if (lastEarningDate !== today) {
-                todayEarnings = 0;
-                lastEarningDate = today;
-                dailyBonusClaimed = false;
-                console.log('📅 New day - earnings and bonuses reset');
-                saveMiningState();
-            }
-        }
-
-        // Check Daily Login
-        function checkDailyLogin() {
-            const today = new Date().toDateString();
-            if (lastLoginDate !== today) {
-                lastLoginDate = today;
-                
-                const yesterday = new Date();
-                yesterday.setDate(yesterday.getDate() - 1);
-                if (lastLoginDate === yesterday.toDateString()) {
-                    loginStreak++;
-                } else {
-                    loginStreak = 1;
-                }
-                
-                console.log('📅 New day detected. Streak:', loginStreak);
-                saveMiningState();
-            }
-        }
-
-        // Calculate Mining Rate
-        function getMiningRate() {
-            const baseRate = LEVEL_DATA[miningLevel].bonus;
-            const speedBonus = (speedLevel - 1) * SPEED_UPGRADES[0].bonus;
-            const multiplier = 1 + (multiplierLevel - 1) * MULTIPLIER_UPGRADES[0].bonus;
-            const turboMultiplier = turboActive ? 2 : 1;
-            
-            return (baseRate + speedBonus) * multiplier * turboMultiplier;
-        }
-
-        // Add Transaction to History
-        function addTransaction(description, amount, type, category = "other") {
-            const transaction = {
-                id: Date.now(),
-                timestamp: new Date().toISOString(),
-                description: description,
-                amount: amount,
-                type: type, // 'earning' or 'spending'
-                category: category,
-                balance: userPoints
-            };
-            
-            transactionHistory.unshift(transaction); // Add to beginning
-            
-            if (type === 'earning') {
-                totalEarned += amount;
-            } else if (type === 'spending') {
-                totalSpent += amount;
-            }
-            
-            // Limit history to 100 transactions
-            if (transactionHistory.length > 100) {
-                transactionHistory = transactionHistory.slice(0, 100);
-            }
-            
-            saveMiningState();
-        }
-
-        // Update UI
-        function updateUI() {
-            // Update Points and Level
-            document.getElementById('walletPoints').textContent = formatNumber(userPoints);
-            document.getElementById('totalPoints').textContent = formatNumber(userPoints);
-            document.getElementById('totalEarnings').textContent = formatNumber(userPoints);
-            document.getElementById('profileTotalPoints').textContent = formatNumber(userPoints);
-            
-            // Update Mining Stats
-            document.getElementById('miningHours').textContent = totalMiningHours;
-            document.getElementById('pointsEarned').textContent = formatNumber(totalPointsEarned);
-            
-            // Update Mining Timer and Status
-            updateMiningTimerDisplay();
-            
-            const statusElement = document.getElementById('miningStatusText');
-            const miningCard = document.querySelector('.main-mining-card');
-            const miningRate = getMiningRate();
-            
-            if (isMining) {
-                statusElement.textContent = `Mining Active - ${miningRate.toFixed(1)} pts/min`;
-                statusElement.style.color = '#FFD700';
-                miningCard.classList.add('mining-active');
-            } else {
-                statusElement.textContent = 'Click to start mining';
-                statusElement.style.color = '';
-                miningCard.classList.remove('mining-active');
-            }
-            
-            // Update Mining Rate Display
-            document.getElementById('miningRate').textContent = `${miningRate.toFixed(1)}/min`;
-            document.getElementById('miningMultiplier').textContent = `${(1 + (multiplierLevel - 1) * 0.2).toFixed(1)}x`;
-            
-            // Update Level and Progress
-            updateLevelUI();
-            
-            // Update Upgrades UI
-            updateUpgradesUI();
-            
-            // Update Bonuses UI
-            updateBonusesUI();
-            
-            // Update Turbo UI
-            updateTurboUI();
-            
-            // Update Earning UI
-            updateEarningUI();
-            
-            // Update Profile UI
-            updateProfileUI();
-        }
-
-        // Update Level UI
-        function updateLevelUI() {
-            const levelData = LEVEL_DATA[miningLevel];
-            document.getElementById('userLevel').textContent = levelData.name;
-            document.getElementById('userLevel').style.color = levelData.color;
-            
-            const nextLevel = miningLevel + 1;
-            const progress = nextLevel <= 5 ? userPoints / LEVEL_DATA[nextLevel].cost * 100 : 100;
-            document.getElementById('levelProgress').style.width = `${Math.min(progress, 100)}%`;
-            document.getElementById('userStats').textContent = `${userPoints}/${LEVEL_DATA[nextLevel]?.cost || 'MAX'}`;
-            
-            document.getElementById('miningTitle').textContent = `${levelData.name} Mining`;
-        }
-
-        // Update Upgrades UI
-        function updateUpgradesUI() {
-            // Speed Upgrade
-            const speedData = SPEED_UPGRADES[speedLevel - 1] || SPEED_UPGRADES[SPEED_UPGRADES.length - 1];
-            document.getElementById('speedLevel').textContent = speedLevel;
-            document.getElementById('speedCost').textContent = speedData ? speedData.cost : 'MAX';
-            
-            const speedBtn = document.getElementById('speedUpgradeBtn');
-            if (speedLevel > SPEED_UPGRADES.length) {
-                speedBtn.textContent = 'MAX LEVEL';
-                speedBtn.disabled = true;
-            } else {
-                speedBtn.disabled = userPoints < speedData.cost;
-            }
-            
-            // Multiplier Upgrade
-            const multiplierData = MULTIPLIER_UPGRADES[multiplierLevel - 1] || MULTIPLIER_UPGRADES[MULTIPLIER_UPGRADES.length - 1];
-            document.getElementById('multiplierLevel').textContent = multiplierLevel;
-            document.getElementById('multiplierCost').textContent = multiplierData ? multiplierData.cost : 'MAX';
-            
-            const multiplierBtn = document.getElementById('multiplierUpgradeBtn');
-            if (multiplierLevel > MULTIPLIER_UPGRADES.length) {
-                multiplierBtn.textContent = 'MAX LEVEL';
-                multiplierBtn.disabled = true;
-            } else {
-                multiplierBtn.disabled = userPoints < multiplierData.cost;
-            }
-            
-            // Level Upgrade
-            const nextLevel = miningLevel + 1;
-            const levelData = LEVEL_DATA[nextLevel];
-            document.getElementById('levelName').textContent = levelData ? levelData.name : 'MAX LEVEL';
-            document.getElementById('levelCost').textContent = levelData ? levelData.cost : 'MAX';
-            
-            const levelBtn = document.getElementById('levelUpgradeBtn');
-            if (miningLevel >= 5) {
-                levelBtn.textContent = 'MAX LEVEL';
-                levelBtn.disabled = true;
-            } else {
-                levelBtn.disabled = userPoints < levelData.cost;
-            }
-        }
-
-        // Update Bonuses UI
-        function updateBonusesUI() {
-            const dailyStatus = document.getElementById('dailyBonusStatus');
-            dailyStatus.textContent = dailyBonusClaimed ? 'Claimed' : 'Available';
-            dailyStatus.style.color = dailyBonusClaimed ? '#FF6B6B' : '#4CAF50';
-            
-            const hourlyStatus = document.getElementById('hourlyBonusStatus');
-            hourlyStatus.textContent = hourlyBonusAvailable ? 'Available' : 'Coming Soon';
-            hourlyStatus.style.color = hourlyBonusAvailable ? '#4CAF50' : '#FFA726';
-            
-            const streakStatus = document.getElementById('streakBonusStatus');
-            streakStatus.textContent = `Day ${loginStreak}`;
-            streakStatus.style.color = '#FFD700';
-        }
-
-        // Update Turbo UI
-        function updateTurboUI() {
-            const turboIndicator = document.getElementById('turboIndicator');
-            const turboBtn = document.getElementById('turboBtn');
-            
-            if (turboActive) {
-                turboIndicator.style.display = 'block';
-                document.getElementById('turboTime').textContent = formatTime(turboTimeLeft);
-                turboBtn.disabled = true;
-                turboBtn.innerHTML = '<span class="btn-icon">🚀</span><span class="btn-text">Active</span>';
-            } else {
-                turboIndicator.style.display = 'none';
-                turboBtn.innerHTML = '<span class="btn-icon">🚀</span><span class="btn-text">Turbo</span>';
-                turboBtn.disabled = userPoints < 200;
-            }
-        }
-
-        // Update Earning UI
-        function updateEarningUI() {
-            document.getElementById('totalTasks').textContent = completedTasks.length;
-            document.getElementById('todayEarnings').textContent = todayEarnings;
-        }
-
-        // Update Profile UI
-        function updateProfileUI() {
-            const profileTelegramId = document.getElementById('profileTelegramId');
-            
-            // Display Telegram ID in profile
-            if (profileTelegramId) {
-                if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
-                    profileTelegramId.textContent = telegramUsername;
-                } else {
-                    profileTelegramId.textContent = 'Not Set';
-                }
-            }
-            
-            // Update other profile stats
-            document.getElementById('profileReferrals').textContent = '0';
-            document.getElementById('profileRewards').textContent = '0';
-        }
-
-        // Format Time
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-
-        // Format Numbers
-        function formatNumber(num) {
-            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-        }
-
-        // Update Mining Timer Display
-        function updateMiningTimerDisplay() {
-            document.getElementById('miningTime').textContent = formatTime(miningSeconds);
-        }
-
-        // Toggle Mining
-        function toggleMining() {
-            if (isMining) {
-                stopMining();
-            } else {
-                startMining();
-            }
-        }
-
-        // Start Mining
-        function startMining() {
-            if (isMining) return;
-            
-            console.log('🟢 Starting mining session...');
-            isMining = true;
-            
-            if (miningInterval) {
-                clearInterval(miningInterval);
-            }
-            
-            let lastMinuteCheck = Math.floor(miningSeconds / 60);
-            let lastHourCheck = Math.floor(miningSeconds / 3600);
-            
-            miningInterval = setInterval(() => {
-                miningSeconds++;
-                
-                updateMiningTimerDisplay();
-                
-                const currentMinute = Math.floor(miningSeconds / 60);
-                const currentHour = Math.floor(miningSeconds / 3600);
-                
-                if (currentMinute > lastMinuteCheck) {
-                    const pointsToAdd = getMiningRate();
-                    userPoints += pointsToAdd;
-                    totalPointsEarned += pointsToAdd;
-                    todayEarnings += pointsToAdd;
-                    lastMinuteCheck = currentMinute;
-                    
-                    // Add to transaction history
-                    addTransaction('Mining Earnings', pointsToAdd, 'earning', 'mining');
-                    
-                    console.log(`⛏️ +${pointsToAdd.toFixed(1)} Points from mining!`);
-                    updateUI();
-                }
-                
-                if (currentHour > lastHourCheck) {
-                    totalMiningHours++;
-                    lastHourCheck = currentHour;
-                    hourlyBonusAvailable = true;
-                    
-                    console.log('⏰ Hour completed! Hourly bonus available.');
-                    showNotification('⏰ Hour completed! Claim your hourly bonus!', 'info');
-                    updateUI();
-                }
-                
-                if (miningSeconds % 30 === 0) {
-                    saveMiningState();
-                }
-                
-            }, 1000);
-            
-            showNotification('⛏️ Mining Started! Earning points...', 'success');
-            saveMiningState();
-            updateUI();
-        }
-
-        // Stop Mining
-        function stopMining() {
-            if (!isMining) return;
-            
-            console.log('🔴 Stopping mining session...');
-            isMining = false;
-            
-            if (miningInterval) {
-                clearInterval(miningInterval);
-                miningInterval = null;
-            }
-            
-            showNotification('⏹️ Mining Stopped. Points saved!', 'info');
-            saveMiningState();
-            updateUI();
-        }
-
-        // Upgrade Functions
-        function upgradeSpeed() {
-            const upgradeCost = SPEED_UPGRADES[speedLevel - 1].cost;
-            
-            if (userPoints >= upgradeCost) {
-                userPoints -= upgradeCost;
-                speedLevel++;
-                
-                // Add to transaction history
-                addTransaction('Speed Upgrade', -upgradeCost, 'spending', 'upgrade');
-                
-                console.log('⚡ Speed upgraded to level:', speedLevel);
-                showNotification(`⚡ Mining Speed upgraded to Level ${speedLevel}!`, 'success');
-                
-                saveMiningState();
-                updateUI();
-            } else {
-                showNotification('❌ Not enough points for speed upgrade!', 'warning');
-            }
-        }
-
-        function upgradeMultiplier() {
-            const upgradeCost = MULTIPLIER_UPGRADES[multiplierLevel - 1].cost;
-            
-            if (userPoints >= upgradeCost) {
-                userPoints -= upgradeCost;
-                multiplierLevel++;
-                
-                // Add to transaction history
-                addTransaction('Multiplier Upgrade', -upgradeCost, 'spending', 'upgrade');
-                
-                console.log('💰 Multiplier upgraded to level:', multiplierLevel);
-                showNotification(`💰 Point Multiplier upgraded to Level ${multiplierLevel}!`, 'success');
-                
-                saveMiningState();
-                updateUI();
-            } else {
-                showNotification('❌ Not enough points for multiplier upgrade!', 'warning');
-            }
-        }
-
-        function upgradeLevel() {
-            const nextLevel = miningLevel + 1;
-            const upgradeCost = LEVEL_DATA[nextLevel].cost;
-            
-            if (userPoints >= upgradeCost) {
-                userPoints -= upgradeCost;
-                miningLevel = nextLevel;
-                
-                // Add to transaction history
-                addTransaction('Level Upgrade', -upgradeCost, 'spending', 'upgrade');
-                
-                console.log('🏆 Mining level upgraded to:', LEVEL_DATA[miningLevel].name);
-                showNotification(`🏆 Congratulations! You are now a ${LEVEL_DATA[miningLevel].name} Miner!`, 'success');
-                
-                saveMiningState();
-                updateUI();
-            } else {
-                showNotification('❌ Not enough points for level upgrade!', 'warning');
-            }
-        }
-
-        // Turbo System
-        function activateTurbo() {
-            if (turboActive) return;
-            
-            const turboCost = 200;
-            if (userPoints >= turboCost) {
-                userPoints -= turboCost;
-                turboActive = true;
-                turboTimeLeft = 300;
-                
-                // Add to transaction history
-                addTransaction('Turbo Boost', -turboCost, 'spending', 'boost');
-                
-                console.log('🚀 Turbo activated!');
-                showNotification('🚀 TURBO MODE ACTIVATED! 2x points for 5 minutes!', 'success');
-                
-                startTurboCountdown();
-                saveMiningState();
-                updateUI();
-            } else {
-                showNotification('❌ Not enough points for turbo boost!', 'warning');
-            }
-        }
-
-        function startTurboCountdown() {
-            const turboInterval = setInterval(() => {
-                if (turboActive && turboTimeLeft > 0) {
-                    turboTimeLeft--;
-                    updateTurboUI();
-                } else {
-                    turboActive = false;
-                    clearInterval(turboInterval);
-                    console.log('🔄 Turbo mode ended');
-                    showNotification('🔄 Turbo mode ended. Points back to normal rate.', 'info');
-                    saveMiningState();
-                    updateUI();
-                }
-            }, 1000);
-        }
-
-        // Bonus Functions
-        function claimDailyBonus() {
-            if (dailyBonusClaimed) {
-                showNotification('❌ Daily bonus already claimed!', 'warning');
-                return;
-            }
-            
-            const bonusAmount = 100 + (loginStreak * 10);
-            
-            userPoints += bonusAmount;
-            totalPointsEarned += bonusAmount;
-            todayEarnings += bonusAmount;
-            dailyBonusClaimed = true;
-            
-            // Add to transaction history
-            addTransaction('Daily Bonus', bonusAmount, 'earning', 'bonus');
-            
-            console.log('🎁 Daily bonus claimed:', bonusAmount);
-            showNotification(`🎁 Daily Bonus! +${bonusAmount} Points (Streak: ${loginStreak})`, 'success');
-            
-            saveMiningState();
-            updateUI();
-        }
-
-        function claimHourlyBonus() {
-            if (!hourlyBonusAvailable) {
-                showNotification('❌ Hourly bonus not available yet!', 'warning');
-                return;
-            }
-            
-            const bonusAmount = 25;
-            userPoints += bonusAmount;
-            totalPointsEarned += bonusAmount;
-            todayEarnings += bonusAmount;
-            hourlyBonusAvailable = false;
-            
-            // Add to transaction history
-            addTransaction('Hourly Bonus', bonusAmount, 'earning', 'bonus');
-            
-            console.log('⏰ Hourly bonus claimed:', bonusAmount);
-            showNotification(`⏰ Hourly Bonus! +${bonusAmount} Points`, 'success');
-            
-            saveMiningState();
-            updateUI();
-        }
-
-        function claimStreakBonus() {
-            const bonusAmount = loginStreak * 10;
-            userPoints += bonusAmount;
-            totalPointsEarned += bonusAmount;
-            todayEarnings += bonusAmount;
-            
-            // Add to transaction history
-            addTransaction('Streak Bonus', bonusAmount, 'earning', 'bonus');
-            
-            console.log('🔥 Streak bonus claimed:', bonusAmount);
-            showNotification(`🔥 Streak Bonus! +${bonusAmount} Points (Day ${loginStreak})`, 'success');
-            
-            saveMiningState();
-            updateUI();
-        }
-
-        function claimBoost() {
-            const boostAmount = 50;
-            userPoints += boostAmount;
-            totalPointsEarned += boostAmount;
-            todayEarnings += boostAmount;
-            
-            // Add to transaction history
-            addTransaction('Daily Boost', boostAmount, 'earning', 'bonus');
-            
-            console.log('🎯 Boost claimed:', boostAmount);
-            showNotification(`🎯 Boost! +${boostAmount} Points`, 'success');
-            
-            saveMiningState();
-            updateUI();
-        }
-
-        // Complete Task
-        function completeTask(taskId, points, taskName) {
-            if (completedTasks.includes(taskId)) {
-                showNotification('❌ You already completed this task!', 'warning');
-                return;
-            }
-            
-            completedTasks.push(taskId);
-            userPoints += points;
-            totalPointsEarned += points;
-            todayEarnings += points;
-            
-            // Add to transaction history
-            addTransaction(`Task: ${taskName}`, points, 'earning', 'task');
-            
-            saveMiningState();
-            updateUI();
-            
-            showNotification(`✅ +${points} Points! ${taskName}`, 'success');
-        }
-
-        // Tab Switching Function
-        function switchTab(tabName) {
-            document.querySelectorAll('.content-page').forEach(page => {
-                page.classList.remove('active');
-            });
-            
-            document.querySelectorAll('.nav-btn').forEach(btn => {
-                btn.classList.remove('active');
-            });
-            
-            document.getElementById(tabName + 'Content').classList.add('active');
-            
-            // Set active nav button based on tab name
-            if (tabName === 'mining') {
-                document.querySelector('.nav-btn:nth-child(1)').classList.add('active');
-            } else if (tabName === 'earn') {
-                document.querySelector('.nav-btn:nth-child(2)').classList.add('active');
-            } else if (tabName === 'profile') {
-                document.querySelector('.nav-btn:nth-child(3)').classList.add('active');
-            }
-            
-            updateUI();
-        }
-
-        // Telegram ID Modal Functions
-        function showTelegramIdModal() {
-            document.getElementById('telegramIdInput').value = telegramUsername;
-            document.getElementById('telegramIdModal').classList.add('active');
-        }
-
-        function closeTelegramIdModal() {
-            document.getElementById('telegramIdModal').classList.remove('active');
-        }
-
-        function updateTelegramId() {
-            const telegramIdInput = document.getElementById('telegramIdInput').value.trim();
-            
-            if (!telegramIdInput) {
-                showNotification('❌ Please enter your Telegram username!', 'warning');
-                return;
-            }
-            
-            // Validate Telegram username format
-            if (!isValidTelegramUsername(telegramIdInput)) {
-                showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
-                return;
-            }
-            
-            // Ensure it starts with @
-            const formattedTelegramId = telegramIdInput.startsWith('@') ? telegramIdInput : '@' + telegramIdInput;
-            
-            // Check for existing user (excluding current user)
-            if (checkIfUserExists(formattedTelegramId) && formattedTelegramId !== telegramUsername) {
-                showNotification('❌ This Telegram ID is already registered by another user!', 'warning');
-                return;
-            }
-            
-            // Update Telegram ID
-            telegramUsername = formattedTelegramId;
-            saveToStorage('telegramUsername', formattedTelegramId);
-            
-            // Update user profile
-            createUserProfileFromTelegram(formattedTelegramId, userId);
-            
-            console.log('✅ Telegram ID updated:', formattedTelegramId);
-            showNotification('✅ Telegram ID updated successfully!', 'success');
-            
-            closeTelegramIdModal();
-            updateUI();
-        }
-
-        // Wallet History System
-        function showWalletHistory() {
-            document.getElementById('walletHistoryModal').classList.add('active');
-            updateHistoryStats();
-            displayTransactionHistory();
-        }
-
-        function closeWalletHistory() {
-            document.getElementById('walletHistoryModal').classList.remove('active');
-        }
-
-        function updateHistoryStats() {
-            document.getElementById('totalEarnedHistory').textContent = formatNumber(totalEarned);
-            document.getElementById('todayEarnedHistory').textContent = formatNumber(todayEarnings);
-            document.getElementById('totalSpentHistory').textContent = formatNumber(totalSpent);
-        }
-
-        function displayTransactionHistory() {
-            const historyList = document.getElementById('historyList');
-            
-            if (transactionHistory.length === 0) {
-                historyList.innerHTML = '<div class="no-history" style="text-align: center; opacity: 0.7; padding: 20px;">No transactions yet</div>';
-                return;
-            }
-            
-            let html = '';
-            
-            transactionHistory.forEach(transaction => {
-                const date = new Date(transaction.timestamp);
-                const timeString = date.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: true 
-                });
-                
-                html += `
-                    <div class="upgrade-item" style="margin-bottom: 10px;">
-                        <div class="upgrade-info">
-                            <div class="upgrade-name">${transaction.description}</div>
-                            <div class="upgrade-level">${getCategoryIcon(transaction.category)} ${formatCategory(transaction.category)} • ${timeString}</div>
-                        </div>
-                        <div class="upgrade-btn" style="background: ${transaction.type === 'earning' ? '#4CAF50' : '#FF6B6B'};">
-                            ${transaction.type === 'earning' ? '+' : '-'}${transaction.amount}
-                        </div>
-                    </div>
-                `;
-            });
-            
-            historyList.innerHTML = html;
-        }
-
-        function getCategoryIcon(category) {
-            const icons = {
-                'mining': '⛏️',
-                'task': '📋',
-                'bonus': '🎁',
-                'upgrade': '⚡',
-                'boost': '🚀',
-                'other': '📊'
-            };
-            return icons[category] || '📊';
-        }
-
-        function formatCategory(category) {
-            const categories = {
-                'mining': 'Mining',
-                'task': 'Task',
-                'bonus': 'Bonus',
-                'upgrade': 'Upgrade',
-                'boost': 'Boost',
-                'other': 'Other'
-            };
-            return categories[category] || 'Other';
-        }
-
-        // Referral System
-        function showReferralSystem() {
-            showNotification('👥 Referral system coming soon!', 'info');
-        }
-
-        // Success Popup System
-        function showSuccessPopup(title, message) {
-            document.getElementById('successTitle').textContent = title;
-            document.getElementById('successMessage').textContent = message;
-            document.getElementById('successPopup').classList.add('active');
-        }
-
-        function closeSuccessPopup() {
-            document.getElementById('successPopup').classList.remove('active');
-        }
-
-        // Show Notification
-        function showNotification(message, type = 'info') {
-            document.querySelectorAll('.notification').forEach(notif => notif.remove());
-            
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            notification.innerHTML = message;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                if (notification.parentElement) {
-                    notification.remove();
-                }
-            }, 3000);
-        }
-
-        // Allow Enter key to submit login form
-        document.getElementById('telegramId').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                loginWithTelegram();
-            }
-        });
-
-        // Allow Enter key in Telegram ID modal
-        document.getElementById('telegramIdInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                updateTelegramId();
-            }
-        });
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
