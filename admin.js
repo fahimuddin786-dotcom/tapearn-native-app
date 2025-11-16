@@ -1249,10 +1249,10 @@ function viewUserDetails(userId) {
     }
 }
 
-// ✅ FIXED: Delete user function - COMPLETELY REMOVES USER
+// ✅ FIXED: Delete user function - COMPLETELY REMOVES USER (ENHANCED)
 function deleteUser(userId) {
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone!')) {
-        console.log('🗑️ Deleting user:', userId);
+    if (confirm('Are you sure you want to PERMANENTLY DELETE this user? This action cannot be undone!')) {
+        console.log('🗑️ PERMANENTLY DELETING user:', userId);
         
         // Find user data first
         const user = allUsers.find(u => u.id === userId);
@@ -1307,8 +1307,8 @@ function deleteUser(userId) {
         updateUserSelect();
         updateAdminStats();
         
-        console.log(`✅ User completely deleted: ${userId} (${telegramUsername}) - ${removedCount} keys removed`);
-        alert(`✅ User ${telegramUsername} completely deleted!`);
+        console.log(`✅ User COMPLETELY DELETED: ${userId} (${telegramUsername}) - ${removedCount} keys removed`);
+        alert(`✅ User ${telegramUsername} PERMANENTLY DELETED!`);
         
         // Force reload to ensure clean state
         setTimeout(() => {
@@ -1317,7 +1317,7 @@ function deleteUser(userId) {
     }
 }
 
-// 🆕 NEW: Delete inactive users
+// 🆕 ENHANCED: Delete inactive users with admin permission
 function deleteInactiveUsers() {
     const inactiveUsers = allUsers.filter(user => user.miningStatus === 'Inactive');
     
@@ -1326,7 +1326,7 @@ function deleteInactiveUsers() {
         return;
     }
     
-    if (confirm(`Are you sure you want to delete ${inactiveUsers.length} inactive users? This action cannot be undone!`)) {
+    if (confirm(`Are you sure you want to PERMANENTLY DELETE ${inactiveUsers.length} inactive users? This action cannot be undone!`)) {
         let deletedCount = 0;
         
         inactiveUsers.forEach(user => {
@@ -1334,12 +1334,12 @@ function deleteInactiveUsers() {
             deletedCount++;
         });
         
-        console.log(`🗑️ Deleted ${deletedCount} inactive users`);
-        alert(`✅ ${deletedCount} inactive users deleted!`);
+        console.log(`🗑️ PERMANENTLY DELETED ${deletedCount} inactive users`);
+        alert(`✅ ${deletedCount} inactive users PERMANENTLY DELETED!`);
     }
 }
 
-// 🆕 NEW: Delete duplicate users
+// 🆕 ENHANCED: Delete duplicate users with admin permission
 function deleteDuplicateUsers() {
     const duplicates = findDuplicateUsers();
     
@@ -1348,7 +1348,7 @@ function deleteDuplicateUsers() {
         return;
     }
     
-    if (confirm(`Are you sure you want to delete ${duplicates.length} duplicate users? This action cannot be undone!`)) {
+    if (confirm(`Are you sure you want to PERMANENTLY DELETE ${duplicates.length} duplicate users? This action cannot be undone!`)) {
         let deletedCount = 0;
         
         duplicates.forEach(user => {
@@ -1356,8 +1356,8 @@ function deleteDuplicateUsers() {
             deletedCount++;
         });
         
-        console.log(`🗑️ Deleted ${deletedCount} duplicate users`);
-        alert(`✅ ${deletedCount} duplicate users deleted!`);
+        console.log(`🗑️ PERMANENTLY DELETED ${deletedCount} duplicate users`);
+        alert(`✅ ${deletedCount} duplicate users PERMANENTLY DELETED!`);
     }
 }
 
