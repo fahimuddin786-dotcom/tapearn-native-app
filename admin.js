@@ -58,11 +58,20 @@ function ultimateUserDetection() {
                     }
                     
                     if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
-                        // Check if already exists
-                        if (!allUsers.find(u => u.id === user.id)) {
+                        // 🆕 FIX: Check if user already exists by Telegram ID (not just ID)
+                        const existingUserIndex = allUsers.findIndex(u => 
+                            u.telegramUsername === user.telegramUsername
+                        );
+                        
+                        if (existingUserIndex === -1) {
+                            // New user - add to array
                             allUsers.push(user);
                             foundUsers++;
-                            console.log('✅ ADDED USER:', user.telegramUsername, user.points);
+                            console.log('✅ ADDED NEW USER:', user.telegramUsername, user.points);
+                        } else {
+                            // User exists - update data but keep same entry
+                            console.log('🔄 UPDATING EXISTING USER:', user.telegramUsername);
+                            allUsers[existingUserIndex] = user;
                         }
                     }
                 }
@@ -75,10 +84,16 @@ function ultimateUserDetection() {
     // Method 2: Direct app data detection
     const directUser = findDirectAppUser();
     if (directUser) {
-        if (!allUsers.find(u => u.id === directUser.id)) {
+        const existingUserIndex = allUsers.findIndex(u => 
+            u.telegramUsername === directUser.telegramUsername
+        );
+        
+        if (existingUserIndex === -1) {
             allUsers.push(directUser);
             foundUsers++;
             console.log('✅ ADDED DIRECT APP USER:', directUser.telegramUsername);
+        } else {
+            allUsers[existingUserIndex] = directUser;
         }
     }
     
@@ -122,7 +137,7 @@ function findDirectAppUser() {
             telegramUsername: userData.telegramUsername,
             points: parseInt(userData.userPoints) || 0,
             level: parseInt(userData.miningLevel) || 1,
-            miningStatus: 'Active',
+            miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
             tasksCompleted: parseInt(userData.totalTasksCompleted) || 0,
             joinDate: new Date().toLocaleDateString('en-US'),
             lastActive: new Date().toLocaleString('en-US'),
@@ -164,6 +179,9 @@ function loadAllUsers() {
     // 🆕 FOURTH: Validate and clean
     validateAndCleanTelegramUsernames();
     
+    // 🆕 FIFTH: Remove duplicates by Telegram username
+    removeDuplicateUsers();
+    
     // 🆕 FINAL: Count real users
     const realUsersCount = allUsers.filter(user => !user.id.startsWith('demo_')).length;
     
@@ -180,6 +198,29 @@ function loadAllUsers() {
     updateUsersTable();
     updateUserSelect();
     updateAdminStats();
+}
+
+// 🆕 NEW: Remove duplicate users by Telegram username
+function removeDuplicateUsers() {
+    console.log('🔍 Removing duplicate users...');
+    
+    const uniqueUsers = [];
+    const telegramUsernames = new Set();
+    
+    allUsers.forEach(user => {
+        if (user.telegramUsername && !telegramUsernames.has(user.telegramUsername)) {
+            telegramUsernames.add(user.telegramUsername);
+            uniqueUsers.push(user);
+        } else {
+            console.log('🗑️ Removing duplicate user:', user.telegramUsername);
+        }
+    });
+    
+    const removedCount = allUsers.length - uniqueUsers.length;
+    allUsers = uniqueUsers;
+    
+    console.log(`✅ Removed ${removedCount} duplicate users`);
+    return removedCount;
 }
 
 // 🆕 NEW: Clear all demo users
@@ -257,10 +298,16 @@ function addUserToAdmin(userData, source) {
         profileSource: source
     };
     
-    // Check if already exists
-    if (!allUsers.find(u => u.telegramUsername === user.telegramUsername)) {
+    // 🆕 FIX: Check if already exists by Telegram username
+    const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === user.telegramUsername);
+    
+    if (existingUserIndex === -1) {
         allUsers.push(user);
         console.log('✅ Added user from', source, ':', user.telegramUsername);
+    } else {
+        // Update existing user
+        allUsers[existingUserIndex] = user;
+        console.log('🔄 Updated existing user from', source, ':', user.telegramUsername);
     }
 }
 
@@ -343,12 +390,10 @@ function checkDirectTelegramUsers() {
     if (telegramUser && isValidTelegramUsername(telegramUser)) {
         console.log('🎉 DIRECT TELEGRAM USER FOUND:', telegramUser);
         
-        // Check if already exists in allUsers
-        const existingUser = allUsers.find(u => 
-            u.telegramUsername === telegramUser || u.id === userId
-        );
+        // Check if already exists in allUsers by Telegram username
+        const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === telegramUser);
         
-        if (!existingUser) {
+        if (existingUserIndex === -1) {
             const directUser = {
                 id: userId || 'user_' + Date.now(),
                 telegramUsername: telegramUser,
@@ -370,6 +415,11 @@ function checkDirectTelegramUsers() {
             
             allUsers.push(directUser);
             console.log('✅ Added direct Telegram user:', telegramUser);
+        } else {
+            // Update existing user
+            allUsers[existingUserIndex].points = parseInt(localStorage.getItem('userPoints')) || 0;
+            allUsers[existingUserIndex].miningStatus = localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive';
+            console.log('🔄 Updated existing Telegram user:', telegramUser);
         }
     } else {
         console.log('⚠️ Direct Telegram user found but invalid:', telegramUser);
@@ -395,8 +445,8 @@ function checkTelegramProfileActivities() {
             if (activity.telegramUsername && isValidTelegramUsername(activity.telegramUsername)) {
                 // 🆕 FIX: Check if it's NOT a demo user
                 if (!activity.id.startsWith('demo_') && !activity.telegramUsername.startsWith('@demo')) {
-                    const existingUser = allUsers.find(u => u.id === activity.id);
-                    if (!existingUser) {
+                    const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === activity.telegramUsername);
+                    if (existingUserIndex === -1) {
                         // Create user from activity
                         const newUser = {
                             id: activity.id,
@@ -431,8 +481,8 @@ function checkTelegramProfileActivities() {
                 if (userData.telegramUsername && isValidTelegramUsername(userData.telegramUsername)) {
                     // 🆕 FIX: Check if it's NOT a demo user
                     if (!userData.id.startsWith('demo_') && !userData.telegramUsername.startsWith('@demo')) {
-                        const existingUser = allUsers.find(u => u.id === userData.id);
-                        if (!existingUser) {
+                        const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === userData.telegramUsername);
+                        if (existingUserIndex === -1) {
                             const newUser = {
                                 id: userData.id,
                                 telegramUsername: userData.telegramUsername,
@@ -508,8 +558,10 @@ function checkStandaloneTelegramIds() {
             
             // 🆕 FIX: Check if it's NOT a demo user
             if (!userId.startsWith('demo_') && !telegramUsername.startsWith('@demo')) {
-                // Check if this user already exists
-                if (!allUsers.find(u => u.id === userId)) {
+                // Check if this user already exists by Telegram username
+                const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === telegramUsername);
+                
+                if (existingUserIndex === -1) {
                     const userData = {
                         id: userId,
                         telegramUsername: telegramUsername,
@@ -1202,6 +1254,10 @@ function deleteUser(userId) {
     if (confirm('Are you sure you want to delete this user? This action cannot be undone!')) {
         console.log('🗑️ Deleting user:', userId);
         
+        // Find user data first
+        const user = allUsers.find(u => u.id === userId);
+        const telegramUsername = user ? user.telegramUsername : '';
+        
         // Remove from localStorage - ALL POSSIBLE KEYS
         const keysToRemove = [
             `userData_${userId}`,
@@ -1219,9 +1275,11 @@ function deleteUser(userId) {
             'totalMiningHours'
         ];
         
+        let removedCount = 0;
         keysToRemove.forEach(key => {
             if (localStorage.getItem(key)) {
                 localStorage.removeItem(key);
+                removedCount++;
                 console.log('✅ Removed:', key);
             }
         });
@@ -1249,12 +1307,12 @@ function deleteUser(userId) {
         updateUserSelect();
         updateAdminStats();
         
-        console.log('✅ User completely deleted:', userId);
-        alert('✅ User completely deleted!');
+        console.log(`✅ User completely deleted: ${userId} (${telegramUsername}) - ${removedCount} keys removed`);
+        alert(`✅ User ${telegramUsername} completely deleted!`);
         
         // Force reload to ensure clean state
         setTimeout(() => {
-            forceReloadAllData();
+            loadAllUsers();
         }, 1000);
     }
 }
