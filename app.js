@@ -93,6 +93,11 @@ const MULTIPLIER_UPGRADES = [
     { cost: 3200, bonus: 0.2 }
 ];
 
+// Video System Variables
+let currentVideoData = null;
+let currentVideoTimer = null;
+let currentVideoTimeLeft = 0;
+
 // 🆕 NEW: App Initialization State
 let appInitialized = false;
 let telegramModalShown = false;
