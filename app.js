@@ -360,6 +360,90 @@ function createUserProfileFromTelegram(telegramId, userId) {
     syncToAdminPanel();
 }
 
+function showTelegramIdModal() {
+    // Don't show if user already has valid Telegram ID
+    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+        console.log('ℹ️ User already has Telegram ID, skipping modal');
+        return;
+    }
+    
+    document.getElementById('telegramIdModal').classList.add('active');
+    // Focus on input field
+    setTimeout(() => {
+        const input = document.getElementById('telegramIdInput');
+        if (input) input.focus();
+    }, 300);
+}
+
+function closeTelegramIdModal() {
+    document.getElementById('telegramIdModal').classList.remove('active');
+}
+
+function saveTelegramId() {
+    const telegramIdInput = document.getElementById('telegramIdInput').value.trim();
+    
+    if (!telegramIdInput) {
+        showNotification('❌ Please enter your Telegram username!', 'warning');
+        return;
+    }
+    
+    // Validate Telegram username format
+    if (!isValidTelegramUsername(telegramIdInput)) {
+        showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
+        return;
+    }
+    
+    // Ensure it starts with @
+    const formattedTelegramId = telegramIdInput.startsWith('@') ? telegramIdInput : '@' + telegramIdInput;
+    
+    // 🆕 CHECK FOR EXISTING USER BEFORE SAVING
+    if (checkIfUserExists(formattedTelegramId)) {
+        showNotification('❌ This Telegram ID is already registered! Please use a different ID or contact support if this is your account.', 'warning');
+        document.getElementById('telegramIdInput').value = '';
+        document.getElementById('telegramIdInput').focus();
+        return;
+    }
+    
+    telegramUsername = formattedTelegramId;
+    
+    // Save to storage
+    saveToStorage('telegramUsername', formattedTelegramId);
+    saveToStorage('userId', userId);
+    saveToStorage('telegramModalShown', true);
+    
+    // Create complete user profile
+    createUserProfileFromTelegram(formattedTelegramId, userId);
+    
+    // Also update referral data
+    referralData.telegramUsername = formattedTelegramId;
+    saveToStorage('referralData', referralData);
+    
+    // Update mining state with Telegram ID
+    const miningState = getFromStorage('miningState', {});
+    miningState.telegramUsername = formattedTelegramId;
+    saveToStorage('miningState', miningState);
+    
+    // Create user profile data
+    const userProfile = {
+        telegramUsername: formattedTelegramId,
+        joinDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
+        userId: userId
+    };
+    saveToStorage('userProfile', userProfile);
+    
+    console.log('✅ Telegram ID saved and profile created:', formattedTelegramId);
+    showNotification('✅ Telegram ID saved successfully!', 'success');
+    
+    closeTelegramIdModal();
+    
+    // Update UI
+    updateUI();
+    
+    // SYNC TO ADMIN PANEL
+    syncToAdminPanel();
+}
+
 // 🆕 NOTIFY ADMIN PANEL
 function notifyAdminPanel(event, data) {
     console.log(`📢 Notifying admin: ${event}`, data);
@@ -457,90 +541,6 @@ function syncToAdminPanel() {
     
     // Update user activity
     updateUserActivity();
-}
-
-function showTelegramIdModal() {
-    // Don't show if user already has valid Telegram ID
-    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
-        console.log('ℹ️ User already has Telegram ID, skipping modal');
-        return;
-    }
-    
-    document.getElementById('telegramIdModal').classList.add('active');
-    // Focus on input field
-    setTimeout(() => {
-        const input = document.getElementById('telegramIdInput');
-        if (input) input.focus();
-    }, 300);
-}
-
-function closeTelegramIdModal() {
-    document.getElementById('telegramIdModal').classList.remove('active');
-}
-
-function saveTelegramId() {
-    const telegramIdInput = document.getElementById('telegramIdInput').value.trim();
-    
-    if (!telegramIdInput) {
-        showNotification('❌ Please enter your Telegram username!', 'warning');
-        return;
-    }
-    
-    // Validate Telegram username format
-    if (!isValidTelegramUsername(telegramIdInput)) {
-        showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
-        return;
-    }
-    
-    // Ensure it starts with @
-    const formattedTelegramId = telegramIdInput.startsWith('@') ? telegramIdInput : '@' + telegramIdInput;
-    
-    // 🆕 CHECK FOR EXISTING USER BEFORE SAVING
-    if (checkIfUserExists(formattedTelegramId)) {
-        showNotification('❌ This Telegram ID is already registered! Please use a different ID or contact support if this is your account.', 'warning');
-        document.getElementById('telegramIdInput').value = '';
-        document.getElementById('telegramIdInput').focus();
-        return;
-    }
-    
-    telegramUsername = formattedTelegramId;
-    
-    // Save to storage
-    saveToStorage('telegramUsername', formattedTelegramId);
-    saveToStorage('userId', userId);
-    saveToStorage('telegramModalShown', true);
-    
-    // Create complete user profile
-    createUserProfileFromTelegram(formattedTelegramId, userId);
-    
-    // Also update referral data
-    referralData.telegramUsername = formattedTelegramId;
-    saveToStorage('referralData', referralData);
-    
-    // Update mining state with Telegram ID
-    const miningState = getFromStorage('miningState', {});
-    miningState.telegramUsername = formattedTelegramId;
-    saveToStorage('miningState', miningState);
-    
-    // Create user profile data
-    const userProfile = {
-        telegramUsername: formattedTelegramId,
-        joinDate: new Date().toISOString(),
-        lastActive: new Date().toISOString(),
-        userId: userId
-    };
-    saveToStorage('userProfile', userProfile);
-    
-    console.log('✅ Telegram ID saved and profile created:', formattedTelegramId);
-    showNotification('✅ Telegram ID saved successfully!', 'success');
-    
-    closeTelegramIdModal();
-    
-    // Update UI
-    updateUI();
-    
-    // SYNC TO ADMIN PANEL
-    syncToAdminPanel();
 }
 
 function isValidTelegramUsername(username) {
