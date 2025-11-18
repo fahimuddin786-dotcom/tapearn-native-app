@@ -36,14 +36,16 @@ function ultimateUserDetection() {
                 const hasPoints = data.points !== undefined || data.userPoints !== undefined;
                 const hasTelegram = data.telegramUsername && data.telegramUsername !== 'Not set';
                 const hasLevel = data.level !== undefined || data.miningLevel !== undefined;
+                const hasReferral = data.referralData !== undefined;
                 
-                if ((hasPoints || hasTelegram || hasLevel) && !key.includes('demo')) {
+                if ((hasPoints || hasTelegram || hasLevel || hasReferral) && !key.includes('demo')) {
                     console.log('🎯 POTENTIAL USER FOUND in key:', key);
                     console.log('📊 User data:', {
                         telegram: data.telegramUsername,
                         points: data.points || data.userPoints,
                         level: data.level || data.miningLevel,
-                        id: data.id || key
+                        id: data.id || key,
+                        referrals: data.referralData ? data.referralData.referredUsers : []
                     });
                     
                     // Try to extract user
@@ -53,7 +55,7 @@ function ultimateUserDetection() {
                         user = extractUserDataFromUserData(key, data);
                     } else if (key.startsWith('miningState')) {
                         user = extractUserDataFromMiningState(key, data);
-                    } else if (hasTelegram || hasPoints) {
+                    } else if (hasTelegram || hasPoints || hasReferral) {
                         user = extractUserData(key, data);
                     }
                     
@@ -132,6 +134,9 @@ function findDirectAppUser() {
     if (userData.telegramUsername && userData.telegramUsername !== 'Not set') {
         console.log('🎉 DIRECT APP USER FOUND:', userData.telegramUsername);
         
+        // 🆕 Get referral data
+        const referralData = getFromStorage('referralData', { referredUsers: [] });
+        
         return {
             id: userData.userId || 'app_user_' + Date.now(),
             telegramUsername: userData.telegramUsername,
@@ -148,7 +153,9 @@ function findDirectAppUser() {
             speedLevel: 1,
             multiplierLevel: 1,
             loginStreak: 1,
-            profileSource: 'direct_app_detection'
+            profileSource: 'direct_app_detection',
+            referredUsers: referralData.referredUsers || [],
+            referralCount: referralData.referredUsers ? referralData.referredUsers.length : 0
         };
     }
     
@@ -182,6 +189,9 @@ function loadAllUsers() {
     // 🆕 FIFTH: Remove duplicates by Telegram username
     removeDuplicateUsers();
     
+    // 🆕 SIXTH: Find and add referral data for all users
+    addReferralDataToUsers();
+    
     // 🆕 FINAL: Count real users
     const realUsersCount = allUsers.filter(user => !user.id.startsWith('demo_')).length;
     
@@ -198,6 +208,46 @@ function loadAllUsers() {
     updateUsersTable();
     updateUserSelect();
     updateAdminStats();
+}
+
+// 🆕 NEW: Add referral data to all users
+function addReferralDataToUsers() {
+    console.log('🔍 Adding referral data to all users...');
+    
+    allUsers.forEach(user => {
+        try {
+            // Try to get referral data from userData
+            const userDataKey = `userData_${user.id}`;
+            const userData = JSON.parse(localStorage.getItem(userDataKey));
+            
+            if (userData && userData.referralData) {
+                user.referredUsers = userData.referralData.referredUsers || [];
+                user.referralCount = user.referredUsers.length;
+                console.log(`📊 Found ${user.referralCount} referrals for ${user.telegramUsername}`);
+            }
+            
+            // Also check miningState
+            const miningStateKey = `miningState_${user.id}`;
+            const miningState = JSON.parse(localStorage.getItem(miningStateKey));
+            
+            if (miningState && miningState.referralData) {
+                user.referredUsers = miningState.referralData.referredUsers || [];
+                user.referralCount = user.referredUsers.length;
+                console.log(`📊 Found ${user.referralCount} referrals for ${user.telegramUsername} from miningState`);
+            }
+            
+            // Check standalone referral data
+            const standaloneReferralData = getFromStorage('referralData', {});
+            if (standaloneReferralData && standaloneReferralData.referredUsers && standaloneReferralData.telegramUsername === user.telegramUsername) {
+                user.referredUsers = standaloneReferralData.referredUsers;
+                user.referralCount = user.referredUsers.length;
+                console.log(`📊 Found ${user.referralCount} referrals for ${user.telegramUsername} from standalone`);
+            }
+            
+        } catch (error) {
+            console.error('Error adding referral data for user:', user.telegramUsername, error);
+        }
+    });
 }
 
 // 🆕 NEW: Remove duplicate users by Telegram username
@@ -295,7 +345,9 @@ function addUserToAdmin(userData, source) {
         speedLevel: userData.speedLevel || 1,
         multiplierLevel: userData.multiplierLevel || 1,
         loginStreak: userData.loginStreak || 1,
-        profileSource: source
+        profileSource: source,
+        referredUsers: userData.referredUsers || [],
+        referralCount: userData.referredUsers ? userData.referredUsers.length : 0
     };
     
     // 🆕 FIX: Check if already exists by Telegram username
@@ -410,7 +462,9 @@ function checkDirectTelegramUsers() {
                 speedLevel: 1,
                 multiplierLevel: 1,
                 loginStreak: 1,
-                profileSource: 'direct_telegram'
+                profileSource: 'direct_telegram',
+                referredUsers: [],
+                referralCount: 0
             };
             
             allUsers.push(directUser);
@@ -464,7 +518,9 @@ function checkTelegramProfileActivities() {
                             speedLevel: 1,
                             multiplierLevel: 1,
                             loginStreak: 1,
-                            profileSource: 'telegram_activity'
+                            profileSource: 'telegram_activity',
+                            referredUsers: [],
+                            referralCount: 0
                         };
                         
                         allUsers.push(newUser);
@@ -499,7 +555,9 @@ function checkTelegramProfileActivities() {
                                 speedLevel: userData.speedLevel || 1,
                                 multiplierLevel: userData.multiplierLevel || 1,
                                 loginStreak: userData.loginStreak || 1,
-                                profileSource: userData.profileSource || 'telegram_notification'
+                                profileSource: userData.profileSource || 'telegram_notification',
+                                referredUsers: userData.referredUsers || [],
+                                referralCount: userData.referredUsers ? userData.referredUsers.length : 0
                             };
                             
                             allUsers.push(newUser);
@@ -536,7 +594,9 @@ function extractUserDataFromUserData(key, data) {
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
             loginStreak: data.loginStreak || 1,
-            profileSource: data.profileSource || 'userData'
+            profileSource: data.profileSource || 'userData',
+            referredUsers: data.referralData ? data.referralData.referredUsers : [],
+            referralCount: data.referralData ? data.referralData.referredUsers.length : 0
         };
         
         return user;
@@ -578,7 +638,9 @@ function checkStandaloneTelegramIds() {
                         speedLevel: 1,
                         multiplierLevel: 1,
                         loginStreak: 1,
-                        profileSource: 'standalone_telegram'
+                        profileSource: 'standalone_telegram',
+                        referredUsers: [],
+                        referralCount: 0
                     };
                     
                     allUsers.push(userData);
@@ -617,7 +679,9 @@ function extractUserDataFromMiningState(key, data) {
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
             loginStreak: data.loginStreak || 1,
-            profileSource: 'miningState'
+            profileSource: 'miningState',
+            referredUsers: data.referralData ? data.referralData.referredUsers : [],
+            referralCount: data.referralData ? data.referralData.referredUsers.length : 0
         };
         
         return user;
@@ -681,7 +745,9 @@ function extractUserData(key, data) {
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
             loginStreak: data.loginStreak || 1,
-            profileSource: 'generic'
+            profileSource: 'generic',
+            referredUsers: data.referralData ? data.referralData.referredUsers : [],
+            referralCount: data.referralData ? data.referralData.referredUsers.length : 0
         };
         
         return user;
@@ -739,7 +805,9 @@ function createDemoUsers() {
             speedLevel: 2,
             multiplierLevel: 1,
             loginStreak: 5,
-            profileSource: 'demo'
+            profileSource: 'demo',
+            referredUsers: ['@jane_smith'],
+            referralCount: 1
         },
         {
             id: 'demo_user_2',
@@ -757,7 +825,9 @@ function createDemoUsers() {
             speedLevel: 1,
             multiplierLevel: 1,
             loginStreak: 3,
-            profileSource: 'demo'
+            profileSource: 'demo',
+            referredUsers: [],
+            referralCount: 0
         },
         {
             id: 'demo_user_3',
@@ -775,7 +845,9 @@ function createDemoUsers() {
             speedLevel: 3,
             multiplierLevel: 2,
             loginStreak: 12,
-            profileSource: 'demo'
+            profileSource: 'demo',
+            referredUsers: ['@john_doe', '@jane_smith'],
+            referralCount: 2
         }
     ];
     
@@ -800,7 +872,7 @@ function createDemoUsers() {
             lastActive: user.lastActive,
             referralData: {
                 referralCode: 'TAPEARN-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
-                referredUsers: [],
+                referredUsers: user.referredUsers,
                 totalEarned: 0
             },
             profileSource: 'demo'
@@ -818,6 +890,7 @@ function updateAdminStats() {
     const totalPoints = allUsers.reduce((sum, user) => sum + user.points, 0);
     const activeUsers = allUsers.filter(user => user.miningStatus === 'Active').length;
     const todayEarnings = allUsers.reduce((sum, user) => sum + user.todayEarnings, 0);
+    const totalReferrals = allUsers.reduce((sum, user) => sum + (user.referralCount || 0), 0);
     
     document.getElementById('totalUsers').textContent = totalUsers;
     document.getElementById('totalPoints').textContent = totalPoints.toLocaleString('en-US');
@@ -828,7 +901,6 @@ function updateAdminStats() {
     const totalMining = allUsers.reduce((sum, user) => sum + user.totalMiningHours, 0);
     const totalTasks = allUsers.reduce((sum, user) => sum + user.tasksCompleted, 0);
     const totalVideos = allUsers.reduce((sum, user) => sum + Math.floor(user.tasksCompleted / 2), 0);
-    const totalReferrals = allUsers.reduce((sum, user) => sum + Math.floor(user.tasksCompleted / 5), 0);
     
     document.getElementById('totalMining').textContent = totalMining;
     document.getElementById('totalTasks').textContent = totalTasks;
@@ -1211,6 +1283,9 @@ function viewUserDetails(userId) {
                     <div><strong>Tasks Completed:</strong></div>
                     <div>${user.tasksCompleted}</div>
                     
+                    <div><strong>Referrals:</strong></div>
+                    <div>${user.referralCount || 0}</div>
+                    
                     <div><strong>Profile Source:</strong></div>
                     <div>${user.profileSource || 'Unknown'}</div>
                 </div>
@@ -1238,6 +1313,20 @@ function viewUserDetails(userId) {
                     <div>${user.lastActive}</div>
                 </div>
             </div>
+            
+            ${user.referredUsers && user.referredUsers.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #FFA726; margin-bottom: 15px;">Referrals (${user.referredUsers.length})</h4>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px;">
+                    ${user.referredUsers.map((ref, index) => `
+                        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <span>${index + 1}. ${ref.telegramUsername || ref}</span>
+                            <span style="color: #4CAF50;">+50 pts</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
             
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="editUser('${user.id}')">Edit Points</button>
@@ -1493,7 +1582,8 @@ function debugTelegramUsernames() {
                 telegram: data.telegramUsername,
                 points: data.userPoints,
                 level: data.miningLevel,
-                id: data.id
+                id: data.id,
+                referrals: data.referralData ? data.referralData.referredUsers : []
             });
         } catch (e) {
             console.log(`❌ ${key}: Parse error`);
@@ -1527,7 +1617,8 @@ function debugUserData() {
                 telegram: data.telegramUsername || 'Not found',
                 points: data.userPoints || data.points || 0,
                 level: data.miningLevel || data.level || 1,
-                source: data.profileSource || 'Unknown'
+                source: data.profileSource || 'Unknown',
+                referrals: data.referralData ? data.referralData.referredUsers.length : 0
             });
         } catch (e) {
             console.log(`❌ ${key}:`, localStorage.getItem(key));
@@ -1537,7 +1628,7 @@ function debugUserData() {
     // Count users in allUsers array
     console.log(`👥 allUsers array has: ${allUsers.length} users`);
     allUsers.forEach(user => {
-        console.log(`   - ${user.telegramUsername} (${user.id}) - ${user.points} points - Source: ${user.profileSource}`);
+        console.log(`   - ${user.telegramUsername} (${user.id}) - ${user.points} points - Referrals: ${user.referralCount || 0} - Source: ${user.profileSource}`);
     });
     
     // Check activities and notifications
@@ -1778,6 +1869,17 @@ function getFromStorage(key, defaultValue = null) {
     } catch (error) {
         console.error('Storage read error:', error);
         return defaultValue;
+    }
+}
+
+// Save to storage helper function
+function saveToStorage(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+    } catch (error) {
+        console.error('Storage write error:', error);
+        return false;
     }
 }
 
