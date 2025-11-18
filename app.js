@@ -134,6 +134,67 @@ const MULTIPLIER_UPGRADES = [
     { cost: 3200, bonus: 0.2 }
 ];
 
+// 🆕 SERVER SYNC FUNCTION - Ye naya function add karein
+async function syncToServer() {
+    if (!telegramUsername || !isValidTelegramUsername(telegramUsername)) {
+        console.log('⏭️ Skipping server sync - no valid Telegram ID');
+        return;
+    }
+    
+    try {
+        const userData = {
+            telegramUsername: telegramUsername,
+            userPoints: Math.round(userPoints),
+            points: Math.round(userPoints),
+            miningLevel: miningLevel,
+            level: miningLevel,
+            isMining: isMining,
+            miningStatus: isMining ? 'Active' : 'Inactive',
+            totalTasksCompleted: totalTasksCompleted,
+            tasksCompleted: totalTasksCompleted,
+            totalPointsEarned: Math.round(totalPointsEarned),
+            totalEarned: Math.round(totalPointsEarned),
+            todayEarnings: Math.round(todayEarnings),
+            miningSeconds: miningSeconds,
+            totalMiningHours: totalMiningHours,
+            speedLevel: speedLevel,
+            multiplierLevel: multiplierLevel,
+            loginStreak: loginStreak,
+            joinDate: new Date().toISOString(),
+            lastActive: new Date().toISOString(),
+            referralCount: referralData.referredUsers.length,
+            profileSource: 'app_sync'
+        };
+        
+        const response = await fetch('http://localhost:3000/api/save-user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(userData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            console.log('✅ Server sync successful:', telegramUsername, 'Points:', userPoints);
+        } else {
+            console.error('❌ Server sync failed:', result.error);
+        }
+    } catch (error) {
+        console.error('❌ Server sync error:', error);
+        // Fallback to localStorage
+        enhancedSyncToAdminPanel();
+    }
+}
+
+// 🆕 Auto-sync every 5 seconds - Ye bhi add karein
+setInterval(() => {
+    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+        syncToServer();
+    }
+}, 5000);
+
 // Calculate Mining Rate
 function getMiningRate() {
     const baseRate = LEVEL_DATA[miningLevel].bonus;
@@ -510,8 +571,11 @@ function updateUserActivity() {
     saveToStorage('userActivities', filteredActivities);
 }
 
-// 🆕 ENHANCED REAL-TIME SYNC TO ADMIN PANEL - FIXED
+// 🆕 UPDATED: Enhanced real-time sync to admin panel - FIXED
 function enhancedSyncToAdminPanel() {
+    // 🆕 Pehle server sync karein
+    syncToServer();
+    
     if (!telegramUsername || !isValidTelegramUsername(telegramUsername)) {
         console.log('⏭️ Skipping admin sync - no valid Telegram ID');
         return;
@@ -564,7 +628,7 @@ function enhancedSyncToAdminPanel() {
     console.log('✅ ENHANCED SYNC COMPLETE:', telegramUsername);
     
     // 🆕 Force admin panel to detect this user
-    forceAdminPanelDetection();
+    forceAdminPanelDetection(); 
 }
 
 // 🆕 FORCE ADMIN PANEL TO DETECT USER
