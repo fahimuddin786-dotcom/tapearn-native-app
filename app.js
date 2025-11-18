@@ -175,7 +175,7 @@ function addTransaction(description, amount, type, category = "other") {
     saveMiningState();
 }
 
-// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - ONLY FOR EXISTING USERS
+// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - IMPROVED DETECTION
 function captureTelegramId() {
     const savedTelegramId = getFromStorage('telegramUsername', '');
     const savedUserId = getFromStorage('userId', '');
@@ -183,7 +183,7 @@ function captureTelegramId() {
     userId = savedUserId || generateUserId();
     
     // If user already has a valid Telegram ID saved
-    if (savedTelegramId && isValidTelegramUsername(savedTelegramId)) {
+    if (savedTelegramId && savedTelegramId !== 'Not set' && savedTelegramId !== 'null') {
         telegramUsername = savedTelegramId;
         console.log('✅ Existing user detected, auto-login:', telegramUsername);
         
@@ -201,14 +201,9 @@ function captureTelegramId() {
             showTelegramIdModal();
         }, 1500);
     }
-    
-    // 🆕 IMMEDIATE SYNC TO ADMIN PANEL
-    setTimeout(() => {
-        syncToAdminPanel();
-    }, 2000);
 }
 
-// 🆕 NEW: Show popup for existing users
+// 🆕 IMPROVED: Show popup for existing users
 function showExistingUserPopup(telegramId) {
     console.log('🔄 Existing user detected, showing welcome back popup:', telegramId);
     
@@ -248,7 +243,7 @@ function showExistingUserPopup(telegramId) {
     document.body.appendChild(existingUserPopup);
 }
 
-// 🆕 NEW: Close existing user popup
+// 🆕 IMPROVED: Close existing user popup
 function closeExistingUserPopup() {
     const popup = document.querySelector('.modal.active');
     if (popup && popup.innerHTML.includes('Welcome Back')) {
@@ -258,7 +253,7 @@ function closeExistingUserPopup() {
     syncToAdminPanel();
 }
 
-// 🆕 NEW: Check if user already exists with this Telegram ID
+// 🆕 IMPROVED: Check if user already exists with this Telegram ID
 function checkIfUserExists(telegramId) {
     try {
         // Check all userData entries in localStorage
@@ -300,7 +295,7 @@ function checkIfUserExists(telegramId) {
     }
 }
 
-// 🆕 UPDATED: Enhanced user profile creation for admin panel
+// 🆕 IMPROVED: Enhanced user profile creation for admin panel
 function createUserProfileFromTelegram(telegramId, userId) {
     console.log('🆕 Creating user profile from Telegram:', telegramId);
     
@@ -362,7 +357,7 @@ function createUserProfileFromTelegram(telegramId, userId) {
 
 function showTelegramIdModal() {
     // Don't show if user already has valid Telegram ID
-    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+    if (telegramUsername && telegramUsername !== 'Not set' && telegramUsername !== 'null') {
         console.log('ℹ️ User already has Telegram ID, skipping modal');
         return;
     }
@@ -379,17 +374,12 @@ function closeTelegramIdModal() {
     document.getElementById('telegramIdModal').classList.remove('active');
 }
 
+// 🆕 IMPROVED: Save Telegram ID function
 function saveTelegramId() {
     const telegramIdInput = document.getElementById('telegramIdInput').value.trim();
     
     if (!telegramIdInput) {
         showNotification('❌ Please enter your Telegram username!', 'warning');
-        return;
-    }
-    
-    // Validate Telegram username format
-    if (!isValidTelegramUsername(telegramIdInput)) {
-        showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
         return;
     }
     
@@ -444,7 +434,7 @@ function saveTelegramId() {
     syncToAdminPanel();
 }
 
-// 🆕 NOTIFY ADMIN PANEL
+// 🆕 IMPROVED NOTIFY ADMIN PANEL
 function notifyAdminPanel(event, data) {
     console.log(`📢 Notifying admin: ${event}`, data);
     
@@ -472,9 +462,9 @@ function notifyAdminPanel(event, data) {
     updateUserActivity();
 }
 
-// 🆕 UPDATE USER ACTIVITY
+// 🆕 IMPROVED UPDATE USER ACTIVITY
 function updateUserActivity() {
-    if (!userId || !telegramUsername) return;
+    if (!userId || !telegramUsername || telegramUsername === 'Not set') return;
     
     const userActivity = {
         id: userId,
@@ -500,9 +490,9 @@ function updateUserActivity() {
     saveToStorage('userActivities', filteredActivities);
 }
 
-// 🆕 SYNC TO ADMIN PANEL
+// 🆕 IMPROVED SYNC TO ADMIN PANEL
 function syncToAdminPanel() {
-    if (!telegramUsername || telegramUsername === 'Not set' || telegramUsername === '' || !isValidTelegramUsername(telegramUsername)) {
+    if (!telegramUsername || telegramUsername === 'Not set' || telegramUsername === '' || telegramUsername === 'null') {
         console.log('⏭️ Skipping admin panel sync - no valid Telegram ID');
         return;
     }
@@ -518,7 +508,7 @@ function syncToAdminPanel() {
         miningStatus: isMining ? 'Active' : 'Inactive',
         tasksCompleted: totalTasksCompleted,
         joinDate: new Date().toISOString(),
-        lastActive: new Date().toISOString(),
+        lastActive: new Date().toLocaleString('en-US'),
         totalEarned: totalPointsEarned,
         todayEarnings: todayEarnings,
         miningSeconds: miningSeconds,
@@ -543,8 +533,9 @@ function syncToAdminPanel() {
     updateUserActivity();
 }
 
+// 🆕 SIMPLIFIED Telegram username validation
 function isValidTelegramUsername(username) {
-    if (!username || username === '' || username === 'Not set') {
+    if (!username || username === '' || username === 'Not set' || username === 'null') {
         return false;
     }
     
@@ -555,15 +546,12 @@ function isValidTelegramUsername(username) {
         return false;
     }
     
-    // Telegram username validation: 5-32 characters, contains only a-z, 0-9, and underscores
-    const telegramRegex = /^[a-zA-Z0-9_]{5,32}$/;
-    
-    // Also allow demo users for testing
-    if (username.startsWith('@demo') || username.startsWith('demo_')) {
-        return true;
+    // More relaxed validation
+    if (cleanUsername.length < 3 || cleanUsername.length > 50) {
+        return false;
     }
     
-    return telegramRegex.test(cleanUsername);
+    return true;
 }
 
 function generateUserId() {
@@ -773,7 +761,7 @@ function saveMiningState() {
     saveToStorage('userId', userId);
     
     // Update user profile for admin panel
-    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+    if (telegramUsername && telegramUsername !== 'Not set') {
         if (!checkIfUserExists(telegramUsername)) {
             createUserProfileFromTelegram(telegramUsername, userId);
         }
@@ -987,7 +975,7 @@ function updateProfileUI() {
     
     // Display Telegram ID in profile
     if (profileTelegramId) {
-        if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+        if (telegramUsername && telegramUsername !== 'Not set') {
             profileTelegramId.textContent = telegramUsername;
             profileTelegramId.style.color = '#4CAF50';
         } else {
@@ -3509,7 +3497,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Auto-sync to Admin Panel every 30 seconds
     setInterval(() => {
-        if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+        if (telegramUsername && telegramUsername !== 'Not set') {
             syncToAdminPanel();
         }
     }, 30000);
