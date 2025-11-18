@@ -175,7 +175,7 @@ function addTransaction(description, amount, type, category = "other") {
     saveMiningState();
 }
 
-// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - IMPROVED DETECTION
+// 🆕 ENHANCED TELEGRAM PROFILE SYSTEM - ONLY FOR EXISTING USERS
 function captureTelegramId() {
     const savedTelegramId = getFromStorage('telegramUsername', '');
     const savedUserId = getFromStorage('userId', '');
@@ -183,7 +183,7 @@ function captureTelegramId() {
     userId = savedUserId || generateUserId();
     
     // If user already has a valid Telegram ID saved
-    if (savedTelegramId && savedTelegramId !== 'Not set' && savedTelegramId !== 'null') {
+    if (savedTelegramId && isValidTelegramUsername(savedTelegramId)) {
         telegramUsername = savedTelegramId;
         console.log('✅ Existing user detected, auto-login:', telegramUsername);
         
@@ -201,9 +201,14 @@ function captureTelegramId() {
             showTelegramIdModal();
         }, 1500);
     }
+    
+    // 🆕 IMMEDIATE SYNC TO ADMIN PANEL
+    setTimeout(() => {
+        enhancedSyncToAdminPanel();
+    }, 2000);
 }
 
-// 🆕 IMPROVED: Show popup for existing users
+// 🆕 NEW: Show popup for existing users
 function showExistingUserPopup(telegramId) {
     console.log('🔄 Existing user detected, showing welcome back popup:', telegramId);
     
@@ -243,17 +248,17 @@ function showExistingUserPopup(telegramId) {
     document.body.appendChild(existingUserPopup);
 }
 
-// 🆕 IMPROVED: Close existing user popup
+// 🆕 NEW: Close existing user popup
 function closeExistingUserPopup() {
     const popup = document.querySelector('.modal.active');
     if (popup && popup.innerHTML.includes('Welcome Back')) {
         popup.remove();
     }
     // Sync to admin panel after login
-    syncToAdminPanel();
+    enhancedSyncToAdminPanel();
 }
 
-// 🆕 IMPROVED: Check if user already exists with this Telegram ID
+// 🆕 NEW: Check if user already exists with this Telegram ID
 function checkIfUserExists(telegramId) {
     try {
         // Check all userData entries in localStorage
@@ -295,7 +300,7 @@ function checkIfUserExists(telegramId) {
     }
 }
 
-// 🆕 IMPROVED: Enhanced user profile creation for admin panel
+// 🆕 UPDATED: Enhanced user profile creation for admin panel
 function createUserProfileFromTelegram(telegramId, userId) {
     console.log('🆕 Creating user profile from Telegram:', telegramId);
     
@@ -303,12 +308,17 @@ function createUserProfileFromTelegram(telegramId, userId) {
         id: userId,
         telegramUsername: telegramId,
         points: userPoints,
+        userPoints: userPoints,
         level: miningLevel,
+        miningLevel: miningLevel,
         miningStatus: isMining ? 'Active' : 'Inactive',
+        isMining: isMining,
         tasksCompleted: totalTasksCompleted,
+        totalTasksCompleted: totalTasksCompleted,
         joinDate: new Date().toISOString(),
         lastActive: new Date().toISOString(),
         totalEarned: totalPointsEarned,
+        totalPointsEarned: totalPointsEarned,
         todayEarnings: todayEarnings,
         miningSeconds: miningSeconds,
         totalMiningHours: totalMiningHours,
@@ -316,7 +326,8 @@ function createUserProfileFromTelegram(telegramId, userId) {
         multiplierLevel: multiplierLevel,
         loginStreak: loginStreak,
         profileSource: 'telegram_direct',
-        isVerified: true
+        isVerified: true,
+        referralData: referralData
     };
     
     // Save in multiple formats for better admin panel detection
@@ -338,7 +349,8 @@ function createUserProfileFromTelegram(telegramId, userId) {
         loginStreak: loginStreak,
         userId: userId,
         joinDate: new Date().toISOString(),
-        lastActive: new Date().toISOString()
+        lastActive: new Date().toISOString(),
+        referralData: referralData
     };
     saveToStorage(`miningState_${userId}`, miningStateData);
     
@@ -352,12 +364,12 @@ function createUserProfileFromTelegram(telegramId, userId) {
     notifyAdminPanel('user_created', userProfileData);
     
     // SYNC TO ADMIN PANEL
-    syncToAdminPanel();
+    enhancedSyncToAdminPanel();
 }
 
 function showTelegramIdModal() {
     // Don't show if user already has valid Telegram ID
-    if (telegramUsername && telegramUsername !== 'Not set' && telegramUsername !== 'null') {
+    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
         console.log('ℹ️ User already has Telegram ID, skipping modal');
         return;
     }
@@ -374,12 +386,17 @@ function closeTelegramIdModal() {
     document.getElementById('telegramIdModal').classList.remove('active');
 }
 
-// 🆕 IMPROVED: Save Telegram ID function
 function saveTelegramId() {
     const telegramIdInput = document.getElementById('telegramIdInput').value.trim();
     
     if (!telegramIdInput) {
         showNotification('❌ Please enter your Telegram username!', 'warning');
+        return;
+    }
+    
+    // Validate Telegram username format
+    if (!isValidTelegramUsername(telegramIdInput)) {
+        showNotification('❌ Please enter a valid Telegram username (e.g., @username)', 'warning');
         return;
     }
     
@@ -431,10 +448,10 @@ function saveTelegramId() {
     updateUI();
     
     // SYNC TO ADMIN PANEL
-    syncToAdminPanel();
+    enhancedSyncToAdminPanel();
 }
 
-// 🆕 IMPROVED NOTIFY ADMIN PANEL
+// 🆕 NOTIFY ADMIN PANEL
 function notifyAdminPanel(event, data) {
     console.log(`📢 Notifying admin: ${event}`, data);
     
@@ -462,17 +479,20 @@ function notifyAdminPanel(event, data) {
     updateUserActivity();
 }
 
-// 🆕 IMPROVED UPDATE USER ACTIVITY
+// 🆕 UPDATE USER ACTIVITY
 function updateUserActivity() {
-    if (!userId || !telegramUsername || telegramUsername === 'Not set') return;
+    if (!userId || !telegramUsername) return;
     
     const userActivity = {
         id: userId,
         telegramUsername: telegramUsername,
         lastActive: new Date().toISOString(),
         points: userPoints,
+        userPoints: userPoints,
         level: miningLevel,
-        miningStatus: isMining ? 'Active' : 'Inactive'
+        miningLevel: miningLevel,
+        miningStatus: isMining ? 'Active' : 'Inactive',
+        isMining: isMining
     };
     
     // Save activity for admin panel
@@ -490,52 +510,91 @@ function updateUserActivity() {
     saveToStorage('userActivities', filteredActivities);
 }
 
-// 🆕 IMPROVED SYNC TO ADMIN PANEL
-function syncToAdminPanel() {
-    if (!telegramUsername || telegramUsername === 'Not set' || telegramUsername === '' || telegramUsername === 'null') {
-        console.log('⏭️ Skipping admin panel sync - no valid Telegram ID');
+// 🆕 ENHANCED REAL-TIME SYNC TO ADMIN PANEL
+function enhancedSyncToAdminPanel() {
+    if (!telegramUsername || !isValidTelegramUsername(telegramUsername)) {
+        console.log('⏭️ Skipping admin sync - no valid Telegram ID');
         return;
     }
     
-    console.log('🔄 Syncing data to Admin Panel format...');
+    console.log('🔄 ENHANCED SYNC: Syncing to Admin Panel...');
     
-    // Create admin panel compatible data
+    // Create COMPLETE user data for admin panel
     const adminPanelData = {
         id: userId,
         telegramUsername: telegramUsername,
         points: userPoints,
+        userPoints: userPoints, // Both formats for compatibility
         level: miningLevel,
+        miningLevel: miningLevel,
+        isMining: isMining,
         miningStatus: isMining ? 'Active' : 'Inactive',
         tasksCompleted: totalTasksCompleted,
+        totalTasksCompleted: totalTasksCompleted,
         joinDate: new Date().toISOString(),
-        lastActive: new Date().toLocaleString('en-US'),
+        lastActive: new Date().toISOString(),
         totalEarned: totalPointsEarned,
+        totalPointsEarned: totalPointsEarned,
         todayEarnings: todayEarnings,
         miningSeconds: miningSeconds,
         totalMiningHours: totalMiningHours,
         speedLevel: speedLevel,
         multiplierLevel: multiplierLevel,
         loginStreak: loginStreak,
-        profileSource: 'app_sync',
-        isVerified: true
+        profileSource: 'enhanced_app_sync',
+        isVerified: true,
+        referralData: referralData
     };
     
-    // Save in formats that Admin Panel can read
+    // 🆕 MULTIPLE STORAGE LOCATIONS for better admin detection
     saveToStorage(`userData_${userId}`, adminPanelData);
     saveToStorage(`miningState_${userId}`, adminPanelData);
-    
-    // Also save in simple format for direct access
+    saveToStorage(`userProfile_${userId}`, adminPanelData);
     saveToStorage('currentUserData', adminPanelData);
     
-    console.log('✅ Data synced to Admin Panel:', telegramUsername);
+    // 🆕 Also save in simple format for direct access
+    saveToStorage('telegramUsername', telegramUsername);
+    saveToStorage('userPoints', userPoints);
+    saveToStorage('miningLevel', miningLevel);
+    saveToStorage('isMining', isMining);
+    saveToStorage('totalTasksCompleted', totalTasksCompleted);
+    saveToStorage('totalPointsEarned', totalPointsEarned);
+    saveToStorage('todayEarnings', todayEarnings);
     
-    // Update user activity
+    console.log('✅ ENHANCED SYNC COMPLETE:', telegramUsername);
+    
+    // 🆕 Force admin panel to detect this user
+    forceAdminPanelDetection();
+}
+
+// 🆕 FORCE ADMIN PANEL TO DETECT USER
+function forceAdminPanelDetection() {
+    // Create a special event for admin panel
+    const adminEvent = {
+        type: 'USER_SYNC_FORCE',
+        userId: userId,
+        telegramUsername: telegramUsername,
+        timestamp: new Date().toISOString(),
+        data: {
+            points: userPoints,
+            level: miningLevel,
+            miningStatus: isMining ? 'Active' : 'Inactive'
+        }
+    };
+    
+    saveToStorage('ADMIN_FORCE_DETECT', adminEvent);
+    
+    // Also add to user activities
     updateUserActivity();
 }
 
-// 🆕 SIMPLIFIED Telegram username validation
+// 🆕 OLD SYNC FUNCTION (for compatibility)
+function syncToAdminPanel() {
+    enhancedSyncToAdminPanel();
+}
+
 function isValidTelegramUsername(username) {
-    if (!username || username === '' || username === 'Not set' || username === 'null') {
+    if (!username || username === '' || username === 'Not set') {
         return false;
     }
     
@@ -546,12 +605,20 @@ function isValidTelegramUsername(username) {
         return false;
     }
     
-    // More relaxed validation
+    // More relaxed validation for testing
     if (cleanUsername.length < 3 || cleanUsername.length > 50) {
         return false;
     }
     
-    return true;
+    // Allow most common characters in usernames
+    const relaxedRegex = /^[a-zA-Z0-9_\.\-]{3,50}$/;
+    
+    // Also allow demo users for testing
+    if (username.startsWith('@demo') || username.startsWith('demo_')) {
+        return true;
+    }
+    
+    return relaxedRegex.test(cleanUsername);
 }
 
 function generateUserId() {
@@ -686,10 +753,10 @@ function loadMiningState() {
     
     updateUI();
     
-    // SYNC TO ADMIN PANEL ON LOAD
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON LOAD
     setTimeout(() => {
-        syncToAdminPanel();
-    }, 2000);
+        enhancedSyncToAdminPanel();
+    }, 3000);
 }
 
 // Save Complete State
@@ -761,7 +828,7 @@ function saveMiningState() {
     saveToStorage('userId', userId);
     
     // Update user profile for admin panel
-    if (telegramUsername && telegramUsername !== 'Not set') {
+    if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
         if (!checkIfUserExists(telegramUsername)) {
             createUserProfileFromTelegram(telegramUsername, userId);
         }
@@ -770,8 +837,8 @@ function saveMiningState() {
     // Update user activity
     updateUserActivity();
     
-    // SYNC TO ADMIN PANEL ON EVERY SAVE
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON EVERY SAVE
+    enhancedSyncToAdminPanel();
 }
 
 // Check Daily Reset for Earnings
@@ -862,8 +929,8 @@ function updateUI() {
     // Update user activity
     updateUserActivity();
     
-    // SYNC TO ADMIN PANEL ON UI UPDATE
-    setTimeout(syncToAdminPanel, 1000);
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON UI UPDATE
+    setTimeout(enhancedSyncToAdminPanel, 1000);
 }
 
 // Update Level UI
@@ -975,7 +1042,7 @@ function updateProfileUI() {
     
     // Display Telegram ID in profile
     if (profileTelegramId) {
-        if (telegramUsername && telegramUsername !== 'Not set') {
+        if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
             profileTelegramId.textContent = telegramUsername;
             profileTelegramId.style.color = '#4CAF50';
         } else {
@@ -1019,8 +1086,8 @@ function toggleMining() {
         startMining();
     }
     
-    // SYNC TO ADMIN PANEL ON MINING ACTION
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON MINING ACTION
+    enhancedSyncToAdminPanel();
 }
 
 // Start Mining - FIXED: Points calculation with whole numbers
@@ -1061,8 +1128,8 @@ function startMining() {
             console.log(`⛏️ +${pointsToAdd} Points from mining!`);
             updateUI();
             
-            // SYNC TO ADMIN PANEL ON POINTS EARN
-            syncToAdminPanel();
+            // 🆕 ENHANCED SYNC TO ADMIN PANEL ON POINTS EARN
+            enhancedSyncToAdminPanel();
         }
         
         if (currentHour > lastHourCheck) {
@@ -1125,8 +1192,8 @@ function upgradeSpeed() {
         saveMiningState();
         updateUI();
         
-        // SYNC TO ADMIN PANEL ON UPGRADE
-        syncToAdminPanel();
+        // 🆕 ENHANCED SYNC TO ADMIN PANEL ON UPGRADE
+        enhancedSyncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for speed upgrade!', 'warning');
     }
@@ -1148,8 +1215,8 @@ function upgradeMultiplier() {
         saveMiningState();
         updateUI();
         
-        // SYNC TO ADMIN PANEL ON UPGRADE
-        syncToAdminPanel();
+        // 🆕 ENHANCED SYNC TO ADMIN PANEL ON UPGRADE
+        enhancedSyncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for multiplier upgrade!', 'warning');
     }
@@ -1172,8 +1239,8 @@ function upgradeLevel() {
         saveMiningState();
         updateUI();
         
-        // SYNC TO ADMIN PANEL ON UPGRADE
-        syncToAdminPanel();
+        // 🆕 ENHANCED SYNC TO ADMIN PANEL ON UPGRADE
+        enhancedSyncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for level upgrade!', 'warning');
     }
@@ -1199,8 +1266,8 @@ function activateTurbo() {
         saveMiningState();
         updateUI();
         
-        // SYNC TO ADMIN PANEL ON TURBO
-        syncToAdminPanel();
+        // 🆕 ENHANCED SYNC TO ADMIN PANEL ON TURBO
+        enhancedSyncToAdminPanel();
     } else {
         showNotification('❌ Not enough points for turbo boost!', 'warning');
     }
@@ -1219,8 +1286,8 @@ function startTurboCountdown() {
             saveMiningState();
             updateUI();
             
-            // SYNC TO ADMIN PANEL ON TURBO END
-            syncToAdminPanel();
+            // 🆕 ENHANCED SYNC TO ADMIN PANEL ON TURBO END
+            enhancedSyncToAdminPanel();
         }
     }, 1000);
 }
@@ -1249,8 +1316,8 @@ function claimDailyBonus() {
     saveMiningState();
     updateUI();
     
-    // SYNC TO ADMIN PANEL ON BONUS
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON BONUS
+    enhancedSyncToAdminPanel();
 }
 
 function claimHourlyBonus() {
@@ -1275,8 +1342,8 @@ function claimHourlyBonus() {
     saveMiningState();
     updateUI();
     
-    // SYNC TO ADMIN PANEL ON BONUS
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON BONUS
+    enhancedSyncToAdminPanel();
 }
 
 function claimStreakBonus() {
@@ -1295,8 +1362,8 @@ function claimStreakBonus() {
     saveMiningState();
     updateUI();
     
-    // SYNC TO ADMIN PANEL ON BONUS
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON BONUS
+    enhancedSyncToAdminPanel();
 }
 
 function claimBoost() {
@@ -1314,8 +1381,8 @@ function claimBoost() {
     saveMiningState();
     updateUI();
     
-    // SYNC TO ADMIN PANEL ON BOOST
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON BOOST
+    enhancedSyncToAdminPanel();
 }
 
 // Tab Switching Function - FIXED
@@ -1507,8 +1574,8 @@ function completeVideoWatch() {
     
     currentVideoData = null;
     
-    // SYNC TO ADMIN PANEL ON VIDEO COMPLETION
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON VIDEO COMPLETION
+    enhancedSyncToAdminPanel();
 }
 
 // Points Claim Popup
@@ -2183,8 +2250,8 @@ function completeFollowTask(taskId, points, username, platform) {
     updateUI();
     saveMiningState();
     
-    // SYNC TO ADMIN PANEL ON TASK COMPLETION
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON TASK COMPLETION
+    enhancedSyncToAdminPanel();
     
     // Refresh current view
     const activeTab = document.querySelector('.platform-tab.active');
@@ -2346,8 +2413,8 @@ function claimTaskReward(taskId, points, title) {
     updateUI();
     saveMiningState();
     
-    // SYNC TO ADMIN PANEL ON TASK REWARD
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON TASK REWARD
+    enhancedSyncToAdminPanel();
     
     showDailyTasksSection();
 }
@@ -2570,8 +2637,8 @@ function completeSocialTask(taskId, points, title, platform) {
     updateUI();
     saveMiningState();
     
-    // SYNC TO ADMIN PANEL ON SOCIAL TASK
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON SOCIAL TASK
+    enhancedSyncToAdminPanel();
     
     showSocialTasksSection();
 }
@@ -2773,8 +2840,8 @@ function redeemReward(rewardId, cost, rewardName) {
     updateUI();
     saveMiningState();
     
-    // SYNC TO ADMIN PANEL ON REWARD REDEMPTION
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON REWARD REDEMPTION
+    enhancedSyncToAdminPanel();
     
     showCashier();
 }
@@ -2979,8 +3046,8 @@ function addReferral() {
     updateUI();
     saveMiningState();
     
-    // SYNC TO ADMIN PANEL ON REFERRAL
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON REFERRAL
+    enhancedSyncToAdminPanel();
     
     showReferralSystem();
 }
@@ -3318,8 +3385,8 @@ function completeTask(taskId, points, taskName) {
     saveMiningState();
     updateUI();
     
-    // SYNC TO ADMIN PANEL ON TASK COMPLETION
-    syncToAdminPanel();
+    // 🆕 ENHANCED SYNC TO ADMIN PANEL ON TASK COMPLETION
+    enhancedSyncToAdminPanel();
     
     showNotification(`✅ +${points} Points! ${taskName}`, 'success');
     
@@ -3495,10 +3562,10 @@ document.addEventListener('DOMContentLoaded', function() {
         checkDailyEarningsReset();
     }, 3600000);
     
-    // Auto-sync to Admin Panel every 30 seconds
+    // 🆕 ENHANCED: Auto-sync to Admin Panel every 10 seconds
     setInterval(() => {
-        if (telegramUsername && telegramUsername !== 'Not set') {
-            syncToAdminPanel();
+        if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
+            enhancedSyncToAdminPanel();
         }
-    }, 30000);
+    }, 10000);
 });
