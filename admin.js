@@ -1,18 +1,18 @@
-// Admin Panel JavaScript - ENHANCED TELEGRAM PROFILE SYSTEM
+// Admin Panel JavaScript - ULTIMATE TELEGRAM PROFILE SYSTEM - FIXED
 let allUsers = [];
 let autoRefreshInterval = null;
 
 // Initialize Admin Panel
 function initAdminPanel() {
-    console.log('🚀 Admin Panel Initialized - ENHANCED TELEGRAM PROFILE SYSTEM');
+    console.log('🚀 Admin Panel Initialized - ULTIMATE TELEGRAM PROFILE SYSTEM - FIXED');
     loadAllUsers();
     setupAutoRefresh();
     updateAdminStats();
 }
 
-// 🆕 ULTRA-ENHANCED USER DETECTION - FIXED
+// 🆕 ULTIMATE USER DETECTION - COMPLETELY FIXED
 function ultimateUserDetection() {
-    console.log('🕵️ ULTIMATE User Detection - Finding ALL real users...');
+    console.log('🕵️ ULTIMATE User Detection - Finding ALL users...');
     
     let foundUsers = 0;
     const allKeys = Object.keys(localStorage);
@@ -23,18 +23,18 @@ function ultimateUserDetection() {
     
     allKeys.forEach(key => {
         try {
-            const item = localStorage.getItem(key);
-            if (!item) return;
-            
             // Skip obviously invalid keys
             if (key.length > 100 || key.includes('undefined') || key.includes('userData_userData')) return;
+            
+            const item = localStorage.getItem(key);
+            if (!item) return;
             
             let data;
             try {
                 data = JSON.parse(item);
             } catch (e) {
                 // If not JSON, check if it's a direct Telegram username
-                if (key === 'telegramUsername' && item && item !== 'Not set' && item !== 'null') {
+                if (key === 'telegramUsername' && item && item !== 'Not set' && item !== 'null' && item !== '') {
                     console.log('🎯 DIRECT TELEGRAM USERNAME FOUND:', item);
                     const directUser = {
                         id: 'direct_' + Date.now(),
@@ -73,33 +73,38 @@ function ultimateUserDetection() {
             
             if (!data || typeof data !== 'object') return;
             
-            // 🆕 ENHANCED: Check for ANY user-like data with more relaxed conditions
-            const hasPoints = data.points !== undefined || data.userPoints !== undefined;
-            const hasTelegram = data.telegramUsername && data.telegramUsername !== 'Not set' && data.telegramUsername !== 'null';
-            const hasLevel = data.level !== undefined || data.miningLevel !== undefined;
+            // 🆕 ULTRA RELAXED: Check for ANY user-like data
+            const hasPoints = data.userPoints !== undefined || data.points !== undefined;
+            const hasTelegram = data.telegramUsername && data.telegramUsername !== 'Not set' && data.telegramUsername !== 'null' && data.telegramUsername !== '';
+            const hasLevel = data.miningLevel !== undefined || data.level !== undefined;
             const hasReferral = data.referralData !== undefined;
             const hasMining = data.isMining !== undefined;
             const hasUserData = data.userData !== undefined;
+            const hasProfile = data.profile !== undefined;
             
-            // 🆕 FIXED: Much more relaxed condition
-            if ((hasPoints || hasTelegram || hasLevel || hasReferral || hasMining || hasUserData) && !key.includes('demo')) {
-                console.log('🎯 POTENTIAL USER FOUND in key:', key);
+            // 🆕 FIXED: MUCH MORE RELAXED CONDITION - ANY user-like data
+            if ((hasPoints || hasTelegram || hasLevel || hasReferral || hasMining || hasUserData || hasProfile) && !key.includes('demo')) {
+                console.log('🎯 POTENTIAL USER FOUND in key:', key, {
+                    telegram: data.telegramUsername,
+                    points: data.userPoints || data.points,
+                    level: data.miningLevel || data.level
+                });
                 
                 let user = null;
                 
                 // Try different extraction methods
-                if (key.startsWith('userData_')) {
-                    user = extractUserData(key, data); // Using generic extractor now
+                if (key.startsWith('userData_') || key.includes('user_')) {
+                    user = extractUserData(key, data);
                 } else if (key.startsWith('miningState')) {
                     user = extractUserDataFromMiningState(key, data);
                 } else if (key === 'currentUserData') {
                     user = extractUserDataFromCurrentUser(data);
-                } else if (hasTelegram || hasPoints || hasReferral || hasMining || hasUserData) {
+                } else if (hasTelegram || hasPoints || hasReferral || hasMining || hasUserData || hasProfile) {
                     user = extractUserData(key, data);
                 }
                 
-                // 🆕 FIXED: Better user validation with relaxed rules
-                if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== 'null') {
+                // 🆕 FIXED: Better user validation with ULTRA relaxed rules
+                if (user && user.telegramUsername && user.telegramUsername !== 'Not set' && user.telegramUsername !== 'null' && user.telegramUsername !== '') {
                     const existingUserIndex = allUsers.findIndex(u => 
                         u.telegramUsername === user.telegramUsername
                     );
@@ -126,7 +131,7 @@ function ultimateUserDetection() {
     return foundUsers;
 }
 
-// 🆕 ENHANCED: Extract user data with better field detection
+// 🆕 ENHANCED: Extract user data with ULTIMATE field detection
 function extractUserData(key, data) {
     try {
         // Generate user ID from key or create new one
@@ -137,15 +142,17 @@ function extractUserData(key, data) {
             userId = key.replace('miningState_', '');
         } else if (key.includes('userProfile_')) {
             userId = key.replace('userProfile_', '');
+        } else if (key.includes('user_')) {
+            userId = key;
         } else {
             userId = key + '_' + Date.now();
         }
         
-        // 🆕 ENHANCED: Extract Telegram username from multiple possible locations
+        // 🆕 ULTIMATE: Extract Telegram username from ALL possible locations
         let telegramUsername = 'Not set';
         
-        // Check multiple possible locations for Telegram username
-        if (data.telegramUsername && data.telegramUsername !== 'Not set' && data.telegramUsername !== 'null') {
+        // Check ALL possible locations for Telegram username
+        if (data.telegramUsername && data.telegramUsername !== 'Not set' && data.telegramUsername !== 'null' && data.telegramUsername !== '') {
             telegramUsername = data.telegramUsername;
         } else if (data.userData && data.userData.telegramUsername) {
             telegramUsername = data.userData.telegramUsername;
@@ -153,11 +160,15 @@ function extractUserData(key, data) {
             telegramUsername = data.referralData.telegramUsername;
         } else if (data.profile && data.profile.telegramUsername) {
             telegramUsername = data.profile.telegramUsername;
+        } else if (data.user && data.user.telegramUsername) {
+            telegramUsername = data.user.telegramUsername;
+        } else if (data.data && data.data.telegramUsername) {
+            telegramUsername = data.data.telegramUsername;
         }
         
         // 🆕 FIXED: If no Telegram username found but we have user data, create one
         if (telegramUsername === 'Not set' && (data.userPoints !== undefined || data.points !== undefined)) {
-            telegramUsername = '@unknown_user_' + Date.now();
+            telegramUsername = '@user_' + userId.substring(0, 8);
             console.log('🆕 CREATED USERNAME for user with points:', telegramUsername);
         }
         
@@ -242,12 +253,8 @@ function forceDetectAllAppUsers() {
         localStorage.removeItem('ADMIN_FORCE_DETECT');
     }
     
-    // ✅ FIXED: Call all detection functions directly
-    detectFromUserData();
-    detectFromMiningState();
-    detectFromCurrentUser();
-    detectFromSimpleStorage();
-    detectFromActivities();
+    // ✅ FIXED: Call ULTIMATE detection first
+    ultimateUserDetection();
     
     console.log(`✅ FORCE DETECTION COMPLETE: ${allUsers.length} users found`);
     return allUsers.length;
@@ -271,10 +278,12 @@ function detectFromCurrentUser() {
     }
 }
 
-// 🆕 DETECT FROM USER DATA
+// 🆕 DETECT FROM USER DATA - IMPROVED
 function detectFromUserData() {
     console.log('📊 Detecting from userData...');
-    const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
+    const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_') || key.includes('user_'));
+    
+    console.log(`🔍 Found ${userDataKeys.length} userData keys`);
     
     userDataKeys.forEach(key => {
         try {
@@ -282,6 +291,7 @@ function detectFromUserData() {
             const user = extractUserDataFromUserData(key, data);
             if (user && user.telegramUsername && isValidTelegramUsername(user.telegramUsername)) {
                 addUserToArray(user);
+                console.log('✅ User from userData:', user.telegramUsername);
             }
         } catch (error) {
             console.error('Error detecting from userData:', key, error);
@@ -289,10 +299,12 @@ function detectFromUserData() {
     });
 }
 
-// 🆕 DETECT FROM MINING STATE
+// 🆕 DETECT FROM MINING STATE - IMPROVED
 function detectFromMiningState() {
     console.log('⛏️ Detecting from miningState...');
     const miningStateKeys = Object.keys(localStorage).filter(key => key.startsWith('miningState'));
+    
+    console.log(`🔍 Found ${miningStateKeys.length} miningState keys`);
     
     miningStateKeys.forEach(key => {
         try {
@@ -300,6 +312,7 @@ function detectFromMiningState() {
             const user = extractUserDataFromMiningState(key, data);
             if (user && user.telegramUsername && isValidTelegramUsername(user.telegramUsername)) {
                 addUserToArray(user);
+                console.log('✅ User from miningState:', user.telegramUsername);
             }
         } catch (error) {
             console.error('Error detecting from miningState:', key, error);
@@ -442,14 +455,15 @@ function addUserToArray(user) {
     }
 }
 
-// ✅ FIXED: Load all users with ULTRA detection
+// ✅ FIXED: Load all users with ULTIMATE detection
 function loadAllUsers() {
-    console.log('📥 ENHANCED Loading users...');
+    console.log('📥 ULTIMATE Loading users...');
     
     allUsers = [];
     
-    // ✅ FIXED: Simple and reliable detection steps
+    // ✅ FIXED: Use ULTIMATE detection as primary method
     const steps = [
+        () => ultimateUserDetection(),  // PRIMARY METHOD
         () => detectFromUserData(),
         () => detectFromMiningState(),
         () => detectFromCurrentUser(),
@@ -462,7 +476,8 @@ function loadAllUsers() {
     
     steps.forEach(step => {
         try {
-            step();
+            const found = step();
+            console.log(`✅ ${step.name}: ${found || 'completed'}`);
         } catch (error) {
             console.error('Error in detection step:', error);
         }
@@ -473,7 +488,9 @@ function loadAllUsers() {
     removeDuplicateUsers();
     addReferralDataToUsers();
     
-    // 🆕 ENHANCED: Check for real users more carefully
+    console.log(`✅ FINAL LOADED: ${allUsers.length} users`);
+    
+    // If no real users, show demo
     const realUsers = allUsers.filter(user => 
         user.telegramUsername && 
         isValidTelegramUsername(user.telegramUsername) &&
@@ -488,7 +505,6 @@ function loadAllUsers() {
         allUsers = realUsers;
     }
     
-    console.log(`✅ FINAL LOADED: ${allUsers.length} users`);
     updateUsersTable();
     updateUserSelect();
     updateAdminStats();
@@ -917,7 +933,7 @@ function extractUserDataFromMiningState(key, data) {
     }
 }
 
-// 🆕 FIXED: More relaxed Telegram username validation
+// 🆕 FIXED: ULTRA RELAXED Telegram username validation
 function isValidTelegramUsername(username) {
     if (!username || username === '' || username === 'Not set' || username === 'null') {
         return false;
@@ -930,12 +946,12 @@ function isValidTelegramUsername(username) {
         return false;
     }
     
-    // Very relaxed validation for testing
-    if (cleanUsername.length < 2 || cleanUsername.length > 50) {
+    // ULTRA RELAXED validation - only check if not empty
+    if (cleanUsername.length < 1) {
         return false;
     }
     
-    // Allow almost any characters for testing
+    // Allow ALL characters for maximum compatibility
     return true;
 }
 
@@ -1747,7 +1763,7 @@ function debugTelegramUsernames() {
     });
     
     // Check user data structures
-    const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
+    const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_') || key.includes('user_'));
     console.log('📊 UserData keys:', userDataKeys);
     
     userDataKeys.forEach(key => {
