@@ -510,7 +510,7 @@ function updateUserActivity() {
     saveToStorage('userActivities', filteredActivities);
 }
 
-// 🆕 ENHANCED REAL-TIME SYNC TO ADMIN PANEL
+// 🆕 ENHANCED REAL-TIME SYNC TO ADMIN PANEL - FIXED
 function enhancedSyncToAdminPanel() {
     if (!telegramUsername || !isValidTelegramUsername(telegramUsername)) {
         console.log('⏭️ Skipping admin sync - no valid Telegram ID');
@@ -523,8 +523,8 @@ function enhancedSyncToAdminPanel() {
     const adminPanelData = {
         id: userId,
         telegramUsername: telegramUsername,
-        points: userPoints,
-        userPoints: userPoints, // Both formats for compatibility
+        points: Math.round(userPoints), // Ensure whole numbers
+        userPoints: Math.round(userPoints),
         level: miningLevel,
         miningLevel: miningLevel,
         isMining: isMining,
@@ -533,9 +533,9 @@ function enhancedSyncToAdminPanel() {
         totalTasksCompleted: totalTasksCompleted,
         joinDate: new Date().toISOString(),
         lastActive: new Date().toISOString(),
-        totalEarned: totalPointsEarned,
-        totalPointsEarned: totalPointsEarned,
-        todayEarnings: todayEarnings,
+        totalEarned: Math.round(totalPointsEarned),
+        totalPointsEarned: Math.round(totalPointsEarned),
+        todayEarnings: Math.round(todayEarnings),
         miningSeconds: miningSeconds,
         totalMiningHours: totalMiningHours,
         speedLevel: speedLevel,
@@ -554,12 +554,12 @@ function enhancedSyncToAdminPanel() {
     
     // 🆕 Also save in simple format for direct access
     saveToStorage('telegramUsername', telegramUsername);
-    saveToStorage('userPoints', userPoints);
-    saveToStorage('miningLevel', miningLevel);
-    saveToStorage('isMining', isMining);
-    saveToStorage('totalTasksCompleted', totalTasksCompleted);
-    saveToStorage('totalPointsEarned', totalPointsEarned);
-    saveToStorage('todayEarnings', todayEarnings);
+    saveToStorage('userPoints', Math.round(userPoints).toString());
+    saveToStorage('miningLevel', miningLevel.toString());
+    saveToStorage('isMining', isMining.toString());
+    saveToStorage('totalTasksCompleted', totalTasksCompleted.toString());
+    saveToStorage('totalPointsEarned', Math.round(totalPointsEarned).toString());
+    saveToStorage('todayEarnings', Math.round(todayEarnings).toString());
     
     console.log('✅ ENHANCED SYNC COMPLETE:', telegramUsername);
     
