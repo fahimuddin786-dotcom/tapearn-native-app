@@ -10,15 +10,16 @@ function initAdminPanel() {
     updateAdminStats();
 }
 
-// 🆕 ULTIMATE USER DETECTION - ENHANCED FUNCTION
+// 🆕 ULTRA-ENHANCED USER DETECTION
 function ultimateUserDetection() {
     console.log('🕵️ ULTIMATE User Detection - Finding ALL real users...');
     
     let foundUsers = 0;
-    
-    // Method 1: Check ALL localStorage keys more thoroughly
     const allKeys = Object.keys(localStorage);
     console.log('🔑 Total localStorage keys:', allKeys.length);
+    
+    // Clear existing users array first
+    allUsers = [];
     
     allKeys.forEach(key => {
         try {
@@ -28,292 +29,378 @@ function ultimateUserDetection() {
             // Skip obviously invalid keys
             if (key.length > 100 || key.includes('undefined')) return;
             
-            // Try to parse JSON data
-            let data;
-            try {
-                data = JSON.parse(item);
-            } catch (e) {
-                // If not JSON, check if it's a direct Telegram username
-                if (key === 'telegramUsername' && item && item !== 'Not set' && item !== 'null') {
-                    console.log('📱 Found direct Telegram username:', item);
-                    const directUser = {
-                        id: localStorage.getItem('userId') || 'user_' + Date.now(),
-                        telegramUsername: item,
-                        points: parseInt(localStorage.getItem('userPoints')) || 0,
-                        level: parseInt(localStorage.getItem('miningLevel')) || 1,
-                        miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
-                        tasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
-                        joinDate: new Date().toLocaleDateString('en-US'),
-                        lastActive: new Date().toLocaleString('en-US'),
-                        totalEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
-                        todayEarnings: parseInt(localStorage.getItem('todayEarnings')) || 0,
-                        miningSeconds: parseInt(localStorage.getItem('miningSeconds')) || 0,
-                        totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
-                        speedLevel: 1,
-                        multiplierLevel: 1,
-                        loginStreak: 1,
-                        profileSource: 'direct_telegram_storage'
-                    };
-                    
-                    // Check if already exists
-                    const existingUserIndex = allUsers.findIndex(u => 
-                        u.telegramUsername === directUser.telegramUsername
-                    );
-                    
-                    if (existingUserIndex === -1) {
-                        allUsers.push(directUser);
-                        foundUsers++;
-                        console.log('✅ ADDED DIRECT TELEGRAM USER:', directUser.telegramUsername);
-                    }
-                }
-                return;
-            }
+            const data = JSON.parse(item);
             
+            // EXTREMELY BROAD user detection - ANY user-like data
             if (data && typeof data === 'object') {
-                // EXTREMELY BROAD user detection
                 const hasPoints = data.points !== undefined || data.userPoints !== undefined;
                 const hasTelegram = data.telegramUsername && data.telegramUsername !== 'Not set';
                 const hasLevel = data.level !== undefined || data.miningLevel !== undefined;
-                const hasUserId = data.id || data.userId;
+                const hasReferral = data.referralData !== undefined;
+                const hasMining = data.isMining !== undefined;
                 
-                if ((hasPoints || hasTelegram || hasLevel || hasUserId) && !key.includes('demo')) {
+                // 🆕 FIX: More relaxed condition for user detection
+                if ((hasPoints || hasTelegram || hasLevel || hasReferral || hasMining) && !key.includes('demo')) {
                     console.log('🎯 POTENTIAL USER FOUND in key:', key);
-                    console.log('📊 User data:', {
-                        telegram: data.telegramUsername,
-                        points: data.points || data.userPoints,
-                        level: data.level || data.miningLevel,
-                        id: data.id || data.userId || key
-                    });
                     
-                    // Try to extract user
                     let user = null;
                     
+                    // Try different extraction methods
                     if (key.startsWith('userData_')) {
                         user = extractUserDataFromUserData(key, data);
                     } else if (key.startsWith('miningState')) {
                         user = extractUserDataFromMiningState(key, data);
                     } else if (key === 'currentUserData') {
-                        user = extractUserDataFromCurrentUserData(data);
-                    } else if (hasTelegram || hasPoints) {
+                        user = extractUserDataFromCurrentUser(data);
+                    } else if (hasTelegram || hasPoints || hasReferral || hasMining) {
                         user = extractUserData(key, data);
                     }
                     
-                    if (user && user.telegramUsername && user.telegramUsername !== 'Not set') {
-                        // 🆕 FIX: Check if user already exists by Telegram ID
+                    // 🆕 FIX: Better user validation
+                    if (user && user.telegramUsername && isValidTelegramUsername(user.telegramUsername)) {
                         const existingUserIndex = allUsers.findIndex(u => 
                             u.telegramUsername === user.telegramUsername
                         );
                         
                         if (existingUserIndex === -1) {
-                            // New user - add to array
                             allUsers.push(user);
                             foundUsers++;
-                            console.log('✅ ADDED NEW USER:', user.telegramUsername, user.points);
+                            console.log('✅ ADDED USER:', user.telegramUsername, user.points);
                         } else {
-                            // User exists - update data but keep same entry
-                            console.log('🔄 UPDATING EXISTING USER:', user.telegramUsername);
+                            // Update existing user with latest data
                             allUsers[existingUserIndex] = {...allUsers[existingUserIndex], ...user};
                         }
                     }
                 }
             }
         } catch (e) {
-            // Skip errors
-            console.log('❌ Error processing key:', key, e);
+            // Skip non-JSON or invalid data
         }
     });
     
-    // Method 2: Direct app data detection
-    const directUser = findDirectAppUser();
-    if (directUser) {
-        const existingUserIndex = allUsers.findIndex(u => 
-            u.telegramUsername === directUser.telegramUsername
-        );
-        
-        if (existingUserIndex === -1) {
-            allUsers.push(directUser);
-            foundUsers++;
-            console.log('✅ ADDED DIRECT APP USER:', directUser.telegramUsername);
-        } else {
-            allUsers[existingUserIndex] = directUser;
-        }
-    }
-    
-    // Method 3: Check user activities
-    checkUserActivities();
-    
-    console.log(`🎯 ULTIMATE DETECTION: Found ${foundUsers} real users`);
+    console.log(`🎯 ULTIMATE DETECTION: Found ${foundUsers} users`);
     return foundUsers;
 }
 
-// 🆕 NEW: Extract from currentUserData
-function extractUserDataFromCurrentUserData(data) {
+// 🆕 EXTRACT FROM CURRENT USER DATA
+function extractUserDataFromCurrentUser(data) {
     try {
         const user = {
             id: data.id || 'user_' + Date.now(),
             telegramUsername: data.telegramUsername || 'Not set',
             points: data.points || data.userPoints || 0,
+            userPoints: data.points || data.userPoints || 0,
             level: data.level || data.miningLevel || 1,
+            miningLevel: data.level || data.miningLevel || 1,
+            isMining: data.isMining || false,
             miningStatus: data.miningStatus || (data.isMining ? 'Active' : 'Inactive'),
             tasksCompleted: data.tasksCompleted || data.totalTasksCompleted || 0,
+            totalTasksCompleted: data.tasksCompleted || data.totalTasksCompleted || 0,
             joinDate: data.joinDate || new Date().toLocaleDateString('en-US'),
             lastActive: data.lastActive || new Date().toLocaleString('en-US'),
             totalEarned: data.totalEarned || data.totalPointsEarned || 0,
+            totalPointsEarned: data.totalEarned || data.totalPointsEarned || 0,
             todayEarnings: data.todayEarnings || 0,
             miningSeconds: data.miningSeconds || 0,
             totalMiningHours: data.totalMiningHours || 0,
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
             loginStreak: data.loginStreak || 1,
-            profileSource: 'currentUserData'
+            profileSource: 'current_user_data',
+            referredUsers: data.referralData ? data.referralData.referredUsers : [],
+            referralCount: data.referralData ? data.referralData.referredUsers.length : 0
         };
         
         return user;
     } catch (error) {
-        console.error('Error extracting from currentUserData:', error);
+        console.error('Error extracting from current user data:', error);
         return null;
     }
 }
 
-// 🆕 NEW: Check user activities
-function checkUserActivities() {
-    try {
-        const activities = getFromStorage('userActivities', []);
-        console.log('📊 Checking user activities:', activities.length);
-        
-        activities.forEach(activity => {
-            if (activity.telegramUsername && activity.telegramUsername !== 'Not set') {
-                const existingUserIndex = allUsers.findIndex(u => 
-                    u.telegramUsername === activity.telegramUsername
-                );
-                
-                if (existingUserIndex === -1) {
-                    const user = {
-                        id: activity.id || 'user_' + Date.now(),
-                        telegramUsername: activity.telegramUsername,
-                        points: activity.points || 0,
-                        level: activity.level || 1,
-                        miningStatus: activity.miningStatus || 'Inactive',
-                        tasksCompleted: 0,
-                        joinDate: new Date().toLocaleDateString('en-US'),
-                        lastActive: activity.lastActive || new Date().toLocaleString('en-US'),
-                        totalEarned: 0,
-                        todayEarnings: 0,
-                        miningSeconds: 0,
-                        totalMiningHours: 0,
-                        speedLevel: 1,
-                        multiplierLevel: 1,
-                        loginStreak: 1,
-                        profileSource: 'user_activity'
-                    };
-                    
-                    allUsers.push(user);
-                    console.log('✅ ADDED USER FROM ACTIVITY:', activity.telegramUsername);
-                }
-            }
-        });
-    } catch (error) {
-        console.error('Error checking user activities:', error);
-    }
-}
-
-// 🆕 Find direct app user data
-function findDirectAppUser() {
-    console.log('📱 Searching for direct app user...');
+// 🆕 FORCE DETECT ALL APP USERS
+function forceDetectAllAppUsers() {
+    console.log('🔍 FORCE DETECTING ALL APP USERS...');
     
-    // Check all possible direct storage locations
-    const locations = [
-        'telegramUsername',
-        'userId', 
-        'userPoints',
-        'miningLevel',
-        'totalTasksCompleted',
-        'totalPointsEarned',
-        'todayEarnings',
-        'miningSeconds',
-        'totalMiningHours'
+    // Check for force detection events
+    const forceEvent = getFromStorage('ADMIN_FORCE_DETECT', null);
+    if (forceEvent) {
+        console.log('🎯 FORCE DETECTION EVENT FOUND:', forceEvent);
+        addUserFromForceEvent(forceEvent);
+        localStorage.removeItem('ADMIN_FORCE_DETECT');
+    }
+    
+    // Check all possible user storage locations
+    const detectionMethods = [
+        detectFromUserData(),
+        detectFromMiningState(), 
+        detectFromCurrentUser(),
+        detectFromSimpleStorage(),
+        detectFromActivities()
     ];
     
-    const userData = {};
+    console.log(`✅ FORCE DETECTION COMPLETE: ${allUsers.length} users found`);
+    return allUsers.length;
+}
+
+// 🆕 DETECT FROM USER DATA
+function detectFromUserData() {
+    console.log('📊 Detecting from userData...');
+    const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
     
-    locations.forEach(key => {
-        const value = localStorage.getItem(key);
-        if (value && value !== 'null' && value !== 'undefined' && value !== 'Not set') {
-            userData[key] = value;
-            console.log(`📱 Found ${key}:`, value);
+    userDataKeys.forEach(key => {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            const user = extractUserDataFromUserData(key, data);
+            if (user && user.telegramUsername && isValidTelegramUsername(user.telegramUsername)) {
+                addUserToArray(user);
+            }
+        } catch (error) {
+            console.error('Error detecting from userData:', key, error);
         }
     });
+}
+
+// 🆕 DETECT FROM MINING STATE
+function detectFromMiningState() {
+    console.log('⛏️ Detecting from miningState...');
+    const miningStateKeys = Object.keys(localStorage).filter(key => key.startsWith('miningState'));
     
-    // Check if we have enough data to create a user
-    if (userData.telegramUsername && userData.telegramUsername !== 'Not set') {
-        console.log('🎉 DIRECT APP USER FOUND:', userData.telegramUsername);
+    miningStateKeys.forEach(key => {
+        try {
+            const data = JSON.parse(localStorage.getItem(key));
+            const user = extractUserDataFromMiningState(key, data);
+            if (user && user.telegramUsername && isValidTelegramUsername(user.telegramUsername)) {
+                addUserToArray(user);
+            }
+        } catch (error) {
+            console.error('Error detecting from miningState:', key, error);
+        }
+    });
+}
+
+// 🆕 DETECT FROM SIMPLE STORAGE (telegramUsername, userPoints, etc.)
+function detectFromSimpleStorage() {
+    console.log('📱 Detecting from simple storage...');
+    
+    const telegramUser = localStorage.getItem('telegramUsername');
+    const userPoints = parseInt(localStorage.getItem('userPoints')) || 0;
+    const miningLevel = parseInt(localStorage.getItem('miningLevel')) || 1;
+    const isMining = localStorage.getItem('isMining') === 'true';
+    
+    if (telegramUser && isValidTelegramUsername(telegramUser)) {
+        const userId = localStorage.getItem('userId') || `user_${Date.now()}`;
         
-        return {
-            id: userData.userId || 'app_user_' + Date.now(),
-            telegramUsername: userData.telegramUsername,
-            points: parseInt(userData.userPoints) || 0,
-            level: parseInt(userData.miningLevel) || 1,
-            miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
-            tasksCompleted: parseInt(userData.totalTasksCompleted) || 0,
-            joinDate: new Date().toLocaleDateString('en-US'),
-            lastActive: new Date().toLocaleString('en-US'),
-            totalEarned: parseInt(userData.totalPointsEarned) || 0,
-            todayEarnings: parseInt(userData.todayEarnings) || 0,
-            miningSeconds: parseInt(userData.miningSeconds) || 0,
-            totalMiningHours: parseInt(userData.totalMiningHours) || 0,
+        const user = {
+            id: userId,
+            telegramUsername: telegramUser,
+            points: userPoints,
+            userPoints: userPoints,
+            level: miningLevel,
+            miningLevel: miningLevel,
+            isMining: isMining,
+            miningStatus: isMining ? 'Active' : 'Inactive',
+            tasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+            totalTasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+            joinDate: new Date().toISOString(),
+            lastActive: new Date().toISOString(),
+            totalEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+            totalPointsEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+            todayEarnings: parseInt(localStorage.getItem('todayEarnings')) || 0,
+            miningSeconds: parseInt(localStorage.getItem('miningSeconds')) || 0,
+            totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
             speedLevel: 1,
             multiplierLevel: 1,
             loginStreak: 1,
-            profileSource: 'direct_app_detection'
+            profileSource: 'simple_storage',
+            referredUsers: [],
+            referralCount: 0
         };
+        
+        addUserToArray(user);
+        console.log('✅ User from simple storage:', telegramUser);
     }
-    
-    return null;
 }
 
-// ✅ ENHANCED: Load all users with ULTIMATE detection
+// 🆕 DETECT FROM ACTIVITIES
+function detectFromActivities() {
+    console.log('📊 Detecting from activities...');
+    const activities = getFromStorage('userActivities', []);
+    
+    activities.forEach(activity => {
+        if (activity.telegramUsername && isValidTelegramUsername(activity.telegramUsername)) {
+            const user = {
+                id: activity.id || 'user_' + Date.now(),
+                telegramUsername: activity.telegramUsername,
+                points: activity.points || activity.userPoints || 0,
+                userPoints: activity.points || activity.userPoints || 0,
+                level: activity.level || activity.miningLevel || 1,
+                miningLevel: activity.level || activity.miningLevel || 1,
+                isMining: activity.isMining || false,
+                miningStatus: activity.miningStatus || (activity.isMining ? 'Active' : 'Inactive'),
+                tasksCompleted: 0,
+                totalTasksCompleted: 0,
+                joinDate: new Date().toLocaleDateString('en-US'),
+                lastActive: activity.lastActive || new Date().toLocaleString('en-US'),
+                totalEarned: 0,
+                totalPointsEarned: 0,
+                todayEarnings: 0,
+                miningSeconds: 0,
+                totalMiningHours: 0,
+                speedLevel: 1,
+                multiplierLevel: 1,
+                loginStreak: 1,
+                profileSource: 'user_activity',
+                referredUsers: [],
+                referralCount: 0
+            };
+            
+            addUserToArray(user);
+        }
+    });
+}
+
+// 🆕 ADD USER FROM FORCE EVENT
+function addUserFromForceEvent(forceEvent) {
+    if (forceEvent && forceEvent.telegramUsername && isValidTelegramUsername(forceEvent.telegramUsername)) {
+        const user = {
+            id: forceEvent.userId || 'user_' + Date.now(),
+            telegramUsername: forceEvent.telegramUsername,
+            points: forceEvent.data.points || 0,
+            userPoints: forceEvent.data.points || 0,
+            level: forceEvent.data.level || 1,
+            miningLevel: forceEvent.data.level || 1,
+            isMining: forceEvent.data.miningStatus === 'Active',
+            miningStatus: forceEvent.data.miningStatus || 'Inactive',
+            tasksCompleted: 0,
+            totalTasksCompleted: 0,
+            joinDate: new Date().toLocaleDateString('en-US'),
+            lastActive: new Date().toLocaleString('en-US'),
+            totalEarned: 0,
+            totalPointsEarned: 0,
+            todayEarnings: 0,
+            miningSeconds: 0,
+            totalMiningHours: 0,
+            speedLevel: 1,
+            multiplierLevel: 1,
+            loginStreak: 1,
+            profileSource: 'force_detection',
+            referredUsers: [],
+            referralCount: 0
+        };
+        
+        addUserToArray(user);
+        console.log('✅ User from force detection:', forceEvent.telegramUsername);
+    }
+}
+
+// 🆕 ADD USER TO ARRAY WITH DUPLICATE CHECK
+function addUserToArray(user) {
+    if (!user || !user.telegramUsername) return;
+    
+    const existingIndex = allUsers.findIndex(u => 
+        u.telegramUsername === user.telegramUsername
+    );
+    
+    if (existingIndex === -1) {
+        allUsers.push(user);
+    } else {
+        // Update existing user but preserve some data
+        allUsers[existingIndex] = {
+            ...allUsers[existingIndex],
+            ...user,
+            id: allUsers[existingIndex].id // Preserve original ID
+        };
+    }
+}
+
+// ✅ ENHANCED: Load all users with ULTRA detection
 function loadAllUsers() {
-    console.log('📥 Loading users with ULTIMATE detection...');
+    console.log('📥 ENHANCED Loading users...');
     
     allUsers = [];
     
-    // 🆕 FIRST: Clear all demo users
-    clearAllDemoUsers();
+    // 🆕 MULTI-STEP DETECTION
+    const steps = [
+        () => forceDetectAllAppUsers(),
+        () => ultimateUserDetection(),
+        () => checkDirectTelegramUsers(),
+        () => checkStandaloneTelegramIds(),
+        () => checkTelegramProfileActivities()
+    ];
     
-    // 🆕 SECOND: Use ULTIMATE detection
-    const realUsersFound = ultimateUserDetection();
+    steps.forEach(step => {
+        try {
+            step();
+        } catch (error) {
+            console.error('Error in detection step:', error);
+        }
+    });
     
-    // 🆕 THIRD: If no users found, try direct detection
-    if (realUsersFound === 0) {
-        console.log('🔍 No users found with ultimate detection, trying direct...');
-        forceFindAppUser();
-        checkDirectTelegramUsers();
-        checkStandaloneTelegramIds();
-        checkTelegramProfileActivities();
-    }
-    
-    // 🆕 FOURTH: Validate and clean
+    // 🆕 POST-PROCESSING
     validateAndCleanTelegramUsernames();
-    
-    // 🆕 FIFTH: Remove duplicates by Telegram username
     removeDuplicateUsers();
+    addReferralDataToUsers();
     
-    // 🆕 FINAL: Count real users
-    const realUsersCount = allUsers.filter(user => !user.id.startsWith('demo_')).length;
+    // 🆕 ENHANCED: Check for real users more carefully
+    const realUsers = allUsers.filter(user => 
+        user.telegramUsername && 
+        isValidTelegramUsername(user.telegramUsername) &&
+        !user.id.startsWith('demo_')
+    );
     
-    if (realUsersCount === 0) {
-        console.log('⚠️ No real users found, creating demo data...');
+    if (realUsers.length === 0) {
+        console.log('⚠️ No real users found, showing demo data');
         createDemoUsers();
     } else {
-        console.log(`🎉 Found ${realUsersCount} real users!`);
-        // Remove any demo users if real users exist
-        allUsers = allUsers.filter(user => !user.id.startsWith('demo_'));
+        console.log(`🎉 Found ${realUsers.length} REAL users!`);
+        allUsers = realUsers;
     }
     
     console.log(`✅ FINAL LOADED: ${allUsers.length} users`);
     updateUsersTable();
     updateUserSelect();
     updateAdminStats();
+}
+
+// 🆕 NEW: Add referral data to all users
+function addReferralDataToUsers() {
+    console.log('🔍 Adding referral data to all users...');
+    
+    allUsers.forEach(user => {
+        try {
+            // Try to get referral data from userData
+            const userDataKey = `userData_${user.id}`;
+            const userData = JSON.parse(localStorage.getItem(userDataKey));
+            
+            if (userData && userData.referralData) {
+                user.referredUsers = userData.referralData.referredUsers || [];
+                user.referralCount = user.referredUsers.length;
+                console.log(`📊 Found ${user.referralCount} referrals for ${user.telegramUsername}`);
+            }
+            
+            // Also check miningState
+            const miningStateKey = `miningState_${user.id}`;
+            const miningState = JSON.parse(localStorage.getItem(miningStateKey));
+            
+            if (miningState && miningState.referralData) {
+                user.referredUsers = miningState.referralData.referredUsers || [];
+                user.referralCount = user.referredUsers.length;
+                console.log(`📊 Found ${user.referralCount} referrals for ${user.telegramUsername} from miningState`);
+            }
+            
+            // Check standalone referral data
+            const standaloneReferralData = getFromStorage('referralData', {});
+            if (standaloneReferralData && standaloneReferralData.referredUsers && standaloneReferralData.telegramUsername === user.telegramUsername) {
+                user.referredUsers = standaloneReferralData.referredUsers;
+                user.referralCount = user.referredUsers.length;
+                console.log(`📊 Found ${user.referralCount} referrals for ${user.telegramUsername} from standalone`);
+            }
+            
+        } catch (error) {
+            console.error('Error adding referral data for user:', user.telegramUsername, error);
+        }
+    });
 }
 
 // 🆕 NEW: Remove duplicate users by Telegram username
@@ -399,19 +486,26 @@ function addUserToAdmin(userData, source) {
         id: userData.id || userData.userId || 'user_' + Date.now(),
         telegramUsername: userData.telegramUsername,
         points: userData.points || userData.userPoints || 0,
+        userPoints: userData.points || userData.userPoints || 0,
         level: userData.level || userData.miningLevel || 1,
+        miningLevel: userData.level || userData.miningLevel || 1,
         miningStatus: userData.miningStatus || (userData.isMining ? 'Active' : 'Inactive'),
+        isMining: userData.isMining || false,
         tasksCompleted: userData.tasksCompleted || userData.totalTasksCompleted || 0,
+        totalTasksCompleted: userData.tasksCompleted || userData.totalTasksCompleted || 0,
         joinDate: userData.joinDate || new Date().toLocaleDateString('en-US'),
         lastActive: userData.lastActive || new Date().toLocaleString('en-US'),
         totalEarned: userData.totalEarned || userData.totalPointsEarned || 0,
+        totalPointsEarned: userData.totalEarned || userData.totalPointsEarned || 0,
         todayEarnings: userData.todayEarnings || 0,
         miningSeconds: userData.miningSeconds || 0,
         totalMiningHours: userData.totalMiningHours || 0,
         speedLevel: userData.speedLevel || 1,
         multiplierLevel: userData.multiplierLevel || 1,
         loginStreak: userData.loginStreak || 1,
-        profileSource: source
+        profileSource: source,
+        referredUsers: userData.referredUsers || [],
+        referralCount: userData.referredUsers ? userData.referredUsers.length : 0
     };
     
     // 🆕 FIX: Check if already exists by Telegram username
@@ -503,7 +597,7 @@ function checkDirectTelegramUsers() {
     const userId = localStorage.getItem('userId');
     
     // 🆕 FIX: Validate Telegram username before adding
-    if (telegramUser && telegramUser !== 'null' && telegramUser !== 'Not set') {
+    if (telegramUser && isValidTelegramUsername(telegramUser)) {
         console.log('🎉 DIRECT TELEGRAM USER FOUND:', telegramUser);
         
         // Check if already exists in allUsers by Telegram username
@@ -514,19 +608,26 @@ function checkDirectTelegramUsers() {
                 id: userId || 'user_' + Date.now(),
                 telegramUsername: telegramUser,
                 points: parseInt(localStorage.getItem('userPoints')) || 0,
+                userPoints: parseInt(localStorage.getItem('userPoints')) || 0,
                 level: parseInt(localStorage.getItem('miningLevel')) || 1,
+                miningLevel: parseInt(localStorage.getItem('miningLevel')) || 1,
+                isMining: localStorage.getItem('isMining') === 'true',
                 miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
                 tasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+                totalTasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
                 joinDate: new Date().toLocaleDateString('en-US'),
                 lastActive: new Date().toLocaleString('en-US'),
                 totalEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+                totalPointsEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
                 todayEarnings: parseInt(localStorage.getItem('todayEarnings')) || 0,
                 miningSeconds: parseInt(localStorage.getItem('miningSeconds')) || 0,
                 totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
                 speedLevel: 1,
                 multiplierLevel: 1,
                 loginStreak: 1,
-                profileSource: 'direct_telegram'
+                profileSource: 'direct_telegram',
+                referredUsers: [],
+                referralCount: 0
             };
             
             allUsers.push(directUser);
@@ -534,7 +635,9 @@ function checkDirectTelegramUsers() {
         } else {
             // Update existing user
             allUsers[existingUserIndex].points = parseInt(localStorage.getItem('userPoints')) || 0;
+            allUsers[existingUserIndex].userPoints = parseInt(localStorage.getItem('userPoints')) || 0;
             allUsers[existingUserIndex].miningStatus = localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive';
+            allUsers[existingUserIndex].isMining = localStorage.getItem('isMining') === 'true';
             console.log('🔄 Updated existing Telegram user:', telegramUser);
         }
     } else {
@@ -558,31 +661,41 @@ function checkTelegramProfileActivities() {
         
         // Process activities to find new users
         userActivities.forEach(activity => {
-            if (activity.telegramUsername && activity.telegramUsername !== 'Not set') {
-                const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === activity.telegramUsername);
-                if (existingUserIndex === -1) {
-                    // Create user from activity
-                    const newUser = {
-                        id: activity.id || 'user_' + Date.now(),
-                        telegramUsername: activity.telegramUsername,
-                        points: activity.points || 0,
-                        level: activity.level || 1,
-                        miningStatus: activity.miningStatus || 'Inactive',
-                        tasksCompleted: 0,
-                        joinDate: new Date().toLocaleDateString('en-US'),
-                        lastActive: activity.lastActive || new Date().toLocaleString('en-US'),
-                        totalEarned: 0,
-                        todayEarnings: 0,
-                        miningSeconds: 0,
-                        totalMiningHours: 0,
-                        speedLevel: 1,
-                        multiplierLevel: 1,
-                        loginStreak: 1,
-                        profileSource: 'telegram_activity'
-                    };
-                    
-                    allUsers.push(newUser);
-                    console.log('🆕 User added from activity:', activity.telegramUsername);
+            if (activity.telegramUsername && isValidTelegramUsername(activity.telegramUsername)) {
+                // 🆕 FIX: Check if it's NOT a demo user
+                if (!activity.id.startsWith('demo_') && !activity.telegramUsername.startsWith('@demo')) {
+                    const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === activity.telegramUsername);
+                    if (existingUserIndex === -1) {
+                        // Create user from activity
+                        const newUser = {
+                            id: activity.id,
+                            telegramUsername: activity.telegramUsername,
+                            points: activity.points || activity.userPoints || 0,
+                            userPoints: activity.points || activity.userPoints || 0,
+                            level: activity.level || activity.miningLevel || 1,
+                            miningLevel: activity.level || activity.miningLevel || 1,
+                            isMining: activity.isMining || false,
+                            miningStatus: activity.miningStatus || (activity.isMining ? 'Active' : 'Inactive'),
+                            tasksCompleted: 0,
+                            totalTasksCompleted: 0,
+                            joinDate: new Date().toLocaleDateString('en-US'),
+                            lastActive: activity.lastActive || new Date().toLocaleString('en-US'),
+                            totalEarned: 0,
+                            totalPointsEarned: 0,
+                            todayEarnings: 0,
+                            miningSeconds: 0,
+                            totalMiningHours: 0,
+                            speedLevel: 1,
+                            multiplierLevel: 1,
+                            loginStreak: 1,
+                            profileSource: 'telegram_activity',
+                            referredUsers: [],
+                            referralCount: 0
+                        };
+                        
+                        allUsers.push(newUser);
+                        console.log('🆕 REAL User added from activity:', activity.telegramUsername);
+                    }
                 }
             }
         });
@@ -591,30 +704,40 @@ function checkTelegramProfileActivities() {
         adminNotifications.forEach(notification => {
             if (notification.event === 'user_created' && notification.data) {
                 const userData = notification.data;
-                if (userData.telegramUsername && userData.telegramUsername !== 'Not set') {
-                    const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === userData.telegramUsername);
-                    if (existingUserIndex === -1) {
-                        const newUser = {
-                            id: userData.id,
-                            telegramUsername: userData.telegramUsername,
-                            points: userData.points || 0,
-                            level: userData.level || 1,
-                            miningStatus: userData.miningStatus || 'Inactive',
-                            tasksCompleted: userData.tasksCompleted || 0,
-                            joinDate: userData.joinDate || new Date().toLocaleDateString('en-US'),
-                            lastActive: userData.lastActive || new Date().toLocaleString('en-US'),
-                            totalEarned: userData.totalEarned || 0,
-                            todayEarnings: userData.todayEarnings || 0,
-                            miningSeconds: userData.miningSeconds || 0,
-                            totalMiningHours: userData.totalMiningHours || 0,
-                            speedLevel: userData.speedLevel || 1,
-                            multiplierLevel: userData.multiplierLevel || 1,
-                            loginStreak: userData.loginStreak || 1,
-                            profileSource: userData.profileSource || 'telegram_notification'
-                        };
-                        
-                        allUsers.push(newUser);
-                        console.log('🆕 User added from notification:', userData.telegramUsername);
+                if (userData.telegramUsername && isValidTelegramUsername(userData.telegramUsername)) {
+                    // 🆕 FIX: Check if it's NOT a demo user
+                    if (!userData.id.startsWith('demo_') && !userData.telegramUsername.startsWith('@demo')) {
+                        const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === userData.telegramUsername);
+                        if (existingUserIndex === -1) {
+                            const newUser = {
+                                id: userData.id,
+                                telegramUsername: userData.telegramUsername,
+                                points: userData.points || userData.userPoints || 0,
+                                userPoints: userData.points || userData.userPoints || 0,
+                                level: userData.level || userData.miningLevel || 1,
+                                miningLevel: userData.level || userData.miningLevel || 1,
+                                isMining: userData.isMining || false,
+                                miningStatus: userData.miningStatus || (userData.isMining ? 'Active' : 'Inactive'),
+                                tasksCompleted: userData.tasksCompleted || userData.totalTasksCompleted || 0,
+                                totalTasksCompleted: userData.tasksCompleted || userData.totalTasksCompleted || 0,
+                                joinDate: userData.joinDate || new Date().toLocaleDateString('en-US'),
+                                lastActive: userData.lastActive || new Date().toLocaleString('en-US'),
+                                totalEarned: userData.totalEarned || userData.totalPointsEarned || 0,
+                                totalPointsEarned: userData.totalEarned || userData.totalPointsEarned || 0,
+                                todayEarnings: userData.todayEarnings || 0,
+                                miningSeconds: userData.miningSeconds || 0,
+                                totalMiningHours: userData.totalMiningHours || 0,
+                                speedLevel: userData.speedLevel || 1,
+                                multiplierLevel: userData.multiplierLevel || 1,
+                                loginStreak: userData.loginStreak || 1,
+                                profileSource: userData.profileSource || 'telegram_notification',
+                                referredUsers: userData.referredUsers || [],
+                                referralCount: userData.referredUsers ? userData.referredUsers.length : 0
+                            };
+                            
+                            allUsers.push(newUser);
+                            console.log('🆕 REAL User added from notification:', userData.telegramUsername);
+                        }
                     }
                 }
             }
@@ -634,19 +757,26 @@ function extractUserDataFromUserData(key, data) {
             id: userId,
             telegramUsername: data.telegramUsername || 'Not set',
             points: data.userPoints || data.points || 0,
+            userPoints: data.userPoints || data.points || 0,
             level: data.miningLevel || data.level || 1,
+            miningLevel: data.miningLevel || data.level || 1,
+            isMining: data.isMining || false,
             miningStatus: data.isMining ? 'Active' : 'Inactive',
-            tasksCompleted: data.totalTasksCompleted || 0,
+            tasksCompleted: data.totalTasksCompleted || data.tasksCompleted || 0,
+            totalTasksCompleted: data.totalTasksCompleted || data.tasksCompleted || 0,
             joinDate: data.joinDate || new Date().toLocaleDateString('en-US'),
             lastActive: data.lastActive || new Date().toLocaleString('en-US'),
             totalEarned: data.totalPointsEarned || data.totalEarned || 0,
+            totalPointsEarned: data.totalPointsEarned || data.totalEarned || 0,
             todayEarnings: data.todayEarnings || 0,
             miningSeconds: data.miningSeconds || 0,
             totalMiningHours: data.totalMiningHours || 0,
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
             loginStreak: data.loginStreak || 1,
-            profileSource: data.profileSource || 'userData'
+            profileSource: data.profileSource || 'userData',
+            referredUsers: data.referralData ? data.referralData.referredUsers : [],
+            referralCount: data.referralData ? data.referralData.referredUsers.length : 0
         };
         
         return user;
@@ -663,34 +793,44 @@ function checkStandaloneTelegramIds() {
     try {
         // Check for telegramUsername key
         const telegramUsername = localStorage.getItem('telegramUsername');
-        if (telegramUsername && telegramUsername !== 'null' && telegramUsername !== 'Not set') {
+        if (telegramUsername && isValidTelegramUsername(telegramUsername)) {
             const userId = localStorage.getItem('userId') || 'user_' + Date.now();
             
-            // Check if this user already exists by Telegram username
-            const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === telegramUsername);
-            
-            if (existingUserIndex === -1) {
-                const userData = {
-                    id: userId,
-                    telegramUsername: telegramUsername,
-                    points: parseInt(localStorage.getItem('userPoints')) || 0,
-                    level: parseInt(localStorage.getItem('miningLevel')) || 1,
-                    miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
-                    tasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
-                    joinDate: new Date().toLocaleDateString('en-US'),
-                    lastActive: new Date().toLocaleString('en-US'),
-                    totalEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
-                    todayEarnings: parseInt(localStorage.getItem('todayEarnings')) || 0,
-                    miningSeconds: parseInt(localStorage.getItem('miningSeconds')) || 0,
-                    totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
-                    speedLevel: 1,
-                    multiplierLevel: 1,
-                    loginStreak: 1,
-                    profileSource: 'standalone_telegram'
-                };
+            // 🆕 FIX: Check if it's NOT a demo user
+            if (!userId.startsWith('demo_') && !telegramUsername.startsWith('@demo')) {
+                // Check if this user already exists by Telegram username
+                const existingUserIndex = allUsers.findIndex(u => u.telegramUsername === telegramUsername);
                 
-                allUsers.push(userData);
-                console.log('✅ Added user from standalone Telegram ID:', telegramUsername);
+                if (existingUserIndex === -1) {
+                    const userData = {
+                        id: userId,
+                        telegramUsername: telegramUsername,
+                        points: parseInt(localStorage.getItem('userPoints')) || 0,
+                        userPoints: parseInt(localStorage.getItem('userPoints')) || 0,
+                        level: parseInt(localStorage.getItem('miningLevel')) || 1,
+                        miningLevel: parseInt(localStorage.getItem('miningLevel')) || 1,
+                        isMining: localStorage.getItem('isMining') === 'true',
+                        miningStatus: localStorage.getItem('isMining') === 'true' ? 'Active' : 'Inactive',
+                        tasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+                        totalTasksCompleted: parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+                        joinDate: new Date().toLocaleDateString('en-US'),
+                        lastActive: new Date().toLocaleString('en-US'),
+                        totalEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+                        totalPointsEarned: parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+                        todayEarnings: parseInt(localStorage.getItem('todayEarnings')) || 0,
+                        miningSeconds: parseInt(localStorage.getItem('miningSeconds')) || 0,
+                        totalMiningHours: parseInt(localStorage.getItem('totalMiningHours')) || 0,
+                        speedLevel: 1,
+                        multiplierLevel: 1,
+                        loginStreak: 1,
+                        profileSource: 'standalone_telegram',
+                        referredUsers: [],
+                        referralCount: 0
+                    };
+                    
+                    allUsers.push(userData);
+                    console.log('✅ Added REAL user from standalone Telegram ID:', telegramUsername);
+                }
             }
         }
     } catch (error) {
@@ -711,20 +851,27 @@ function extractUserDataFromMiningState(key, data) {
         const user = {
             id: userId,
             telegramUsername: telegramUsername,
-            points: data.userPoints || 0,
-            level: data.miningLevel || 1,
+            points: data.userPoints || data.points || 0,
+            userPoints: data.userPoints || data.points || 0,
+            level: data.miningLevel || data.level || 1,
+            miningLevel: data.miningLevel || data.level || 1,
+            isMining: data.isMining || false,
             miningStatus: data.isMining ? 'Active' : 'Inactive',
-            tasksCompleted: data.totalTasksCompleted || 0,
+            tasksCompleted: data.totalTasksCompleted || data.tasksCompleted || 0,
+            totalTasksCompleted: data.totalTasksCompleted || data.tasksCompleted || 0,
             joinDate: data.joinDate || new Date().toLocaleDateString('en-US'),
             lastActive: data.lastActive || new Date().toLocaleString('en-US'),
-            totalEarned: data.totalPointsEarned || 0,
+            totalEarned: data.totalPointsEarned || data.totalEarned || 0,
+            totalPointsEarned: data.totalPointsEarned || data.totalEarned || 0,
             todayEarnings: data.todayEarnings || 0,
             miningSeconds: data.miningSeconds || 0,
             totalMiningHours: data.totalMiningHours || 0,
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
             loginStreak: data.loginStreak || 1,
-            profileSource: 'miningState'
+            profileSource: 'miningState',
+            referredUsers: data.referralData ? data.referralData.referredUsers : [],
+            referralCount: data.referralData ? data.referralData.referredUsers.length : 0
         };
         
         return user;
@@ -775,20 +922,27 @@ function extractUserData(key, data) {
         const user = {
             id: userId,
             telegramUsername: telegramUsername,
-            points: data.userPoints || 0,
-            level: data.miningLevel || 1,
+            points: data.userPoints || data.points || 0,
+            userPoints: data.userPoints || data.points || 0,
+            level: data.miningLevel || data.level || 1,
+            miningLevel: data.miningLevel || data.level || 1,
+            isMining: data.isMining || false,
             miningStatus: data.isMining ? 'Active' : 'Inactive',
-            tasksCompleted: data.totalTasksCompleted || 0,
+            tasksCompleted: data.totalTasksCompleted || data.tasksCompleted || 0,
+            totalTasksCompleted: data.totalTasksCompleted || data.tasksCompleted || 0,
             joinDate: data.joinDate || new Date().toLocaleDateString('en-US'),
             lastActive: data.lastActive || new Date().toLocaleString('en-US'),
-            totalEarned: data.totalPointsEarned || 0,
+            totalEarned: data.totalPointsEarned || data.totalEarned || 0,
+            totalPointsEarned: data.totalPointsEarned || data.totalEarned || 0,
             todayEarnings: data.todayEarnings || 0,
             miningSeconds: data.miningSeconds || 0,
             totalMiningHours: data.totalMiningHours || 0,
             speedLevel: data.speedLevel || 1,
             multiplierLevel: data.multiplierLevel || 1,
             loginStreak: data.loginStreak || 1,
-            profileSource: 'generic'
+            profileSource: 'generic',
+            referredUsers: data.referralData ? data.referralData.referredUsers : [],
+            referralCount: data.referralData ? data.referralData.referredUsers.length : 0
         };
         
         return user;
@@ -834,55 +988,76 @@ function createDemoUsers() {
             id: 'demo_user_1',
             telegramUsername: '@john_doe',
             points: 1500,
+            userPoints: 1500,
             level: 2,
+            miningLevel: 2,
+            isMining: true,
             miningStatus: 'Active',
             tasksCompleted: 15,
+            totalTasksCompleted: 15,
             joinDate: '2024-01-15',
             lastActive: new Date().toLocaleString('en-US'),
             totalEarned: 2000,
+            totalPointsEarned: 2000,
             todayEarnings: 150,
             miningSeconds: 3600,
             totalMiningHours: 10,
             speedLevel: 2,
             multiplierLevel: 1,
             loginStreak: 5,
-            profileSource: 'demo'
+            profileSource: 'demo',
+            referredUsers: ['@jane_smith'],
+            referralCount: 1
         },
         {
             id: 'demo_user_2',
             telegramUsername: '@jane_smith',
             points: 800,
+            userPoints: 800,
             level: 1,
+            miningLevel: 1,
+            isMining: false,
             miningStatus: 'Inactive',
             tasksCompleted: 8,
+            totalTasksCompleted: 8,
             joinDate: '2024-01-20',
             lastActive: new Date().toLocaleString('en-US'),
             totalEarned: 1000,
+            totalPointsEarned: 1000,
             todayEarnings: 80,
             miningSeconds: 1800,
             totalMiningHours: 5,
             speedLevel: 1,
             multiplierLevel: 1,
             loginStreak: 3,
-            profileSource: 'demo'
+            profileSource: 'demo',
+            referredUsers: [],
+            referralCount: 0
         },
         {
             id: 'demo_user_3',
             telegramUsername: '@tech_guru',
             points: 3500,
+            userPoints: 3500,
             level: 3,
+            miningLevel: 3,
+            isMining: true,
             miningStatus: 'Active',
             tasksCompleted: 25,
+            totalTasksCompleted: 25,
             joinDate: '2024-01-10',
             lastActive: new Date().toLocaleString('en-US'),
             totalEarned: 4500,
+            totalPointsEarned: 4500,
             todayEarnings: 300,
             miningSeconds: 7200,
             totalMiningHours: 20,
             speedLevel: 3,
             multiplierLevel: 2,
             loginStreak: 12,
-            profileSource: 'demo'
+            profileSource: 'demo',
+            referredUsers: ['@john_doe', '@jane_smith'],
+            referralCount: 2
         }
     ];
     
@@ -907,7 +1082,7 @@ function createDemoUsers() {
             lastActive: user.lastActive,
             referralData: {
                 referralCode: 'TAPEARN-' + Math.random().toString(36).substr(2, 8).toUpperCase(),
-                referredUsers: [],
+                referredUsers: user.referredUsers,
                 totalEarned: 0
             },
             profileSource: 'demo'
@@ -925,6 +1100,7 @@ function updateAdminStats() {
     const totalPoints = allUsers.reduce((sum, user) => sum + user.points, 0);
     const activeUsers = allUsers.filter(user => user.miningStatus === 'Active').length;
     const todayEarnings = allUsers.reduce((sum, user) => sum + user.todayEarnings, 0);
+    const totalReferrals = allUsers.reduce((sum, user) => sum + (user.referralCount || 0), 0);
     
     document.getElementById('totalUsers').textContent = totalUsers;
     document.getElementById('totalPoints').textContent = totalPoints.toLocaleString('en-US');
@@ -935,7 +1111,6 @@ function updateAdminStats() {
     const totalMining = allUsers.reduce((sum, user) => sum + user.totalMiningHours, 0);
     const totalTasks = allUsers.reduce((sum, user) => sum + user.tasksCompleted, 0);
     const totalVideos = allUsers.reduce((sum, user) => sum + Math.floor(user.tasksCompleted / 2), 0);
-    const totalReferrals = allUsers.reduce((sum, user) => sum + Math.floor(user.tasksCompleted / 5), 0);
     
     document.getElementById('totalMining').textContent = totalMining;
     document.getElementById('totalTasks').textContent = totalTasks;
@@ -1088,7 +1263,9 @@ function updateUserPoints() {
     const userDataKey = `userData_${userId}`;
     const userData = JSON.parse(localStorage.getItem(userDataKey)) || {};
     userData.userPoints = newPoints;
+    userData.points = newPoints;
     userData.totalPointsEarned = (userData.totalPointsEarned || 0) + (action === 'add' ? amount : 0);
+    userData.totalEarned = (userData.totalEarned || 0) + (action === 'add' ? amount : 0);
     localStorage.setItem(userDataKey, JSON.stringify(userData));
     
     // Also update miningState if exists
@@ -1096,14 +1273,18 @@ function updateUserPoints() {
     const miningState = JSON.parse(localStorage.getItem(miningStateKey));
     if (miningState) {
         miningState.userPoints = newPoints;
+        miningState.points = newPoints;
         miningState.totalPointsEarned = (miningState.totalPointsEarned || 0) + (action === 'add' ? amount : 0);
+        miningState.totalEarned = (miningState.totalEarned || 0) + (action === 'add' ? amount : 0);
         localStorage.setItem(miningStateKey, JSON.stringify(miningState));
     }
     
     // Update in-memory data
     user.points = newPoints;
+    user.userPoints = newPoints;
     if (action === 'add') {
         user.totalEarned += amount;
+        user.totalPointsEarned += amount;
     }
     
     // Update UI
@@ -1318,6 +1499,9 @@ function viewUserDetails(userId) {
                     <div><strong>Tasks Completed:</strong></div>
                     <div>${user.tasksCompleted}</div>
                     
+                    <div><strong>Referrals:</strong></div>
+                    <div>${user.referralCount || 0}</div>
+                    
                     <div><strong>Profile Source:</strong></div>
                     <div>${user.profileSource || 'Unknown'}</div>
                 </div>
@@ -1345,6 +1529,20 @@ function viewUserDetails(userId) {
                     <div>${user.lastActive}</div>
                 </div>
             </div>
+            
+            ${user.referredUsers && user.referredUsers.length > 0 ? `
+            <div style="margin-bottom: 20px;">
+                <h4 style="color: #FFA726; margin-bottom: 15px;">Referrals (${user.referredUsers.length})</h4>
+                <div style="max-height: 200px; overflow-y: auto; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px;">
+                    ${user.referredUsers.map((ref, index) => `
+                        <div style="display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                            <span>${index + 1}. ${ref.telegramUsername || ref}</span>
+                            <span style="color: #4CAF50;">+50 pts</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+            ` : ''}
             
             <div style="text-align: center; margin-top: 20px;">
                 <button class="btn btn-primary" onclick="editUser('${user.id}')">Edit Points</button>
@@ -1528,26 +1726,27 @@ function showTab(tabName) {
     console.log('Showing tab:', tabName);
 }
 
-// Setup auto refresh
+// 🆕 ENHANCED AUTO-REFRESH
 function setupAutoRefresh() {
     const autoRefreshCheckbox = document.getElementById('autoRefresh');
+    
+    // Auto-refresh every 10 seconds instead of 30
+    autoRefreshInterval = setInterval(() => {
+        loadAllUsers();
+        updateAdminStats();
+        console.log('🔄 Auto-refresh completed');
+    }, 10000);
     
     autoRefreshCheckbox.addEventListener('change', function() {
         if (this.checked) {
             autoRefreshInterval = setInterval(() => {
                 loadAllUsers();
                 updateAdminStats();
-            }, 30000); // Refresh every 30 seconds
+            }, 10000);
         } else {
             clearInterval(autoRefreshInterval);
         }
     });
-    
-    // Start auto refresh
-    autoRefreshInterval = setInterval(() => {
-        loadAllUsers();
-        updateAdminStats();
-    }, 30000);
 }
 
 // Refresh data manually
@@ -1600,7 +1799,8 @@ function debugTelegramUsernames() {
                 telegram: data.telegramUsername,
                 points: data.userPoints,
                 level: data.miningLevel,
-                id: data.id
+                id: data.id,
+                referrals: data.referralData ? data.referralData.referredUsers : []
             });
         } catch (e) {
             console.log(`❌ ${key}: Parse error`);
@@ -1634,7 +1834,8 @@ function debugUserData() {
                 telegram: data.telegramUsername || 'Not found',
                 points: data.userPoints || data.points || 0,
                 level: data.miningLevel || data.level || 1,
-                source: data.profileSource || 'Unknown'
+                source: data.profileSource || 'Unknown',
+                referrals: data.referralData ? data.referralData.referredUsers.length : 0
             });
         } catch (e) {
             console.log(`❌ ${key}:`, localStorage.getItem(key));
@@ -1644,7 +1845,7 @@ function debugUserData() {
     // Count users in allUsers array
     console.log(`👥 allUsers array has: ${allUsers.length} users`);
     allUsers.forEach(user => {
-        console.log(`   - ${user.telegramUsername} (${user.id}) - ${user.points} points - Source: ${user.profileSource}`);
+        console.log(`   - ${user.telegramUsername} (${user.id}) - ${user.points} points - Referrals: ${user.referralCount || 0} - Source: ${user.profileSource}`);
     });
     
     // Check activities and notifications
@@ -1693,10 +1894,14 @@ function migrateAllUserData() {
                 // Create new user data structure with Telegram profile
                 const userData = {
                     userPoints: data.userPoints || data.points || parseInt(localStorage.getItem('userPoints')) || 0,
+                    points: data.userPoints || data.points || parseInt(localStorage.getItem('userPoints')) || 0,
                     miningLevel: data.miningLevel || data.level || parseInt(localStorage.getItem('miningLevel')) || 1,
+                    level: data.miningLevel || data.level || parseInt(localStorage.getItem('miningLevel')) || 1,
                     isMining: data.isMining || false,
                     totalTasksCompleted: data.totalTasksCompleted || parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
+                    tasksCompleted: data.totalTasksCompleted || parseInt(localStorage.getItem('totalTasksCompleted')) || 0,
                     totalPointsEarned: data.totalPointsEarned || data.totalEarned || parseInt(localStorage.getItem('totalPointsEarned')) || 0,
+                    totalEarned: data.totalPointsEarned || data.totalEarned || parseInt(localStorage.getItem('totalPointsEarned')) || 0,
                     todayEarnings: data.todayEarnings || parseInt(localStorage.getItem('todayEarnings')) || 0,
                     telegramUsername: data.telegramUsername || localStorage.getItem('telegramUsername') || 'Not set',
                     miningSeconds: data.miningSeconds || parseInt(localStorage.getItem('miningSeconds')) || 0,
@@ -1888,13 +2093,13 @@ function getFromStorage(key, defaultValue = null) {
     }
 }
 
-// Save to storage helper
+// Save to storage helper function
 function saveToStorage(key, value) {
     try {
         localStorage.setItem(key, JSON.stringify(value));
         return true;
     } catch (error) {
-        console.error('Storage save error:', error);
+        console.error('Storage write error:', error);
         return false;
     }
 }
