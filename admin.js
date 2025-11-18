@@ -1,10 +1,10 @@
-// Admin Panel JavaScript - ULTIMATE TELEGRAM PROFILE SYSTEM - REAL USERS ONLY
+// Admin Panel JavaScript - MULTIPLE REAL TELEGRAM USERS DETECTION
 let allUsers = [];
 let autoRefreshInterval = null;
 
 // Initialize Admin Panel
 function initAdminPanel() {
-    console.log('🚀 Admin Panel Initialized - REAL TELEGRAM USERS ONLY');
+    console.log('🚀 Admin Panel Initialized - MULTIPLE REAL TELEGRAM USERS');
     loadAllUsers();
     setupAutoRefresh();
     updateAdminStats();
@@ -27,24 +27,17 @@ function isRealTelegramUsername(username) {
         cleanUsername.includes('userProf') ||
         cleanUsername.length < 3 || // Real Telegram usernames minimum length
         cleanUsername.length > 32) { // Telegram username max length
-        console.log('🚫 Rejecting fake username:', cleanUsername);
         return false;
     }
     
     // ✅ ONLY allow realistic Telegram username patterns
     const realTelegramPattern = /^[a-zA-Z0-9_]{3,32}$/;
-    const isValid = realTelegramPattern.test(cleanUsername);
-    
-    if (!isValid) {
-        console.log('🚫 Invalid Telegram username pattern:', cleanUsername);
-    }
-    
-    return isValid;
+    return realTelegramPattern.test(cleanUsername);
 }
 
-// 🆕 ENHANCED USER DETECTION - ONLY REAL TELEGRAM USERS
+// 🆕 ENHANCED USER DETECTION - MULTIPLE REAL TELEGRAM USERS
 function ultimateUserDetection() {
-    console.log('🕵️ ULTIMATE User Detection - Finding REAL Telegram users...');
+    console.log('🕵️ ULTIMATE User Detection - Finding MULTIPLE REAL Telegram users...');
     
     let foundUsers = 0;
     const allKeys = Object.keys(localStorage);
@@ -67,8 +60,8 @@ function ultimateUserDetection() {
             } catch (e) {
                 // If not JSON, check if it's a direct Telegram username
                 if (key === 'telegramUsername' && item && item !== 'Not set' && item !== 'null' && item !== '') {
-                    console.log('🎯 DIRECT TELEGRAM USERNAME FOUND:', item);
                     if (isRealTelegramUsername(item)) {
+                        console.log('🎯 DIRECT REAL TELEGRAM USERNAME FOUND:', item);
                         const directUser = {
                             id: 'direct_' + Date.now(),
                             telegramUsername: item,
@@ -105,7 +98,7 @@ function ultimateUserDetection() {
             
             if (!data || typeof data !== 'object') return;
             
-            // 🆕 STRICT: Check for REAL user-like data
+            // 🆕 ENHANCED: Check for REAL user-like data with multiple user support
             const hasPoints = data.userPoints !== undefined || data.points !== undefined;
             const hasTelegram = data.telegramUsername && data.telegramUsername !== 'Not set' && data.telegramUsername !== 'null' && data.telegramUsername !== '';
             const hasLevel = data.miningLevel !== undefined || data.level !== undefined;
@@ -114,17 +107,12 @@ function ultimateUserDetection() {
             const hasUserData = data.userData !== undefined;
             const hasProfile = data.profile !== undefined;
             
-            // 🆕 STRICT CONDITION - Only REAL user data
+            // 🆕 ENHANCED CONDITION - Multiple REAL user data
             if ((hasPoints || hasTelegram || hasLevel || hasReferral || hasMining || hasUserData || hasProfile) && !key.includes('demo')) {
-                console.log('🎯 POTENTIAL USER FOUND in key:', key, {
-                    telegram: data.telegramUsername,
-                    points: data.userPoints || data.points,
-                    level: data.miningLevel || data.level
-                });
                 
                 let user = null;
                 
-                // Try different extraction methods
+                // Try different extraction methods for MULTIPLE users
                 if (key.startsWith('userData_') || key.includes('user_')) {
                     user = extractUserData(key, data);
                 } else if (key.startsWith('miningState')) {
@@ -135,7 +123,7 @@ function ultimateUserDetection() {
                     user = extractUserData(key, data);
                 }
                 
-                // 🆕 STRICT: Only add users with REAL Telegram usernames
+                // 🆕 ENHANCED: Only add users with REAL Telegram usernames
                 if (user && user.telegramUsername && isRealTelegramUsername(user.telegramUsername)) {
                     const existingUserIndex = allUsers.findIndex(u => 
                         u.telegramUsername === user.telegramUsername
@@ -146,12 +134,10 @@ function ultimateUserDetection() {
                         foundUsers++;
                         console.log('✅ ADDED REAL USER:', user.telegramUsername, user.points, 'from', key);
                     } else {
-                        // Update existing user with latest data
+                        // Update existing user with latest data - KEEP BOTH USERS SEPARATE
                         allUsers[existingUserIndex] = {...allUsers[existingUserIndex], ...user};
                         console.log('🔄 UPDATED REAL USER:', user.telegramUsername);
                     }
-                } else {
-                    console.log('🚫 USER REJECTED - Invalid/fake Telegram:', user ? user.telegramUsername : 'no user');
                 }
             }
         } catch (e) {
@@ -163,7 +149,7 @@ function ultimateUserDetection() {
     return foundUsers;
 }
 
-// 🆕 ENHANCED: Extract user data with STRICT Telegram validation
+// 🆕 ENHANCED: Extract user data with MULTIPLE USER support
 function extractUserData(key, data) {
     try {
         // Generate user ID from key or create new one
@@ -180,7 +166,7 @@ function extractUserData(key, data) {
             userId = key + '_' + Date.now();
         }
         
-        // 🆕 STRICT: Extract Telegram username from ALL possible locations
+        // 🆕 ENHANCED: Extract Telegram username from ALL possible locations
         let telegramUsername = 'Not set';
         
         // Check ALL possible locations for Telegram username
@@ -200,7 +186,6 @@ function extractUserData(key, data) {
         
         // 🆕 STRICT: ONLY proceed if we have a REAL Telegram username
         if (!isRealTelegramUsername(telegramUsername)) {
-            console.log('🚫 Rejecting user - invalid Telegram username:', telegramUsername);
             return null;
         }
         
@@ -390,9 +375,9 @@ function cleanupFakeUsers() {
     return removedCount;
 }
 
-// ✅ FIXED: Load all users with REAL Telegram detection only
+// ✅ FIXED: Load all users with MULTIPLE REAL Telegram detection
 function loadAllUsers() {
-    console.log('📥 ULTIMATE Loading REAL Telegram users only...');
+    console.log('📥 ULTIMATE Loading MULTIPLE REAL Telegram users...');
     
     allUsers = [];
     
@@ -406,7 +391,8 @@ function loadAllUsers() {
         () => detectFromActivities(),
         () => checkDirectTelegramUsers(),
         () => checkStandaloneTelegramIds(),
-        () => checkTelegramProfileActivities()
+        () => checkTelegramProfileActivities(),
+        () => checkMultipleUserProfiles() // 🆕 NEW: Check for multiple user profiles
     ];
     
     steps.forEach(step => {
@@ -425,6 +411,14 @@ function loadAllUsers() {
     addReferralDataToUsers();
     
     console.log(`✅ FINAL LOADED: ${allUsers.length} REAL Telegram users`);
+    
+    // Show all detected real users
+    if (allUsers.length > 0) {
+        console.log('🎉 DETECTED REAL TELEGRAM USERS:');
+        allUsers.forEach(user => {
+            console.log(`   👤 ${user.telegramUsername} - ${user.points} points - ${user.profileSource}`);
+        });
+    }
     
     // If no real users, show demo
     const realUsers = allUsers.filter(user => 
@@ -445,9 +439,62 @@ function loadAllUsers() {
     updateAdminStats();
 }
 
-// 🆕 DETECT FROM USER DATA - IMPROVED
+// 🆕 NEW: Check for multiple user profiles specifically
+function checkMultipleUserProfiles() {
+    console.log('🔍 Checking for MULTIPLE user profiles...');
+    
+    try {
+        // Check for userProfiles array
+        const userProfiles = getFromStorage('userProfiles', []);
+        if (userProfiles && Array.isArray(userProfiles)) {
+            console.log(`📊 Found userProfiles array with ${userProfiles.length} users`);
+            
+            userProfiles.forEach(profile => {
+                if (profile.telegramUsername && isRealTelegramUsername(profile.telegramUsername)) {
+                    const user = {
+                        id: profile.id || 'user_' + Date.now(),
+                        telegramUsername: profile.telegramUsername,
+                        points: profile.points || profile.userPoints || 0,
+                        userPoints: profile.points || profile.userPoints || 0,
+                        level: profile.level || profile.miningLevel || 1,
+                        miningLevel: profile.level || profile.miningLevel || 1,
+                        isMining: profile.isMining || false,
+                        miningStatus: profile.miningStatus || (profile.isMining ? 'Active' : 'Inactive'),
+                        tasksCompleted: profile.tasksCompleted || profile.totalTasksCompleted || 0,
+                        totalTasksCompleted: profile.tasksCompleted || profile.totalTasksCompleted || 0,
+                        joinDate: profile.joinDate || new Date().toLocaleDateString('en-US'),
+                        lastActive: profile.lastActive || new Date().toLocaleString('en-US'),
+                        totalEarned: profile.totalEarned || profile.totalPointsEarned || 0,
+                        totalPointsEarned: profile.totalEarned || profile.totalPointsEarned || 0,
+                        todayEarnings: profile.todayEarnings || 0,
+                        miningSeconds: profile.miningSeconds || 0,
+                        totalMiningHours: profile.totalMiningHours || 0,
+                        speedLevel: profile.speedLevel || 1,
+                        multiplierLevel: profile.multiplierLevel || 1,
+                        loginStreak: profile.loginStreak || 1,
+                        profileSource: 'user_profiles_array',
+                        referredUsers: profile.referredUsers || [],
+                        referralCount: profile.referredUsers ? profile.referredUsers.length : 0
+                    };
+                    
+                    addUserToArray(user);
+                    console.log('✅ Added user from userProfiles array:', profile.telegramUsername);
+                }
+            });
+        }
+        
+        // Check for multiple userData entries
+        const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
+        console.log(`🔍 Found ${userDataKeys.length} userData keys for multiple users`);
+        
+    } catch (error) {
+        console.error('Error checking multiple user profiles:', error);
+    }
+}
+
+// 🆕 DETECT FROM USER DATA - IMPROVED FOR MULTIPLE USERS
 function detectFromUserData() {
-    console.log('📊 Detecting from userData...');
+    console.log('📊 Detecting from userData for MULTIPLE users...');
     const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_') || key.includes('user_'));
     
     console.log(`🔍 Found ${userDataKeys.length} userData keys`);
@@ -466,9 +513,9 @@ function detectFromUserData() {
     });
 }
 
-// 🆕 DETECT FROM MINING STATE - IMPROVED
+// 🆕 DETECT FROM MINING STATE - IMPROVED FOR MULTIPLE USERS
 function detectFromMiningState() {
-    console.log('⛏️ Detecting from miningState...');
+    console.log('⛏️ Detecting from miningState for MULTIPLE users...');
     const miningStateKeys = Object.keys(localStorage).filter(key => key.startsWith('miningState'));
     
     console.log(`🔍 Found ${miningStateKeys.length} miningState keys`);
@@ -507,7 +554,7 @@ function detectFromCurrentUser() {
 
 // 🆕 FIXED: Detect from simple storage
 function detectFromSimpleStorage() {
-    console.log('📱 Detecting from simple storage...');
+    console.log('📱 Detecting from simple storage for MULTIPLE users...');
     
     const telegramUser = localStorage.getItem('telegramUsername');
     const userPoints = parseInt(localStorage.getItem('userPoints')) || 0;
@@ -558,6 +605,7 @@ function addUserToArray(user) {
     
     if (existingIndex === -1) {
         allUsers.push(user);
+        console.log('🆕 NEW USER ADDED:', user.telegramUsername);
     } else {
         // Update existing user but preserve some data
         allUsers[existingIndex] = {
@@ -565,6 +613,7 @@ function addUserToArray(user) {
             ...user,
             id: allUsers[existingIndex].id // Preserve original ID
         };
+        console.log('🔄 EXISTING USER UPDATED:', user.telegramUsername);
     }
 }
 
@@ -701,7 +750,7 @@ function findRealTelegramUsername(userId) {
 
 // 🆕 CHECK DIRECT TELEGRAM USERS
 function checkDirectTelegramUsers() {
-    console.log('🔍 Checking direct Telegram users...');
+    console.log('🔍 Checking direct Telegram users for MULTIPLE users...');
     
     // Direct Telegram ID check
     const telegramUser = localStorage.getItem('telegramUsername');
@@ -759,7 +808,7 @@ function checkDirectTelegramUsers() {
 
 // 🆕 CHECK TELEGRAM PROFILE ACTIVITIES
 function checkTelegramProfileActivities() {
-    console.log('🔍 Checking Telegram profile activities...');
+    console.log('🔍 Checking Telegram profile activities for MULTIPLE users...');
     
     try {
         // Check for user activities
@@ -854,7 +903,7 @@ function checkTelegramProfileActivities() {
 
 // Check for standalone Telegram IDs in localStorage
 function checkStandaloneTelegramIds() {
-    console.log('🔍 Checking for standalone Telegram IDs...');
+    console.log('🔍 Checking for standalone Telegram IDs for MULTIPLE users...');
     
     try {
         // Check for telegramUsername key
@@ -903,7 +952,7 @@ function checkStandaloneTelegramIds() {
 
 // 🆕 FIXED: Detect from activities
 function detectFromActivities() {
-    console.log('📊 Detecting from activities...');
+    console.log('📊 Detecting from activities for MULTIPLE users...');
     const activities = getFromStorage('userActivities', []);
     
     activities.forEach(activity => {
@@ -944,7 +993,7 @@ function createDemoUsers() {
     const demoUsers = [
         {
             id: 'demo_user_1',
-            telegramUsername: '@john_doe',
+            telegramUsername: '@abdul8613',
             points: 1500,
             userPoints: 1500,
             level: 2,
@@ -964,12 +1013,12 @@ function createDemoUsers() {
             multiplierLevel: 1,
             loginStreak: 5,
             profileSource: 'demo',
-            referredUsers: ['@jane_smith'],
+            referredUsers: ['@farhat8613'],
             referralCount: 1
         },
         {
             id: 'demo_user_2',
-            telegramUsername: '@jane_smith',
+            telegramUsername: '@farhat8613',
             points: 800,
             userPoints: 800,
             level: 1,
@@ -991,6 +1040,31 @@ function createDemoUsers() {
             profileSource: 'demo',
             referredUsers: [],
             referralCount: 0
+        },
+        {
+            id: 'demo_user_3',
+            telegramUsername: '@topjust2',
+            points: 2500,
+            userPoints: 2500,
+            level: 3,
+            miningLevel: 3,
+            isMining: true,
+            miningStatus: 'Active',
+            tasksCompleted: 25,
+            totalTasksCompleted: 25,
+            joinDate: '2024-01-10',
+            lastActive: new Date().toLocaleString('en-US'),
+            totalEarned: 3000,
+            totalPointsEarned: 3000,
+            todayEarnings: 200,
+            miningSeconds: 7200,
+            totalMiningHours: 20,
+            speedLevel: 3,
+            multiplierLevel: 2,
+            loginStreak: 12,
+            profileSource: 'demo',
+            referredUsers: ['@abdul8613', '@farhat8613'],
+            referralCount: 2
         }
     ];
     
@@ -1024,7 +1098,7 @@ function createDemoUsers() {
         localStorage.setItem(`userData_${user.id}`, JSON.stringify(userData));
     });
     
-    console.log('✅ Created demo users with REAL Telegram profiles');
+    console.log('✅ Created MULTIPLE demo users with REAL Telegram profiles');
 }
 
 // Update admin statistics
@@ -1667,7 +1741,7 @@ function setupAutoRefresh() {
     autoRefreshInterval = setInterval(() => {
         loadAllUsers();
         updateAdminStats();
-        console.log('🔄 Auto-refresh completed - REAL USERS ONLY');
+        console.log('🔄 Auto-refresh completed - MULTIPLE REAL USERS');
     }, 10000);
     
     autoRefreshCheckbox.addEventListener('change', function() {
@@ -1686,14 +1760,14 @@ function setupAutoRefresh() {
 function refreshData() {
     loadAllUsers();
     updateAdminStats();
-    alert('✅ Data refreshed - REAL USERS ONLY!');
+    alert('✅ Data refreshed - MULTIPLE REAL USERS!');
 }
 
-// 🆕 ENHANCED FUNCTIONS FOR TELEGRAM PROFILE DETECTION
+// 🆕 ENHANCED FUNCTIONS FOR MULTIPLE TELEGRAM PROFILE DETECTION
 
 // Force reload all data
 function forceReloadAllData() {
-    console.log('🔄 Force reloading ALL data with REAL Telegram profile detection...');
+    console.log('🔄 Force reloading ALL data with MULTIPLE REAL Telegram profile detection...');
     
     // Clear cache
     localStorage.removeItem('adminUsersCache');
@@ -1711,7 +1785,7 @@ function forceReloadAllData() {
 
 // 🆕 FIX: Debug Telegram username issues
 function debugTelegramUsernames() {
-    console.log('🐛 DEBUG: Checking Telegram username issues...');
+    console.log('🐛 DEBUG: Checking MULTIPLE Telegram username issues...');
     
     // Check all Telegram-related storage
     const telegramKeys = ['telegramUsername', 'userId', 'userPoints', 'miningLevel'];
@@ -1746,7 +1820,7 @@ function debugTelegramUsernames() {
 
 // Debug user data
 function debugUserData() {
-    console.log('🐛 DEBUG: Checking ALL user data with REAL Telegram profiles...');
+    console.log('🐛 DEBUG: Checking ALL user data with MULTIPLE REAL Telegram profiles...');
     
     // Check all user-related keys
     const userKeys = Object.keys(localStorage).filter(key => 
@@ -1790,7 +1864,7 @@ function debugUserData() {
 
 // Migrate all user data to new Telegram profile format
 function migrateAllUserData() {
-    console.log('🚚 Migrating ALL user data to REAL Telegram profile format...');
+    console.log('🚚 Migrating ALL user data to MULTIPLE REAL Telegram profile format...');
     
     const allKeys = Object.keys(localStorage);
     let migratedCount = 0;
@@ -1827,7 +1901,6 @@ function migrateAllUserData() {
                 // 🆕 STRICT: Only migrate if we have a REAL Telegram username
                 const telegramUsername = data.telegramUsername || localStorage.getItem('telegramUsername') || 'Not set';
                 if (!isRealTelegramUsername(telegramUsername)) {
-                    console.log('🚫 Skipping migration - invalid Telegram username:', telegramUsername);
                     return;
                 }
                 
@@ -1908,7 +1981,7 @@ function addDebugButtons() {
 
 // 🆕 CHECK TELEGRAM ACTIVITIES
 function checkTelegramActivities() {
-    console.log('📱 Checking REAL Telegram profile activities...');
+    console.log('📱 Checking MULTIPLE REAL Telegram profile activities...');
     
     const activities = getFromStorage('userActivities', []);
     const notifications = getFromStorage('adminNotifications', []);
@@ -1918,7 +1991,7 @@ function checkTelegramActivities() {
     
     let html = `
         <div style="margin-bottom: 20px;">
-            <h4>📱 REAL Telegram Profile Activities</h4>
+            <h4>📱 MULTIPLE REAL Telegram Profile Activities</h4>
             <p><strong>Total Activities:</strong> ${activities.length}</p>
             <p><strong>Total Notifications:</strong> ${notifications.length}</p>
         </div>
@@ -1956,7 +2029,7 @@ function checkTelegramActivities() {
 
 // Check data consistency
 function checkDataConsistency() {
-    console.log('🔍 Checking data consistency with REAL Telegram profiles...');
+    console.log('🔍 Checking data consistency with MULTIPLE REAL Telegram profiles...');
     
     const userDataKeys = Object.keys(localStorage).filter(key => key.startsWith('userData_'));
     const miningStateKeys = Object.keys(localStorage).filter(key => key.startsWith('miningState_'));
@@ -1988,8 +2061,8 @@ function checkDataConsistency() {
     });
     
     if (inconsistentUsers === 0) {
-        console.log('✅ All REAL user data is consistent!');
-        alert('✅ All REAL user data is consistent with Telegram profiles!');
+        console.log('✅ All MULTIPLE REAL user data is consistent!');
+        alert('✅ All MULTIPLE REAL user data is consistent with Telegram profiles!');
     } else {
         console.log(`⚠️ Found ${inconsistentUsers} users with inconsistent data`);
         alert(`⚠️ Found ${inconsistentUsers} users with inconsistent data. Check console for details.`);
@@ -2067,7 +2140,11 @@ document.addEventListener('DOMContentLoaded', function() {
     setTimeout(() => {
         const realUsersCount = allUsers.filter(user => isRealTelegramUsername(user.telegramUsername)).length;
         if (realUsersCount > 0) {
-            console.log('🎉 REAL TELEGRAM USERS LOADED SUCCESSFULLY!');
+            console.log('🎉 MULTIPLE REAL TELEGRAM USERS LOADED SUCCESSFULLY!');
+            console.log('👥 DETECTED USERS:');
+            allUsers.forEach(user => {
+                console.log(`   - ${user.telegramUsername} (${user.points} points)`);
+            });
         } else {
             console.log('📊 Currently showing demo users (no real Telegram users found)');
         }
