@@ -1,5 +1,3 @@
-[file name]: app.js
-[file content begin]
 // Advanced Mining State Management
 let isMining = false;
 let miningSeconds = 0;
@@ -3511,4 +3509,3 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 30000);
 });
-[file content end]
