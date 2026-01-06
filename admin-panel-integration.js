@@ -41,6 +41,33 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
         resetTimer: null
     };
 
+    // ✅ Helper functions for storage
+    function getFromStorage(key, defaultValue) {
+        try {
+            const item = localStorage.getItem(key);
+            return item ? JSON.parse(item) : defaultValue;
+        } catch (error) {
+            console.error('Error reading from storage:', error);
+            return defaultValue;
+        }
+    }
+
+    function saveToStorage(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+            return true;
+        } catch (error) {
+            console.error('Error saving to storage:', error);
+            return false;
+        }
+    }
+
+    // ✅ Show notification function
+    function showNotification(message, type = 'info') {
+        console.log(`[${type.toUpperCase()}] ${message}`);
+        // You can implement actual notification display here
+    }
+
     // Reset performance counters every minute
     function resetPerformanceCounters() {
         performance.broadcastCount = 0;
@@ -703,6 +730,99 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
         }
     }
 
+    // ✅ BROADCAST FUNCTIONS FOR MAIN APP
+    function onUserRegistered(userData) {
+        // Save user locally
+        const registeredUsers = getFromStorage('registeredUsers', []);
+        registeredUsers.push(userData);
+        saveToStorage('registeredUsers', registeredUsers);
+        
+        // Broadcast to other browsers
+        broadcastUserRegistration(userData.email, userData.username);
+        
+        // Also save to server
+        saveUserToServer(userData);
+    }
+
+    function onUserLogin(userData) {
+        // Update last login
+        const registeredUsers = getFromStorage('registeredUsers', []);
+        const userIndex = registeredUsers.findIndex(u => u.email === userData.email);
+        if (userIndex !== -1) {
+            registeredUsers[userIndex].lastLogin = new Date().toISOString();
+            saveToStorage('registeredUsers', registeredUsers);
+        }
+        
+        // Broadcast login
+        broadcastUserLogin(userData.email, userData.username);
+    }
+
+    function broadcastUserRegistration(userEmail, username) {
+        try {
+            const broadcastData = {
+                type: 'user_registered',
+                userEmail: userEmail,
+                username: username,
+                timestamp: Date.now(),
+                source: 'main_app'
+            };
+            
+            // Save to localStorage (will trigger storage event in admin panel)
+            localStorage.setItem('userRegistrationEvent', JSON.stringify(broadcastData));
+            
+            // Also use optimized broadcast
+            if (window.broadcastStorageChange) {
+                window.broadcastStorageChange('userRegistrationEvent', broadcastData);
+            }
+            
+            console.log('📢 User registration broadcasted:', userEmail);
+            
+            // Remove after 5 seconds to prevent buildup
+            setTimeout(() => {
+                localStorage.removeItem('userRegistrationEvent');
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Error broadcasting registration:', error);
+        }
+    }
+
+    function broadcastUserLogin(userEmail, username) {
+        try {
+            const broadcastData = {
+                type: 'user_login',
+                userEmail: userEmail,
+                username: username,
+                timestamp: Date.now(),
+                source: 'main_app'
+            };
+            
+            // Save to localStorage (will trigger storage event in admin panel)
+            localStorage.setItem('userLoginEvent', JSON.stringify(broadcastData));
+            
+            // Also use optimized broadcast
+            if (window.broadcastStorageChange) {
+                window.broadcastStorageChange('userLoginEvent', broadcastData);
+            }
+            
+            console.log('📢 User login broadcasted:', userEmail);
+            
+            // Remove after 5 seconds to prevent buildup
+            setTimeout(() => {
+                localStorage.removeItem('userLoginEvent');
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Error broadcasting login:', error);
+        }
+    }
+
+    function saveUserToServer(userData) {
+        // TODO: Implement server save
+        console.log('Saving user to server:', userData);
+        // You can implement actual server API call here
+    }
+
     // ✅ INITIALIZE ADMIN PANEL INTEGRATION WITH SPONSOR SYSTEM
     function initializeAdminPanelIntegration() {
         console.log('🚀 Initializing optimized admin panel integration...');
@@ -734,6 +854,12 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
         window.injectAdminButton = injectAdminButton;
         window.broadcastAllUsersData = broadcastAllUsersData;
         window.initializeSponsorSystemData = initializeSponsorSystemData;
+        window.onUserRegistered = onUserRegistered;
+        window.onUserLogin = onUserLogin;
+        window.broadcastUserRegistration = broadcastUserRegistration;
+        window.broadcastUserLogin = broadcastUserLogin;
+        window.saveUserToServer = saveUserToServer;
+        window.broadcastStorageChange = broadcastStorageChange;
     }
 
     // ✅ WAIT FOR APP TO BE READY (Optimized)
