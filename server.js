@@ -10,8 +10,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ MongoDB Atlas Connection String
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin%4012345@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
+// ✅ FIXED MongoDB Atlas Connection String
+// Replace Admin123456 with your actual password
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
 
 // ✅ Security Middleware
 app.use(helmet());
@@ -21,21 +22,19 @@ app.use(express.static(__dirname));
 
 // ✅ Rate Limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 1000, // limit each IP to 1000 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
     message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/api/', limiter);
 
 // ==========================================
-// ✅ MONGODB CONNECTION
+// ✅ FIXED MONGODB CONNECTION (No Deprecated Options)
 // ==========================================
 
 console.log('🔄 Connecting to MongoDB Atlas...');
 
 mongoose.connect(MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
 })
@@ -43,10 +42,25 @@ mongoose.connect(MONGODB_URI, {
     console.log('✅ Connected to MongoDB Atlas successfully!');
     console.log('📊 Database:', mongoose.connection.name);
     console.log('🌐 Host:', mongoose.connection.host);
+    
+    // Check if database exists
+    const db = mongoose.connection.db;
+    db.listCollections().toArray((err, collections) => {
+        if (err) {
+            console.log('📋 No existing collections found (will create on first use)');
+        } else {
+            console.log(`📋 Existing collections: ${collections.length}`);
+            collections.forEach(col => console.log(`   - ${col.name}`));
+        }
+    });
 })
 .catch((err) => {
-    console.error('❌ MongoDB connection error:', err);
+    console.error('❌ MongoDB connection error:', err.message);
     console.log('⚠️ Using fallback local storage mode...');
+    console.log('💡 Please check:');
+    console.log('1. MongoDB Atlas username/password');
+    console.log('2. IP address whitelist in Network Access');
+    console.log('3. Database name in connection string');
 });
 
 // ==========================================
