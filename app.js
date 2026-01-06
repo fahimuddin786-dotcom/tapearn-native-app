@@ -719,7 +719,169 @@ const DAILY_ACTIVITIES = [
 ];
 
 // ==============================================
-// ✅ CORE FUNCTIONS (UPDATED)
+// ✅ FIX CLICK EVENTS - EVENT DELEGATION SYSTEM
+// ==============================================
+
+// Global event delegation for all dynamic elements
+document.addEventListener('click', function(e) {
+    const target = e.target;
+    
+    // Handle navigation buttons
+    if (target.closest('.nav-btn')) {
+        const navBtn = target.closest('.nav-btn');
+        const tabName = navBtn.querySelector('.nav-label').textContent.toLowerCase();
+        switchTab(tabName);
+        return;
+    }
+    
+    // Handle wallet click
+    if (target.closest('.wallet')) {
+        showWalletHistory();
+        return;
+    }
+    
+    // Handle platform cards
+    if (target.closest('.platform-card')) {
+        const card = target.closest('.platform-card');
+        const platformName = card.querySelector('.platform-name').textContent;
+        
+        if (platformName.includes('YouTube')) showVideoSection();
+        else if (platformName.includes('Telegram')) showTelegramSection();
+        else if (platformName.includes('Instagram')) showInstagramSection();
+        else if (platformName.includes('Twitter')) showTwitterSection();
+        else if (platformName.includes('Digital Wallet')) showWalletSection();
+        else if (platformName.includes('Rewards Center')) showCashier();
+        else if (platformName.includes('Wallet History')) showWalletHistory();
+        else if (platformName.includes('Refer & Earn')) showReferralSystem();
+        return;
+    }
+    
+    // Handle modal close buttons
+    if (target.classList.contains('modal-close') || target.closest('.modal-close')) {
+        const closeBtn = target.classList.contains('modal-close') ? target : target.closest('.modal-close');
+        const modal = closeBtn.closest('.modal');
+        if (modal) {
+            modal.remove();
+        }
+        return;
+    }
+    
+    // Handle back buttons
+    if (target.closest('.back-btn')) {
+        const backBtn = target.closest('.back-btn');
+        const text = backBtn.textContent || '';
+        
+        if (text.includes('Back to Videos')) showVideoSection();
+        else if (text.includes('Back to Earn')) showHomePage();
+        else if (text.includes('Back to Profile')) showProfileHomePage();
+        else if (text.includes('Back to Wallet')) showWalletSection();
+        else showHomePage();
+        return;
+    }
+    
+    // Handle video cards
+    if (target.closest('.video-card') && !target.closest('.video-card').classList.contains('video-completed')) {
+        const videoCard = target.closest('.video-card');
+        if (videoCard.dataset.videoId) {
+            const videoId = videoCard.dataset.videoId;
+            const video = DEMO_VIDEOS.find(v => v.id === videoId) || {
+                id: videoId,
+                title: videoCard.querySelector('.video-title').textContent,
+                thumbnail: videoCard.querySelector('img').src,
+                channel: videoCard.querySelector('.video-channel').textContent,
+                points: parseInt(videoCard.querySelector('.points-badge').textContent.replace('+', '')),
+                videoUrl: videoCard.dataset.videoUrl
+            };
+            openVideoAndStartTimer(video.id, video.points, video.title, video.thumbnail, video.channel, video.videoUrl);
+        }
+        return;
+    }
+    
+    // Handle task buttons
+    if (target.closest('.task-btn') && !target.closest('.task-btn').disabled) {
+        const taskBtn = target.closest('.task-btn');
+        if (taskBtn.dataset.taskId) {
+            completeTask(taskBtn.dataset.taskId, parseInt(taskBtn.dataset.points), taskBtn.dataset.taskName);
+        }
+        return;
+    }
+    
+    // Handle conversion buttons
+    if (target.closest('.wallet-convert-btn')) {
+        const convertBtn = target.closest('.wallet-convert-btn');
+        if (convertBtn.textContent.includes('कन्वर्ट करें')) {
+            showConvertPointsModal();
+        } else if (convertBtn.textContent.includes('USDT में बदलें')) {
+            showConvertINRModal();
+        }
+        return;
+    }
+    
+    // Handle wallet action buttons
+    if (target.closest('.wallet-action-btn')) {
+        const actionBtn = target.closest('.wallet-action-btn');
+        const actionText = actionBtn.querySelector('.action-text').textContent;
+        
+        if (actionText.includes('पॉइंट्स कन्वर्ट')) showConvertPointsModal();
+        else if (actionText.includes('INR टू USDT')) showConvertINRModal();
+        else if (actionText.includes('पेड पूल खरीदें')) showMiningPage();
+        return;
+    }
+    
+    // Handle registration buttons
+    if (target.closest('.btn-register-prompt')) {
+        showRegistrationModal();
+        return;
+    }
+    
+    if (target.closest('.btn-login-prompt')) {
+        showLoginModal();
+        return;
+    }
+    
+    // Handle logout button
+    if (target.closest('.logout-btn')) {
+        logoutUser();
+        return;
+    }
+});
+
+// Additional event listeners for input elements
+document.addEventListener('input', function(e) {
+    if (e.target.id === 'videoSearch') {
+        // Handle video search - we'll implement this with a debounce
+        clearTimeout(window.searchTimeout);
+        window.searchTimeout = setTimeout(() => {
+            if (e.target.value.trim()) {
+                searchVideos();
+            }
+        }, 500);
+    }
+    
+    if (e.target.id === 'pointsToConvert') {
+        updateConversionPreview();
+    }
+    
+    if (e.target.id === 'inrToConvert') {
+        updateINRConversionPreview();
+    }
+});
+
+// Handle form submissions
+document.addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (e.target.id === 'registrationForm') {
+        validateStep1();
+    }
+    
+    if (e.target.id === 'loginForm') {
+        loginUser();
+    }
+});
+
+// ==============================================
+// ✅ CORE FUNCTIONS (UPDATED WITHOUT INLINE HANDLERS)
 // ==============================================
 
 // 🛡️ ULTIMATE NAN PROTECTION SYSTEM
@@ -751,13 +913,11 @@ function safeNumber(value, defaultValue = 0) {
 // ✅ UPDATED saveToStorage FUNCTION
 function saveToStorage(key, value) {
     try {
-        // Handle undefined values
         if (value === undefined) {
             console.warn(`⚠️ Attempted to save undefined value for key: ${key}`);
             return false;
         }
         
-        // Handle NaN values in numbers
         if (typeof value === 'number' && isNaN(value)) {
             console.warn(`⚠️ Attempted to save NaN for key: ${key}`);
             value = 0;
@@ -773,7 +933,7 @@ function saveToStorage(key, value) {
     }
 }
 
-// ✅ UPDATED getFromStorage FUNCTION WITH BETTER ERROR HANDLING
+// ✅ UPDATED getFromStorage FUNCTION
 function getFromStorage(key, defaultValue = null) {
     try {
         const item = localStorage.getItem(key);
@@ -781,14 +941,12 @@ function getFromStorage(key, defaultValue = null) {
             return defaultValue;
         }
         
-        // Handle empty strings
         if (item.trim() === '') {
             return defaultValue;
         }
         
         const parsed = JSON.parse(item);
         
-        // Handle null after parsing
         if (parsed === null || parsed === undefined) {
             return defaultValue;
         }
