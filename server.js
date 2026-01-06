@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ✅ MongoDB Atlas Connection String
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin@12345@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin%4012345@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
 
 // ✅ Security Middleware
 app.use(helmet());
