@@ -1,0 +1,889 @@
+// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH SPONSOR SYSTEM + REAL-TIME REFRESH)
+
+const AdminPanel = {
+    // Server endpoints
+    endpoints: {
+        getUsers: 'http://localhost:3000/api/get-all-users',
+        getTransactions: 'http://localhost:3000/api/get-all-transactions',
+        getUserStats: 'http://localhost:3000/api/admin/user-stats',
+        deleteUser: 'http://localhost:3000/api/delete-user/',
+        syncUsers: 'http://localhost:3000/api/admin/sync-all',
+        fixDatabase: 'http://localhost:3000/api/admin/fix-database',
+        health: 'http://localhost:3000/api/health',
+        databaseInfo: 'http://localhost:3000/api/admin/database-info',
+        sponsorStats: 'http://localhost:3000/api/admin/sponsor-stats',
+        realtimeSync: 'http://localhost:3000/api/admin/realtime-sync' // New endpoint
+    },
+
+    // Initialize admin panel
+    init: async function() {
+        console.log('🔧 Initializing Admin Panel with Sponsor System...');
+        
+        // Check authentication
+        if (!this.checkAuth()) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // Load initial data
+        await this.loadInitialData();
+        
+        // Setup real-time updates
+        this.setupRealTimeUpdates();
+        
+        // Inject admin controls if on main app
+        if (window.location.pathname.includes('index.html')) {
+            this.injectAdminControls();
+        }
+        
+        // Initialize sponsor system
+        this.initializeSponsorSystem();
+        
+        // Add real-time refresh button if on admin page
+        if (window.location.pathname.includes('admin.html')) {
+            setTimeout(() => this.addRealTimeRefreshButton(), 1000);
+        }
+        
+        console.log('✅ Admin Panel Initialized with Sponsor System');
+    },
+
+    // Check admin authentication
+    checkAuth: function() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const ADMIN_AUTHORIZED_USERS = [
+            'admin@tapearn.com',
+            'admin@example.com',
+            'superuser@tapearn.com',
+            'system_admin',
+            'developer'
+        ];
+
+        if (!currentUser.email || !ADMIN_AUTHORIZED_USERS.includes(currentUser.email)) {
+            console.log('🚫 Unauthorized admin access attempt by:', currentUser.email);
+            return false;
+        }
+
+        return true;
+    },
+
+    // Load initial data
+    loadInitialData: async function() {
+        try {
+            // Load users
+            const usersResponse = await fetch(this.endpoints.getUsers);
+            if (usersResponse.ok) {
+                const data = await usersResponse.json();
+                if (data.success) {
+                    window.adminData = window.adminData || {};
+                    window.adminData.users = data.users;
+                    console.log(`✅ Loaded ${data.users.length} users from server`);
+                }
+            }
+
+            // Load transactions
+            const txResponse = await fetch(this.endpoints.getTransactions);
+            if (txResponse.ok) {
+                const data = await txResponse.json();
+                if (data.success) {
+                    window.adminData.transactions = data.transactions;
+                    console.log(`✅ Loaded ${data.transactions.length} transactions`);
+                }
+            }
+
+            // Load sponsor statistics
+            await this.loadSponsorStats();
+
+            // Load server stats
+            await this.loadServerStats();
+
+            window.adminData.lastUpdated = new Date();
+            
+            // Dispatch event for UI updates
+            this.dispatchEvent('adminDataLoaded', window.adminData);
+            
+        } catch (error) {
+            console.error('❌ Error loading admin data:', error);
+            this.loadFromLocalStorage();
+        }
+    },
+
+    // Load sponsor statistics
+    loadSponsorStats: async function() {
+        try {
+            const response = await fetch(this.endpoints.sponsorStats);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    window.adminData.sponsorStats = data.stats;
+                    console.log('✅ Sponsor stats loaded:', data.stats);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading sponsor stats:', error);
+            // Fallback: calculate from local data
+            this.calculateLocalSponsorStats();
+        }
+    },
+
+    // Calculate sponsor stats from local data
+    calculateLocalSponsorStats: function() {
+        const users = window.adminData.users || [];
+        const transactions = window.adminData.transactions || [];
+        
+        const usersWithSponsor = users.filter(u => u.sponsorId && u.sponsorId !== 'none' && u.sponsorId !== '');
+        const uniqueSponsors = [...new Set(usersWithSponsor.map(u => u.sponsorId))];
+        
+        const commissionEarnings = transactions
+            .filter(tx => tx.category === 'referral' && tx.type === 'earning')
+            .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        
+        window.adminData.sponsorStats = {
+            totalSponsors: uniqueSponsors.length,
+            sponsoredUsers: usersWithSponsor.length,
+            commissionEarnings: commissionEarnings,
+            sponsorConversionRate: users.length > 0 ? ((usersWithSponsor.length / users.length) * 100).toFixed(1) : 0,
+            topSponsors: this.getTopSponsors(users)
+        };
+    },
+
+    // Get top sponsors from user data
+    getTopSponsors: function(users) {
+        const sponsorMap = {};
+        
+        users.forEach(user => {
+            if (user.sponsorId && user.sponsorId !== 'none' && user.sponsorId !== '') {
+                sponsorMap[user.sponsorId] = (sponsorMap[user.sponsorId] || 0) + 1;
+            }
+        });
+        
+        return Object.entries(sponsorMap)
+            .map(([sponsorId, count]) => ({
+                sponsorId,
+                count,
+                sponsorData: users.find(u => u.email === sponsorId || u.id === sponsorId)
+            }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 10);
+    },
+
+    // Load from localStorage as fallback
+    loadFromLocalStorage: function() {
+        try {
+            const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            const allTransactions = JSON.parse(localStorage.getItem('allUsersTransactions') || '[]');
+            
+            window.adminData = {
+                users: registeredUsers,
+                transactions: allTransactions,
+                lastUpdated: new Date()
+            };
+            
+            console.log(`⚠️ Loaded ${registeredUsers.length} users from localStorage`);
+            
+            // Calculate sponsor stats from local data
+            this.calculateLocalSponsorStats();
+            
+            this.dispatchEvent('adminDataLoaded', window.adminData);
+        } catch (error) {
+            console.error('❌ Failed to load any data:', error);
+        }
+    },
+
+    // Load server statistics
+    loadServerStats: async function() {
+        try {
+            const response = await fetch(this.endpoints.getUserStats);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    window.adminData.serverStats = data.stats;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading server stats:', error);
+        }
+    },
+
+    // Setup real-time updates
+    setupRealTimeUpdates: function() {
+        // Auto-refresh every 30 seconds
+        setInterval(async () => {
+            await this.loadSponsorStats();
+            await this.loadServerStats();
+            this.dispatchEvent('adminDataUpdated', window.adminData);
+        }, 30000);
+
+        // Listen for storage changes (multi-browser sync)
+        window.addEventListener('storage', (event) => {
+            if (event.key === 'registeredUsers' || event.key === 'allUsersTransactions') {
+                console.log('🔄 Storage changed from another browser:', event.key);
+                this.loadFromLocalStorage();
+            }
+            
+            // Sponsor data changes
+            if (event.key === 'sponsorData' || event.key === 'sponsorAssignments') {
+                console.log('🔄 Sponsor data updated from another browser');
+                this.calculateLocalSponsorStats();
+                this.dispatchEvent('sponsorDataUpdated', window.adminData.sponsorStats);
+            }
+        });
+
+        // Listen for custom events from main app
+        window.addEventListener('userRegistered', () => {
+            this.loadInitialData();
+        });
+
+        window.addEventListener('transactionAdded', () => {
+            this.loadInitialData();
+        });
+        
+        // Listen for sponsor-related events
+        window.addEventListener('sponsorAssigned', (event) => {
+            console.log('🔄 Sponsor assigned event:', event.detail);
+            this.loadSponsorStats();
+        });
+        
+        window.addEventListener('sponsorRemoved', (event) => {
+            console.log('🔄 Sponsor removed event:', event.detail);
+            this.loadSponsorStats();
+        });
+    },
+
+    // Initialize sponsor system
+    initializeSponsorSystem: function() {
+        console.log('🤝 Initializing Sponsor System...');
+        
+        // Setup sponsor commission settings if not exists
+        if (!localStorage.getItem('sponsorCommissionSettings')) {
+            const defaultSettings = {
+                level1: 10,
+                level2: 5,
+                level3: 2,
+                minCommission: 100,
+                payoutSchedule: 'daily',
+                maxDaily: 10000,
+                createdAt: new Date().toISOString()
+            };
+            localStorage.setItem('sponsorCommissionSettings', JSON.stringify(defaultSettings));
+        }
+        
+        // Setup sponsor change log if not exists
+        if (!localStorage.getItem('sponsorChangeLog')) {
+            localStorage.setItem('sponsorChangeLog', JSON.stringify([]));
+        }
+        
+        console.log('✅ Sponsor System Initialized');
+    },
+
+    // Inject admin controls into main app
+    injectAdminControls: function() {
+        // Check if admin button already exists
+        if (document.querySelector('.admin-panel-btn')) return;
+
+        // Create admin panel button
+        const adminBtn = document.createElement('button');
+        adminBtn.className = 'admin-panel-btn';
+        adminBtn.innerHTML = '🛠️ Admin';
+        adminBtn.style.cssText = `
+            position: fixed;
+            top: 70px;
+            right: 15px;
+            z-index: 9999;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        `;
+
+        adminBtn.onclick = () => {
+            window.open('admin.html', '_blank');
+        };
+
+        adminBtn.onmouseenter = () => {
+            adminBtn.style.transform = 'translateY(-2px)';
+            adminBtn.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.7)';
+        };
+
+        adminBtn.onmouseleave = () => {
+            adminBtn.style.transform = 'translateY(0)';
+            adminBtn.style.boxShadow = '0 4px 15px rgba(102, 126, 234, 0.5)';
+        };
+
+        document.body.appendChild(adminBtn);
+        console.log('✅ Admin panel button injected');
+    },
+
+    // ✅ NEW: Add Real-Time Refresh Button to Admin Panel
+    addRealTimeRefreshButton: function() {
+        // Check if already exists
+        if (document.querySelector('#realTimeRefreshBtn')) return;
+        
+        const headerActions = document.querySelector('.admin-actions');
+        if (!headerActions) {
+            // Try to find admin header
+            const adminHeader = document.querySelector('.admin-header');
+            if (adminHeader) {
+                headerActions = adminHeader.querySelector('.actions') || adminHeader;
+            }
+        }
+        
+        if (!headerActions) {
+            console.warn('⚠️ Could not find admin actions container');
+            // Create one if doesn't exist
+            headerActions = document.createElement('div');
+            headerActions.className = 'admin-actions';
+            headerActions.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                display: flex;
+                gap: 10px;
+            `;
+            
+            const adminHeader = document.querySelector('.admin-header');
+            if (adminHeader) {
+                adminHeader.appendChild(headerActions);
+            } else {
+                document.body.appendChild(headerActions);
+            }
+        }
+        
+        const realTimeBtn = document.createElement('button');
+        realTimeBtn.id = 'realTimeRefreshBtn';
+        realTimeBtn.className = 'btn btn-warning';
+        realTimeBtn.innerHTML = '<i class="fas fa-bolt"></i> Real-Time Sync';
+        realTimeBtn.style.cssText = `
+            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 10px rgba(246, 211, 101, 0.4);
+            transition: all 0.3s;
+        `;
+        
+        realTimeBtn.onclick = async () => {
+            try {
+                // Show loading state
+                realTimeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+                realTimeBtn.disabled = true;
+                
+                // Force refresh from server
+                const response = await fetch(this.endpoints.getUsers);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        // Filter deleted users
+                        const filteredUsers = this.filterDeletedUsers(data.users);
+                        
+                        // Update global adminData
+                        window.adminData.users = filteredUsers;
+                        window.adminData.lastUpdated = new Date();
+                        
+                        // Update user count badge if exists
+                        const userCountBadge = document.getElementById('userCountBadge');
+                        if (userCountBadge) {
+                            userCountBadge.textContent = filteredUsers.length;
+                        }
+                        
+                        // Refresh current view
+                        const adminHeaderTitle = document.querySelector('.admin-header h2');
+                        if (adminHeaderTitle && adminHeaderTitle.textContent.includes('Users')) {
+                            this.showUsers && this.showUsers();
+                        } else {
+                            this.showDashboard && this.showDashboard();
+                        }
+                        
+                        // Show success notification
+                        this.showNotification('✅ Real-time sync completed!', 'success');
+                        
+                        // Also sync sponsor stats
+                        await this.loadSponsorStats();
+                    }
+                }
+            } catch (error) {
+                console.error('Error in real-time sync:', error);
+                this.showNotification('❌ Real-time sync failed!', 'error');
+            } finally {
+                // Reset button state
+                setTimeout(() => {
+                    realTimeBtn.innerHTML = '<i class="fas fa-bolt"></i> Real-Time Sync';
+                    realTimeBtn.disabled = false;
+                }, 1000);
+            }
+        };
+        
+        realTimeBtn.onmouseenter = () => {
+            realTimeBtn.style.transform = 'translateY(-2px)';
+            realTimeBtn.style.boxShadow = '0 6px 15px rgba(246, 211, 101, 0.6)';
+        };
+        
+        realTimeBtn.onmouseleave = () => {
+            realTimeBtn.style.transform = 'translateY(0)';
+            realTimeBtn.style.boxShadow = '0 4px 10px rgba(246, 211, 101, 0.4)';
+        };
+        
+        headerActions.appendChild(realTimeBtn);
+        console.log('✅ Real-Time Refresh Button added');
+        
+        // Also add a timestamp display
+        this.addLastSyncTimestamp();
+    },
+    
+    // ✅ NEW: Add Last Sync Timestamp
+    addLastSyncTimestamp: function() {
+        const timestampDiv = document.createElement('div');
+        timestampDiv.id = 'lastSyncTimestamp';
+        timestampDiv.className = 'sync-timestamp';
+        timestampDiv.innerHTML = `
+            <i class="fas fa-clock"></i>
+            <span>Last sync: ${new Date().toLocaleTimeString()}</span>
+        `;
+        timestampDiv.style.cssText = `
+            font-size: 12px;
+            color: #666;
+            background: #f5f5f5;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        `;
+        
+        const headerActions = document.querySelector('.admin-actions');
+        if (headerActions) {
+            headerActions.appendChild(timestampDiv);
+        }
+    },
+    
+    // ✅ NEW: Filter deleted users
+    filterDeletedUsers: function(users) {
+        return users.filter(user => 
+            !user.isDeleted && 
+            user.status !== 'deleted' && 
+            !user.deletedAt
+        );
+    },
+
+    // ✅ UPDATED: Get real-time statistics WITH SPONSOR STATS
+    getStats: function() {
+        const users = window.adminData.users || [];
+        const transactions = window.adminData.transactions || [];
+        const sponsorStats = window.adminData.sponsorStats || {};
+        
+        // Calculate sponsor-specific stats
+        const usersWithSponsor = users.filter(u => 
+            u.sponsorId && u.sponsorId !== 'none' && u.sponsorId !== ''
+        );
+        const uniqueSponsors = [...new Set(usersWithSponsor.map(u => u.sponsorId))];
+        
+        const commissionEarnings = transactions
+            .filter(tx => tx.category === 'referral' && tx.type === 'earning')
+            .reduce((sum, tx) => sum + (tx.amount || 0), 0);
+        
+        const topSponsors = this.getTopSponsors(users);
+        
+        return {
+            // User stats
+            totalUsers: users.length,
+            activeUsers: users.filter(u => u.status === 'active').length,
+            verifiedUsers: users.filter(u => u.emailVerified).length,
+            
+            // Points and wallet stats
+            totalPoints: users.reduce((sum, user) => sum + (user.points || 0), 0),
+            totalUSDT: users.reduce((sum, user) => sum + (user.usdtWallet || 0), 0),
+            
+            // Transaction stats
+            totalTransactions: transactions.length,
+            earningTransactions: transactions.filter(t => t.type === 'earning').length,
+            spendingTransactions: transactions.filter(t => t.type === 'spending').length,
+            
+            // Sponsor stats
+            totalSponsors: uniqueSponsors.length,
+            sponsoredUsers: usersWithSponsor.length,
+            sponsorConversionRate: users.length > 0 ? 
+                ((usersWithSponsor.length / users.length) * 100).toFixed(1) : 0,
+            commissionEarnings: commissionEarnings,
+            topSponsors: topSponsors,
+            
+            // Registration stats
+            todayRegistrations: users.filter(user => {
+                const regDate = new Date(user.registration_date || user.registeredAt);
+                return regDate.toDateString() === new Date().toDateString();
+            }).length,
+            
+            lastUpdated: window.adminData.lastUpdated,
+            sponsorStats: sponsorStats
+        };
+    },
+
+    // User management methods
+    deleteUser: async function(userId) {
+        try {
+            const response = await fetch(`${this.endpoints.deleteUser}${userId}`, {
+                method: 'DELETE'
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.dispatchEvent('userDeleted', { userId });
+                return { success: true, message: 'User deleted from server' };
+            } else {
+                return { success: false, message: data.message };
+            }
+        } catch (error) {
+            console.error('Error deleting user:', error);
+            return { success: false, message: 'Server error' };
+        }
+    },
+
+    updateUser: async function(userId, updates) {
+        try {
+            const response = await fetch(`http://localhost:3000/api/update-user/${userId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updates)
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.dispatchEvent('userUpdated', { userId, updates });
+                return { success: true, message: 'User updated' };
+            }
+        } catch (error) {
+            console.error('Error updating user:', error);
+            return { success: false, message: 'Server error' };
+        }
+    },
+
+    addPointsToUser: async function(userId, points, reason) {
+        try {
+            const response = await fetch(`http://localhost:3000/api/add-points`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, points, reason })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.dispatchEvent('pointsAdded', { userId, points, reason });
+                return { success: true, message: 'Points added' };
+            }
+        } catch (error) {
+            console.error('Error adding points:', error);
+            return { success: false, message: 'Server error' };
+        }
+    },
+
+    // ✅ NEW: Sponsor Management Methods
+    assignSponsor: async function(userId, sponsorId, reason = 'Manual assignment') {
+        try {
+            const response = await fetch(`http://localhost:3000/api/assign-sponsor`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, sponsorId, reason })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Update local data
+                const userIndex = window.adminData.users.findIndex(u => 
+                    u.email === userId || u.id === userId
+                );
+                if (userIndex !== -1) {
+                    window.adminData.users[userIndex].sponsorId = sponsorId;
+                }
+                
+                this.dispatchEvent('sponsorAssigned', { userId, sponsorId, reason });
+                return { success: true, message: 'Sponsor assigned' };
+            }
+        } catch (error) {
+            console.error('Error assigning sponsor:', error);
+            return { success: false, message: 'Server error' };
+        }
+    },
+
+    removeSponsor: async function(userId, reason = 'Manual removal') {
+        try {
+            const response = await fetch(`http://localhost:3000/api/remove-sponsor/${userId}`, {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Update local data
+                const userIndex = window.adminData.users.findIndex(u => 
+                    u.email === userId || u.id === userId
+                );
+                if (userIndex !== -1) {
+                    window.adminData.users[userIndex].sponsorId = null;
+                }
+                
+                this.dispatchEvent('sponsorRemoved', { userId, reason });
+                return { success: true, message: 'Sponsor removed' };
+            }
+        } catch (error) {
+            console.error('Error removing sponsor:', error);
+            return { success: false, message: 'Server error' };
+        }
+    },
+
+    bulkAssignSponsors: async function(userIds, sponsorId, reason = 'Bulk assignment') {
+        try {
+            const response = await fetch(`http://localhost:3000/api/bulk-assign-sponsors`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userIds, sponsorId, reason })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                // Update local data
+                userIds.forEach(userId => {
+                    const userIndex = window.adminData.users.findIndex(u => 
+                        u.email === userId || u.id === userId
+                    );
+                    if (userIndex !== -1) {
+                        window.adminData.users[userIndex].sponsorId = sponsorId;
+                    }
+                });
+                
+                this.dispatchEvent('bulkSponsorsAssigned', { userIds, sponsorId, reason });
+                return { success: true, message: `Sponsors assigned to ${userIds.length} users` };
+            }
+        } catch (error) {
+            console.error('Error bulk assigning sponsors:', error);
+            return { success: false, message: 'Server error' };
+        }
+    },
+
+    getSponsorHierarchy: function(sponsorId) {
+        const users = window.adminData.users || [];
+        const sponsorMap = {};
+        
+        // Create sponsor map
+        users.forEach(user => {
+            if (user.sponsorId && user.sponsorId !== 'none' && user.sponsorId !== '') {
+                if (!sponsorMap[user.sponsorId]) {
+                    sponsorMap[user.sponsorId] = [];
+                }
+                sponsorMap[user.sponsorId].push(user);
+            }
+        });
+        
+        // Get specific sponsor hierarchy
+        const getHierarchy = (sponsorId, level = 0, maxLevel = 3) => {
+            if (level >= maxLevel) return null;
+            
+            const sponsoredUsers = sponsorMap[sponsorId] || [];
+            const hierarchy = {
+                sponsorId,
+                sponsorData: users.find(u => u.email === sponsorId || u.id === sponsorId),
+                level,
+                sponsoredUsers: sponsoredUsers.map(user => ({
+                    userId: user.email || user.id,
+                    userData: user,
+                    children: getHierarchy(user.email || user.id, level + 1, maxLevel)
+                }))
+            };
+            
+            return hierarchy;
+        };
+        
+        return getHierarchy(sponsorId);
+    },
+
+    // Server management methods
+    testServerConnection: async function() {
+        try {
+            const startTime = Date.now();
+            const response = await fetch(this.endpoints.health);
+            const endTime = Date.now();
+            
+            if (response.ok) {
+                const data = await response.json();
+                return {
+                    success: true,
+                    status: 'online',
+                    responseTime: endTime - startTime,
+                    data: data
+                };
+            } else {
+                return {
+                    success: false,
+                    status: 'error',
+                    responseTime: endTime - startTime
+                };
+            }
+        } catch (error) {
+            return {
+                success: false,
+                status: 'offline',
+                error: error.message
+            };
+        }
+    },
+
+    syncToServer: async function() {
+        try {
+            const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            const sponsorData = {
+                sponsorAssignments: registeredUsers.map(u => ({
+                    userId: u.email || u.id,
+                    sponsorId: u.sponsorId
+                })).filter(a => a.sponsorId),
+                sponsorCommissionSettings: JSON.parse(localStorage.getItem('sponsorCommissionSettings') || '{}'),
+                sponsorChangeLog: JSON.parse(localStorage.getItem('sponsorChangeLog') || '[]')
+            };
+            
+            const response = await fetch(this.endpoints.syncUsers, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    users: registeredUsers,
+                    sponsorData: sponsorData
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.dispatchEvent('dataSynced', { 
+                    count: registeredUsers.length,
+                    sponsorData: sponsorData
+                });
+                return { success: true, count: registeredUsers.length };
+            }
+        } catch (error) {
+            console.error('Error syncing to server:', error);
+            return { success: false, error: error.message };
+        }
+    },
+
+    fixDatabase: async function() {
+        try {
+            const response = await fetch(this.endpoints.fixDatabase);
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            return { success: false, error: error.message };
+        }
+    },
+
+    // Data export methods
+    exportData: function(type = 'all') {
+        let data;
+        
+        switch(type) {
+            case 'users':
+                data = window.adminData.users;
+                break;
+            case 'transactions':
+                data = window.adminData.transactions;
+                break;
+            case 'sponsors':
+                data = {
+                    sponsorStats: window.adminData.sponsorStats,
+                    sponsorAssignments: window.adminData.users.map(u => ({
+                        userId: u.email || u.id,
+                        sponsorId: u.sponsorId,
+                        username: u.username
+                    })).filter(a => a.sponsorId),
+                    commissionSettings: JSON.parse(localStorage.getItem('sponsorCommissionSettings') || '{}'),
+                    changeLog: JSON.parse(localStorage.getItem('sponsorChangeLog') || '[]')
+                };
+                break;
+            case 'all':
+            default:
+                data = {
+                    users: window.adminData.users,
+                    transactions: window.adminData.transactions,
+                    serverStats: window.adminData.serverStats,
+                    sponsorStats: window.adminData.sponsorStats,
+                    commissionSettings: JSON.parse(localStorage.getItem('sponsorCommissionSettings') || '{}'),
+                    exportDate: new Date().toISOString()
+                };
+                break;
+        }
+        
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tapearn_${type}_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        return { success: true, type, count: Array.isArray(data) ? data.length : 'multiple' };
+    },
+
+    // Notification system
+    showNotification: function(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `admin-notification notification-${type}`;
+        notification.innerHTML = `
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+            ${message}
+        `;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            background: linear-gradient(45deg, 
+                ${type === 'success' ? '#00b09b, #96c93d' : 
+                 type === 'error' ? '#ff416c, #ff4b2b' : 
+                 type === 'warning' ? '#f7971e, #ffd200' : 
+                 '#2196F3, #21CBF3'}
+            );
+        `;
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.remove();
+        }, 5000);
+        
+        this.dispatchEvent('notificationShown', { message, type });
+    },
+
+    // Event system for communication between admin panel and main app
+    dispatchEvent: function(eventName, detail) {
+        const event = new CustomEvent(eventName, { detail });
+        window.dispatchEvent(event);
+    }
+};
+
+// Initialize admin panel when DOM is loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => AdminPanel.init());
+} else {
+    AdminPanel.init();
+}
+
+// Export for use in other files
+window.AdminPanel = AdminPanel;
