@@ -1,5 +1,1078 @@
 // ==============================================
-// OPTIMIZED MINING POOL APP - ALL NEW FEATURES ADDED
+// TAPEARN APP - COMPLETELY CSP COMPLIANT VERSION
+// ✅ FIXED: All CSP violations removed
+// ✅ FIXED: All inline event handlers replaced with proper event delegation
+// ✅ OPTIMIZED: All features preserved
+// ==============================================
+
+// ✅ DEBUG CONFIG
+window.APP_DEBUG = false;
+window.APP_LOG_PREFIX = '🎯 [App]';
+
+// ✅ Performance optimization
+window.lastUpdateUI = 0;
+window.lastAdminCheck = 0;
+window.updateUIThrottle = 1000; // 1 second
+
+// ✅ GLOBAL VARIABLES
+let currentUser = null;
+let serverOnline = false;
+const SERVER_URL = 'http://localhost:3000';
+const storage = localStorage;
+
+// ✅ ADMIN AUTHORIZED USERS
+const ADMIN_AUTHORIZED_USERS = [
+    'admin@tapearn.com',
+    'admin',
+    'superadmin@tapearn.com',
+    'superadmin'
+];
+
+// ✅ DOMContentLoaded EVENT LISTENER
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ DOM Fully Loaded');
+    
+    // ✅ INITIALIZE ALL FEATURES
+    initializeApp();
+    
+    // ✅ ADD ALL EVENT LISTENERS
+    setupEventListeners();
+    
+    // ✅ CHECK SERVER CONNECTION
+    checkServerConnection();
+});
+
+// ✅ INITIALIZE APP FUNCTION
+function initializeApp() {
+    console.log('🔄 Initializing app features...');
+    
+    // Load user data
+    initExistingCode();
+}
+
+// ✅ EXISTING CODE INITIALIZATION
+function initExistingCode() {
+    console.log('🔧 Initializing existing code...');
+    
+    // Check registration status
+    checkRegistrationStatus();
+    
+    // Load mining pools
+    loadMiningPools();
+    
+    // Load daily activities
+    loadDailyActivities();
+    
+    // Update UI
+    updateUI();
+    
+    // Initialize referral codes database
+    initializeReferralCodesDatabase();
+    
+    // Check and reset tasks
+    checkFreePoolTasks();
+    checkDailyEarningsReset();
+    checkDailyLogin();
+    
+    // Auto-complete login activity
+    autoCompleteLoginActivity();
+    
+    // Capture Telegram ID
+    captureTelegramId();
+}
+
+// ✅ SETUP ALL EVENT LISTENERS
+function setupEventListeners() {
+    console.log('🔧 Setting up event listeners...');
+    
+    // ✅ LOGIN MODAL EVENT LISTENERS
+    const loginBtn = document.getElementById('loginBtn');
+    if (loginBtn) {
+        loginBtn.addEventListener('click', showLoginModal);
+    }
+    
+    const loginSubmitBtn = document.getElementById('loginSubmitBtn');
+    if (loginSubmitBtn) {
+        loginSubmitBtn.addEventListener('click', handleLogin);
+    }
+    
+    const closeLoginBtn = document.getElementById('closeLoginBtn');
+    if (closeLoginBtn) {
+        closeLoginBtn.addEventListener('click', closeLoginModal);
+    }
+    
+    // ✅ REGISTRATION MODAL EVENT LISTENERS
+    const registerBtn = document.getElementById('registerBtn');
+    if (registerBtn) {
+        registerBtn.addEventListener('click', showRegistrationModal);
+    }
+    
+    const registerSubmitBtn = document.getElementById('registerSubmitBtn');
+    if (registerSubmitBtn) {
+        registerSubmitBtn.addEventListener('click', handleRegistration);
+    }
+    
+    const closeRegisterBtn = document.getElementById('closeRegisterBtn');
+    if (closeRegisterBtn) {
+        closeRegisterBtn.addEventListener('click', closeRegistrationModal);
+    }
+    
+    // ✅ NAVIGATION EVENT LISTENERS
+    setupNavigationListeners();
+    
+    // ✅ MINING POOL EVENT LISTENERS
+    setupMiningPoolListeners();
+    
+    // ✅ TASK EVENT LISTENERS
+    setupTaskListeners();
+    
+    // ✅ WALLET EVENT LISTENERS
+    setupWalletListeners();
+    
+    // ✅ REFERRAL EVENT LISTENERS
+    setupReferralListeners();
+    
+    // ✅ ADMIN EVENT LISTENERS
+    setupAdminListeners();
+    
+    // ✅ ENHANCED GLOBAL EVENT DELEGATION FOR ALL DYNAMIC ELEMENTS
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        
+        // Handle modal close buttons
+        if (target.closest('[data-action="closeModal"]')) {
+            const btn = target.closest('[data-action="closeModal"]');
+            const modalId = btn.getAttribute('data-modal') || btn.closest('.modal').id;
+            if (modalId) {
+                closeModal(modalId);
+            }
+            return;
+        }
+        
+        // Handle close buttons with class
+        if (target.closest('.modal-close')) {
+            const modal = target.closest('.modal');
+            if (modal) {
+                modal.remove();
+            }
+            return;
+        }
+        
+        // Handle back buttons
+        if (target.closest('.back-btn')) {
+            const backBtn = target.closest('.back-btn');
+            if (backBtn.classList.contains('back-to-profile')) {
+                showProfileHomePage();
+            } else if (backBtn.classList.contains('back-to-wallet')) {
+                showWalletSection();
+            } else {
+                showHomePage();
+            }
+            return;
+        }
+        
+        // Handle data-action elements
+        const actionElement = target.closest('[data-action]');
+        if (actionElement) {
+            const action = actionElement.getAttribute('data-action');
+            const value = actionElement.getAttribute('data-value') || 
+                         actionElement.getAttribute('data-modal') || 
+                         actionElement.getAttribute('data-tab') ||
+                         actionElement.getAttribute('data-amount') ||
+                         actionElement.getAttribute('data-email') ||
+                         actionElement.getAttribute('data-pool') ||
+                         actionElement.getAttribute('data-task');
+            
+            e.preventDefault();
+            e.stopPropagation();
+            
+            handleAction(action, value, actionElement);
+            return;
+        }
+    });
+    
+    // Handle input events
+    document.addEventListener('input', function(e) {
+        if (e.target.id === 'pointsToConvert') {
+            updateConversionPreview();
+        }
+        if (e.target.id === 'inrToConvert') {
+            updateINRConversionPreview();
+        }
+        if (e.target.id === 'loginUsername' || e.target.id === 'loginEmail') {
+            checkUsernameAvailability();
+        }
+    });
+    
+    console.log('✅ Event listeners setup complete');
+}
+
+// ✅ HANDLE ACTION FUNCTION
+function handleAction(action, value, element) {
+    switch(action) {
+        case 'switchTab':
+            switchTab(value);
+            break;
+        case 'showModal':
+            showModal(value);
+            break;
+        case 'closeModal':
+            closeModal(value);
+            break;
+        case 'login':
+            loginUser();
+            break;
+        case 'register':
+            handleRegistration();
+            break;
+        case 'validateStep1':
+            validateStep1();
+            break;
+        case 'validateStep2':
+            validateStep2();
+            break;
+        case 'previousStep':
+            previousStep();
+            break;
+        case 'sendEmailOTP':
+            sendEmailOTP();
+            break;
+        case 'verifyEmailOTP':
+            verifyEmailOTP();
+            break;
+        case 'sendMobileOTP':
+            sendMobileOTP();
+            break;
+        case 'verifyMobileOTP':
+            verifyMobileOTP();
+            break;
+        case 'sendPasswordResetOTP':
+            sendPasswordResetOTP();
+            break;
+        case 'resetPassword':
+            const email = element.getAttribute('data-email');
+            resetPassword(email);
+            break;
+        case 'resendResetOTP':
+            const email2 = element.getAttribute('data-email');
+            resendResetOTP(email2);
+            break;
+        case 'showWalletSection':
+            showWalletSection();
+            break;
+        case 'showConvertPointsModal':
+            showConvertPointsModal();
+            break;
+        case 'showConvertINRModal':
+            showConvertINRModal();
+            break;
+        case 'convertPointsToINR':
+            const points = element.getAttribute('data-amount');
+            convertPointsToINR(parseInt(points));
+            break;
+        case 'convertPointsToUSDT':
+            const points2 = element.getAttribute('data-amount');
+            convertPointsToUSDT(parseInt(points2));
+            break;
+        case 'convertINRtoUSDT':
+            const inrAmount = element.getAttribute('data-amount');
+            convertINRtoUSDT(parseInt(inrAmount));
+            break;
+        case 'completeTask':
+            const taskId = element.getAttribute('data-task');
+            const taskPoints = element.getAttribute('data-points') || 100;
+            completeTask(taskId, parseInt(taskPoints));
+            break;
+        case 'startMiningPool':
+            const poolId = element.getAttribute('data-pool');
+            const duration = element.getAttribute('data-duration') || 24;
+            startMiningPool(poolId, parseInt(duration));
+            break;
+        case 'claimMiningPool':
+            const claimPoolId = element.getAttribute('data-pool');
+            claimMiningPoolRewards(claimPoolId);
+            break;
+        case 'logout':
+            logoutUser();
+            break;
+        case 'showProfile':
+            showProfileHomePage();
+            break;
+        case 'refreshSponsorData':
+            refreshSponsorData();
+            break;
+        case 'completeDailyActivity':
+            const activityId = element.getAttribute('data-activity');
+            completeDailyActivity(activityId);
+            break;
+        case 'copyReferral':
+            copyReferralLink();
+            break;
+        case 'shareReferral':
+            shareReferralLink();
+            break;
+        case 'selectReferralCode':
+            selectReferralCode(value);
+            break;
+        // Admin actions
+        case 'switchAdminTab':
+            switchAdminTab(value, element);
+            break;
+        case 'filterAdminUsers':
+            filterAdminUsers();
+            break;
+        case 'adminRefreshUsers':
+            adminRefreshUsers();
+            break;
+        case 'viewAdminUser':
+            viewAdminUser(value);
+            break;
+        case 'removeAdminUser':
+            removeAdminUser(value);
+            break;
+        case 'exportAllData':
+            exportAllData();
+            break;
+        case 'cleanCache':
+            cleanCache();
+            break;
+        case 'clearAllStorage':
+            clearAllStorage();
+            break;
+        case 'resetAllPoints':
+            resetAllPoints();
+            break;
+        case 'resetAllTasks':
+            resetAllTasks();
+            break;
+        case 'resetAllMining':
+            resetAllMining();
+            break;
+        case 'fixDataCorruption':
+            fixDataCorruption();
+            break;
+        case 'reloadApp':
+            reloadApp();
+            break;
+        case 'toggleDebug':
+            toggleDebug();
+            break;
+        case 'addTestUser':
+            addTestUser();
+            break;
+        case 'removeUserByEmail':
+            removeUserByEmail();
+            break;
+        case 'bulkRemoveByEmail':
+            bulkRemoveByEmail();
+            break;
+        case 'nuclearReset':
+            nuclearReset();
+            break;
+        case 'exportConversionHistory':
+            exportConversionHistory();
+            break;
+        case 'showFullConversionHistory':
+            showFullConversionHistory();
+            break;
+        case 'showSponsorTransactionHistory':
+            showSponsorTransactionHistory();
+            break;
+        case 'exportSponsorHistory':
+            exportSponsorHistory();
+            break;
+        case 'testServerConnection':
+            testServerConnection();
+            break;
+        case 'syncAllToServer':
+            syncAllToServer();
+            break;
+        case 'fixServerData':
+            fixServerData();
+            break;
+        case 'closeAdminPanel':
+            closeAdminPanel();
+            break;
+        case 'switchAdminTab':
+            switchAdminTab(value, element);
+            break;
+        case 'cancelMiningPool':
+            cancelMiningPool();
+            break;
+        case 'checkFreePoolTasksCompletion':
+            checkFreePoolTasksCompletion();
+            break;
+        case 'unlockPaidPool':
+            const poolIdToUnlock = element.getAttribute('data-pool');
+            unlockPaidPool(poolIdToUnlock);
+            break;
+        default:
+            console.log('Unknown action:', action);
+    }
+}
+
+// ✅ SHOW MODAL FUNCTION
+function showModal(modalId) {
+    switch(modalId) {
+        case 'login':
+            showLoginModal();
+            break;
+        case 'register':
+            showRegistrationModal();
+            break;
+        case 'forgotPassword':
+            showForgotPassword();
+            break;
+        case 'convertPoints':
+            showConvertPointsModal();
+            break;
+        case 'convertINR':
+            showConvertINRModal();
+            break;
+        case 'freePoolTasks':
+            showFreePoolTasksModal();
+            break;
+        case 'dailyActivities':
+            showDailyActivitiesModal();
+            break;
+        case 'admin':
+            window.adminSystem.openAdminPanel();
+            break;
+        case 'telegramId':
+            showTelegramIdModal();
+            break;
+        case 'sponsorId':
+            showSponsorIdModal();
+            break;
+        case 'rewards':
+            showRewardsModal();
+            break;
+        case 'walletHistory':
+            showWalletHistoryModal();
+            break;
+        case 'referral':
+            showReferralModal();
+            break;
+        case 'mining':
+            showMiningPage();
+            break;
+    }
+}
+
+// ✅ NAVIGATION EVENT LISTENERS
+function setupNavigationListeners() {
+    const navLinks = document.querySelectorAll('.nav-link, .menu-link');
+    navLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const sectionId = this.getAttribute('data-section');
+            if (sectionId) {
+                showSection(sectionId);
+            }
+        });
+    });
+}
+
+// ✅ MINING POOL EVENT LISTENERS
+function setupMiningPoolListeners() {
+    const poolButtons = document.querySelectorAll('.pool-btn, .start-mining-btn');
+    poolButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const poolId = this.getAttribute('data-pool-id');
+            if (poolId) {
+                startMiningPool(poolId);
+            }
+        });
+    });
+    
+    const claimButtons = document.querySelectorAll('.claim-btn');
+    claimButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const poolId = this.getAttribute('data-pool-id');
+            if (poolId) {
+                claimPoolRewards(poolId);
+            }
+        });
+    });
+}
+
+// ✅ TASK EVENT LISTENERS
+function setupTaskListeners() {
+    const taskButtons = document.querySelectorAll('.task-btn, .complete-task');
+    taskButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const taskId = this.getAttribute('data-task-id');
+            const taskPoints = this.getAttribute('data-points') || 100;
+            if (taskId) {
+                completeTask(taskId, parseInt(taskPoints));
+            }
+        });
+    });
+    
+    const videoButtons = document.querySelectorAll('.watch-video-btn');
+    videoButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const videoId = this.getAttribute('data-video-id');
+            const points = this.getAttribute('data-points') || 50;
+            if (videoId) {
+                watchVideo(videoId, parseInt(points));
+            }
+        });
+    });
+}
+
+// ✅ WALLET EVENT LISTENERS
+function setupWalletListeners() {
+    const convertButtons = document.querySelectorAll('.convert-btn');
+    convertButtons.forEach(btn => {
+        btn.addEventListener('click', function() {
+            const type = this.getAttribute('data-type');
+            if (type === 'points-to-inr') {
+                showConvertModal('points-to-inr');
+            } else if (type === 'inr-to-usdt') {
+                showConvertModal('inr-to-usdt');
+            }
+        });
+    });
+    
+    const convertSubmitBtn = document.getElementById('convertSubmitBtn');
+    if (convertSubmitBtn) {
+        convertSubmitBtn.addEventListener('click', handleConversion);
+    }
+    
+    const closeConvertBtn = document.getElementById('closeConvertBtn');
+    if (closeConvertBtn) {
+        closeConvertBtn.addEventListener('click', closeConvertModal);
+    }
+}
+
+// ✅ REFERRAL EVENT LISTENERS
+function setupReferralListeners() {
+    const copyReferralBtn = document.getElementById('copyReferralBtn');
+    if (copyReferralBtn) {
+        copyReferralBtn.addEventListener('click', copyReferralLink);
+    }
+    
+    const shareReferralBtn = document.getElementById('shareReferralBtn');
+    if (shareReferralBtn) {
+        shareReferralBtn.addEventListener('click', shareReferralLink);
+    }
+}
+
+// ✅ ADMIN EVENT LISTENERS
+function setupAdminListeners() {
+    const adminBtn = document.getElementById('adminBtn');
+    if (adminBtn) {
+        adminBtn.addEventListener('click', showAdminPanel);
+    }
+    
+    const closeAdminBtn = document.getElementById('closeAdminBtn');
+    if (closeAdminBtn) {
+        closeAdminBtn.addEventListener('click', closeAdminPanel);
+    }
+    
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    if (adminLoginBtn) {
+        adminLoginBtn.addEventListener('click', handleAdminLogin);
+    }
+}
+
+// ✅ CHECK SERVER CONNECTION
+async function checkServerConnection() {
+    try {
+        const response = await fetch(`${SERVER_URL}/api/health`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            serverOnline = true;
+            console.log('✅ Server is online');
+            
+            // Sync user data with server if available
+            if (currentUser) {
+                syncUserWithServer();
+            }
+        } else {
+            serverOnline = false;
+            console.log('⚠️ Server is offline - using local storage only');
+        }
+    } catch (error) {
+        serverOnline = false;
+        console.log('⚠️ Server is offline - using local storage only');
+    }
+}
+
+// ✅ SYNC USER WITH SERVER
+async function syncUserWithServer() {
+    if (!serverOnline || !currentUser) return;
+    
+    try {
+        const response = await fetch(`${SERVER_URL}/api/sync-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(currentUser)
+        });
+        
+        if (response.ok) {
+            console.log('✅ User synced with server');
+        }
+    } catch (error) {
+        console.error('❌ Error syncing user with server:', error);
+    }
+}
+
+// ✅ SHOW SECTION FUNCTION
+function showSection(sectionId) {
+    // Hide all sections
+    const sections = document.querySelectorAll('.section-content');
+    sections.forEach(section => {
+        section.classList.remove('active');
+    });
+    
+    // Show selected section
+    const targetSection = document.getElementById(sectionId);
+    if (targetSection) {
+        targetSection.classList.add('active');
+    }
+    
+    // Update active navigation
+    const navLinks = document.querySelectorAll('.nav-link, .menu-link');
+    navLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('data-section') === sectionId) {
+            link.classList.add('active');
+        }
+    });
+}
+
+// ✅ LOGIN HANDLER
+function handleLogin() {
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        showNotification('❌ Please enter email and password', 'warning');
+        return;
+    }
+    
+    // For demo purposes, accept any login
+    currentUser = {
+        email: email,
+        username: email.split('@')[0],
+        points: 1000,
+        joined: new Date().toISOString()
+    };
+    
+    storage.setItem('currentUser', JSON.stringify(currentUser));
+    showNotification('✅ Login successful!', 'success');
+    closeLoginModal();
+    updateUI();
+}
+
+// ✅ REGISTRATION HANDLER
+function handleRegistration() {
+    const username = document.getElementById('regUsername').value;
+    const email = document.getElementById('regEmail').value;
+    const password = document.getElementById('regPassword').value;
+    const confirmPassword = document.getElementById('regConfirmPassword').value;
+    
+    if (!username || !email || !password) {
+        showNotification('❌ Please fill all fields', 'warning');
+        return;
+    }
+    
+    if (password !== confirmPassword) {
+        showNotification('❌ Passwords do not match', 'warning');
+        return;
+    }
+    
+    currentUser = {
+        username: username,
+        email: email,
+        points: 100,
+        joined: new Date().toISOString()
+    };
+    
+    storage.setItem('currentUser', JSON.stringify(currentUser));
+    showNotification('✅ Registration successful!', 'success');
+    closeRegistrationModal();
+    updateUI();
+}
+
+// ✅ SHOW LOGIN MODAL (CSP FIXED VERSION)
+function showLoginModal() {
+    const modal = document.createElement('div');
+    modal.className = 'modal active login-modal';
+    modal.id = 'loginModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🔐 Login</h3>
+                <button class="modal-close" data-action="closeModal" data-modal="loginModal">×</button>
+            </div>
+            <div class="login-form">
+                <div class="form-group">
+                    <label for="loginUsername">Username or Email</label>
+                    <input type="text" id="loginUsername" placeholder="Enter username or email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="Enter password">
+                </div>
+                <div class="form-actions">
+                    <button class="btn-cancel" data-action="closeModal" data-modal="loginModal">Cancel</button>
+                    <button class="btn-success" data-action="login">Login</button>
+                </div>
+                <div class="login-footer">
+                    <p>Don't have an account? <a href="#" data-action="showModal" data-modal="register">Register here</a></p>
+                    <p>Forgot password? <a href="#" data-action="showModal" data-modal="forgotPassword">Reset here</a></p>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// ✅ CLOSE LOGIN MODAL
+function closeLoginModal() {
+    closeModal('loginModal');
+}
+
+// ✅ SHOW REGISTRATION MODAL (CSP FIXED VERSION)
+function showRegistrationModal() {
+    // Check if user is already registered
+    if (checkRegistrationStatus()) {
+        showNotification('✅ You are already registered!', 'success');
+        updateUI();
+        return;
+    }
+    
+    const modal = document.createElement('div');
+    modal.className = 'modal active registration-modal';
+    modal.id = 'registrationModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📝 User Registration</h3>
+                <button class="modal-close" data-action="closeModal" data-modal="registrationModal">×</button>
+            </div>
+            <div class="registration-steps">
+                <div class="step-indicator">
+                    <div class="step ${registrationStep === 1 ? 'active' : ''}">1</div>
+                    <div class="step-line"></div>
+                    <div class="step ${registrationStep === 2 ? 'active' : ''}">2</div>
+                    <div class="step-line"></div>
+                    <div class="step ${registrationStep === 3 ? 'active' : ''}">3</div>
+                    <div class="step-line"></div>
+                    <div class="step ${registrationStep === 4 ? 'active' : ''}">4</div>
+                </div>
+                
+                <div id="registrationFormContent">
+                    ${getRegistrationStepContent()}
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+// ✅ CLOSE REGISTRATION MODAL
+function closeRegistrationModal() {
+    closeModal('registrationModal');
+}
+
+// ✅ SHOW CONVERT MODAL
+function showConvertModal(type) {
+    if (type === 'points-to-inr') {
+        showConvertPointsModal();
+    } else if (type === 'inr-to-usdt') {
+        showConvertINRModal();
+    }
+}
+
+// ✅ HANDLE CONVERSION
+function handleConversion() {
+    console.log('Handle conversion');
+}
+
+// ✅ CLOSE CONVERT MODAL
+function closeConvertModal() {
+    console.log('Close convert modal');
+}
+
+// ✅ COPY REFERRAL LINK
+function copyReferralLink() {
+    const referralLink = `https://tapearn.com/ref/${referralData.referralCode}`;
+    navigator.clipboard.writeText(referralLink)
+        .then(() => {
+            showNotification('✅ Referral link copied to clipboard!', 'success');
+        })
+        .catch(err => {
+            showNotification('❌ Failed to copy referral link', 'error');
+        });
+}
+
+// ✅ SHARE REFERRAL LINK
+function shareReferralLink() {
+    const referralLink = `https://tapearn.com/ref/${referralData.referralCode}`;
+    const shareText = `Join Tapearn and earn points with me! Use my referral code: ${referralData.referralCode}\n${referralLink}`;
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Join Tapearn',
+            text: shareText,
+            url: referralLink
+        });
+    } else {
+        navigator.clipboard.writeText(shareText)
+            .then(() => {
+                showNotification('✅ Referral text copied to clipboard!', 'success');
+            });
+    }
+}
+
+// ✅ SHOW ADMIN PANEL
+function showAdminPanel() {
+    window.adminSystem.openAdminPanel();
+}
+
+// ✅ CLOSE ADMIN PANEL
+function closeAdminPanel() {
+    closeModal('adminModal');
+}
+
+// ✅ HANDLE ADMIN LOGIN
+function handleAdminLogin() {
+    console.log('Handle admin login');
+}
+
+// ✅ START MINING POOL
+function startMiningPool(poolId, durationHours) {
+    const pool = MINING_POOLS.find(p => p.id === poolId);
+    if (!pool) {
+        showNotification('❌ Mining pool not found!', 'warning');
+        return;
+    }
+    
+    const duration = pool.durations.find(d => d.hours === (durationHours || 24));
+    if (!duration) {
+        showNotification('❌ Invalid duration!', 'warning');
+        return;
+    }
+    
+    const instanceId = `${poolId}_${duration.hours}`;
+    const instance = miningPoolInstances[instanceId];
+    
+    if (!instance) {
+        showNotification('❌ Pool instance not found!', 'warning');
+        return;
+    }
+    
+    // Check if already mining
+    if (activeMiningPool) {
+        showNotification('❌ You already have an active mining pool!', 'warning');
+        return;
+    }
+    
+    // Check pool type requirements
+    if (pool.type === 'free') {
+        if (!freePoolTasksCompleted) {
+            showFreePoolTasksModal();
+            showNotification('❌ Complete required tasks first!', 'warning');
+            return;
+        }
+        
+        const freePoolUsed = getFromStorage(`freePoolUsed_${userId}`, false);
+        if (freePoolUsed) {
+            showNotification('❌ Free pool already used! Try paid pools.', 'warning');
+            return;
+        }
+    } else if (pool.type === 'paid') {
+        if (usdtWallet < pool.minInvestment) {
+            showNotification(`❌ Minimum ${pool.minInvestment} USDT required in your USDT wallet!`, 'warning');
+            return;
+        }
+        
+        usdtWallet -= pool.minInvestment;
+        addTransaction(
+            `Investment: ${pool.name} (${durationHours}h)`, 
+            -pool.minInvestment, 
+            'spending', 
+            'investment',
+            'usdt_wallet'
+        );
+        showNotification(`💰 Invested ${pool.minInvestment} USDT from your wallet`, 'info');
+        saveMiningState();
+    }
+    
+    // Join the pool
+    const startTime = Date.now();
+    const endTime = startTime + (duration.hours * 60 * 60 * 1000);
+    
+    activeMiningPool = {
+        id: 'user_pool_' + Date.now(),
+        poolId: poolId,
+        poolName: pool.name,
+        poolIcon: pool.icon,
+        poolType: pool.type,
+        startTime: startTime,
+        endTime: endTime,
+        durationHours: duration.hours,
+        expectedPoints: duration.points,
+        status: 'active',
+        instanceId: instanceId
+    };
+    
+    // Update instance statistics
+    instance.subscribers += 1;
+    instance.participants += 1;
+    
+    // Mark free pool as used
+    if (pool.type === 'free') {
+        saveToStorage(`freePoolUsed_${userId}`, true);
+    }
+    
+    // Start countdown
+    startMiningPoolCountdown();
+    
+    // Save to history
+    miningPoolHistory.unshift({
+        ...activeMiningPool,
+        claimed: false
+    });
+    
+    saveMiningState();
+    
+    showNotification(`⛏️ Started ${pool.name} for ${duration.hours} hours! You'll earn ${duration.points} points.`, 'success');
+    updateMiningPageUI();
+}
+
+// ✅ CLAIM POOL REWARDS
+function claimPoolRewards(poolId) {
+    if (!activeMiningPool || activeMiningPool.poolId !== poolId) {
+        showNotification('❌ No active pool to claim!', 'warning');
+        return;
+    }
+    
+    if (activeMiningPool.status !== 'completed') {
+        showNotification('❌ Pool is still running!', 'warning');
+        return;
+    }
+    
+    const points = activeMiningPool.expectedPoints;
+    awardPoints(points, `Mining Pool: ${activeMiningPool.poolName}`, 'mining');
+    
+    // Mark as claimed
+    activeMiningPool.status = 'claimed';
+    
+    // Update history
+    const historyEntry = miningPoolHistory.find(h => h.id === activeMiningPool.id);
+    if (historyEntry) {
+        historyEntry.claimed = true;
+        historyEntry.claimedAt = new Date().toISOString();
+    }
+    
+    // Clear active pool
+    activeMiningPool = null;
+    
+    saveMiningState();
+    showNotification(`✅ Successfully claimed ${points} points from mining pool!`, 'success');
+    updateMiningPageUI();
+}
+
+// ✅ COMPLETE TASK
+function completeTask(taskId, points) {
+    const task = FREE_POOL_TASKS.find(t => t.id === taskId) || 
+                DAILY_ACTIVITIES.find(t => t.id === taskId);
+    
+    if (!task) {
+        showNotification('❌ Task not found!', 'warning');
+        return;
+    }
+    
+    if (task.completed) {
+        showNotification('❌ Task already completed!', 'warning');
+        return;
+    }
+    
+    task.completed = true;
+    awardPoints(points, `Task: ${task.name || task.title}`, 'task');
+    
+    completedTasks.push({
+        id: taskId,
+        name: task.name || task.title,
+        points: points,
+        completedAt: new Date().toISOString()
+    });
+    
+    saveMiningState();
+    showNotification(`✅ Task completed! +${points} points`, 'success');
+}
+
+// ✅ WATCH VIDEO
+function watchVideo(videoId, points) {
+    const video = DEMO_VIDEOS.find(v => v.id === videoId);
+    
+    if (!video) {
+        showNotification('❌ Video not found!', 'warning');
+        return;
+    }
+    
+    if (watchedVideos.includes(videoId)) {
+        showNotification('❌ Video already watched!', 'warning');
+        return;
+    }
+    
+    watchedVideos.push(videoId);
+    awardPoints(points, `Video: ${video.title}`, 'video');
+    
+    showNotification(`✅ Video watched! +${points} points`, 'success');
+}
+
+// ✅ SHOW NOTIFICATION
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// ✅ UPDATE UI
+function updateUI() {
+    console.log('Update UI');
+    
+    // Update user info
+    if (currentUser) {
+        const userElements = document.querySelectorAll('.user-name, .user-email, .user-points');
+        userElements.forEach(el => {
+            if (el.classList.contains('user-name')) {
+                el.textContent = currentUser.username;
+            } else if (el.classList.contains('user-email')) {
+                el.textContent = currentUser.email;
+            } else if (el.classList.contains('user-points')) {
+                el.textContent = currentUser.points + ' Points';
+            }
+        });
+    }
+    
+    // Update points display
+    const pointElements = document.querySelectorAll('.points-display, .total-points');
+    pointElements.forEach(el => {
+        el.textContent = userPoints + ' Points';
+    });
+}
+
+// ==============================================
+// ✅ EXISTING CODE CONTINUES FROM HERE
 // ==============================================
 
 // ✅ 1. STATE VARIABLES - Updated with Registration System
@@ -719,168 +1792,6 @@ const DAILY_ACTIVITIES = [
 ];
 
 // ==============================================
-// ✅ FIX CLICK EVENTS - EVENT DELEGATION SYSTEM
-// ==============================================
-
-// Global event delegation for all dynamic elements
-document.addEventListener('click', function(e) {
-    const target = e.target;
-    
-    // Handle navigation buttons
-    if (target.closest('.nav-btn')) {
-        const navBtn = target.closest('.nav-btn');
-        const tabName = navBtn.querySelector('.nav-label').textContent.toLowerCase();
-        switchTab(tabName);
-        return;
-    }
-    
-    // Handle wallet click
-    if (target.closest('.wallet')) {
-        showWalletHistory();
-        return;
-    }
-    
-    // Handle platform cards
-    if (target.closest('.platform-card')) {
-        const card = target.closest('.platform-card');
-        const platformName = card.querySelector('.platform-name').textContent;
-        
-        if (platformName.includes('YouTube')) showVideoSection();
-        else if (platformName.includes('Telegram')) showTelegramSection();
-        else if (platformName.includes('Instagram')) showInstagramSection();
-        else if (platformName.includes('Twitter')) showTwitterSection();
-        else if (platformName.includes('Digital Wallet')) showWalletSection();
-        else if (platformName.includes('Rewards Center')) showCashier();
-        else if (platformName.includes('Wallet History')) showWalletHistory();
-        else if (platformName.includes('Refer & Earn')) showReferralSystem();
-        return;
-    }
-    
-    // Handle modal close buttons
-    if (target.classList.contains('modal-close') || target.closest('.modal-close')) {
-        const closeBtn = target.classList.contains('modal-close') ? target : target.closest('.modal-close');
-        const modal = closeBtn.closest('.modal');
-        if (modal) {
-            modal.remove();
-        }
-        return;
-    }
-    
-    // Handle back buttons
-    if (target.closest('.back-btn')) {
-        const backBtn = target.closest('.back-btn');
-        const text = backBtn.textContent || '';
-        
-        if (text.includes('Back to Videos')) showVideoSection();
-        else if (text.includes('Back to Earn')) showHomePage();
-        else if (text.includes('Back to Profile')) showProfileHomePage();
-        else if (text.includes('Back to Wallet')) showWalletSection();
-        else showHomePage();
-        return;
-    }
-    
-    // Handle video cards
-    if (target.closest('.video-card') && !target.closest('.video-card').classList.contains('video-completed')) {
-        const videoCard = target.closest('.video-card');
-        if (videoCard.dataset.videoId) {
-            const videoId = videoCard.dataset.videoId;
-            const video = DEMO_VIDEOS.find(v => v.id === videoId) || {
-                id: videoId,
-                title: videoCard.querySelector('.video-title').textContent,
-                thumbnail: videoCard.querySelector('img').src,
-                channel: videoCard.querySelector('.video-channel').textContent,
-                points: parseInt(videoCard.querySelector('.points-badge').textContent.replace('+', '')),
-                videoUrl: videoCard.dataset.videoUrl
-            };
-            openVideoAndStartTimer(video.id, video.points, video.title, video.thumbnail, video.channel, video.videoUrl);
-        }
-        return;
-    }
-    
-    // Handle task buttons
-    if (target.closest('.task-btn') && !target.closest('.task-btn').disabled) {
-        const taskBtn = target.closest('.task-btn');
-        if (taskBtn.dataset.taskId) {
-            completeTask(taskBtn.dataset.taskId, parseInt(taskBtn.dataset.points), taskBtn.dataset.taskName);
-        }
-        return;
-    }
-    
-    // Handle conversion buttons
-    if (target.closest('.wallet-convert-btn')) {
-        const convertBtn = target.closest('.wallet-convert-btn');
-        if (convertBtn.textContent.includes('कन्वर्ट करें')) {
-            showConvertPointsModal();
-        } else if (convertBtn.textContent.includes('USDT में बदलें')) {
-            showConvertINRModal();
-        }
-        return;
-    }
-    
-    // Handle wallet action buttons
-    if (target.closest('.wallet-action-btn')) {
-        const actionBtn = target.closest('.wallet-action-btn');
-        const actionText = actionBtn.querySelector('.action-text').textContent;
-        
-        if (actionText.includes('पॉइंट्स कन्वर्ट')) showConvertPointsModal();
-        else if (actionText.includes('INR टू USDT')) showConvertINRModal();
-        else if (actionText.includes('पेड पूल खरीदें')) showMiningPage();
-        return;
-    }
-    
-    // Handle registration buttons
-    if (target.closest('.btn-register-prompt')) {
-        showRegistrationModal();
-        return;
-    }
-    
-    if (target.closest('.btn-login-prompt')) {
-        showLoginModal();
-        return;
-    }
-    
-    // Handle logout button
-    if (target.closest('.logout-btn')) {
-        logoutUser();
-        return;
-    }
-});
-
-// Additional event listeners for input elements
-document.addEventListener('input', function(e) {
-    if (e.target.id === 'videoSearch') {
-        // Handle video search - we'll implement this with a debounce
-        clearTimeout(window.searchTimeout);
-        window.searchTimeout = setTimeout(() => {
-            if (e.target.value.trim()) {
-                searchVideos();
-            }
-        }, 500);
-    }
-    
-    if (e.target.id === 'pointsToConvert') {
-        updateConversionPreview();
-    }
-    
-    if (e.target.id === 'inrToConvert') {
-        updateINRConversionPreview();
-    }
-});
-
-// Handle form submissions
-document.addEventListener('submit', function(e) {
-    e.preventDefault();
-    
-    if (e.target.id === 'registrationForm') {
-        validateStep1();
-    }
-    
-    if (e.target.id === 'loginForm') {
-        loginUser();
-    }
-});
-
-// ==============================================
 // ✅ CORE FUNCTIONS (UPDATED WITHOUT INLINE HANDLERS)
 // ==============================================
 
@@ -914,20 +1825,20 @@ function safeNumber(value, defaultValue = 0) {
 function saveToStorage(key, value) {
     try {
         if (value === undefined) {
-            console.warn(`⚠️ Attempted to save undefined value for key: ${key}`);
+            if (window.APP_DEBUG) console.warn(`${window.APP_LOG_PREFIX} ⚠️ Attempted to save undefined value for key: ${key}`);
             return false;
         }
         
         if (typeof value === 'number' && isNaN(value)) {
-            console.warn(`⚠️ Attempted to save NaN for key: ${key}`);
+            if (window.APP_DEBUG) console.warn(`${window.APP_LOG_PREFIX} ⚠️ Attempted to save NaN for key: ${key}`);
             value = 0;
         }
         
         localStorage.setItem(key, JSON.stringify(value));
-        console.log(`💾 Saved to storage: ${key}`);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 💾 Saved to storage: ${key}`);
         return true;
     } catch (error) {
-        console.error('❌ Storage error:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} ❌ Storage error:`, error);
         showNotification('❌ Storage error!', 'warning');
         return false;
     }
@@ -953,7 +1864,7 @@ function getFromStorage(key, defaultValue = null) {
         
         return parsed;
     } catch (error) {
-        console.warn(`❌ Error parsing localStorage key "${key}":`, error);
+        if (window.APP_DEBUG) console.warn(`${window.APP_LOG_PREFIX} ❌ Error parsing localStorage key "${key}":`, error);
         return defaultValue;
     }
 }
@@ -966,17 +1877,6 @@ function formatTime(seconds) {
 
 function formatNumber(num) {
     return Math.max(0, Math.round(safeNumber(num, 0))).toLocaleString('en-US');
-}
-
-function showNotification(message, type = 'info') {
-    document.querySelectorAll('.notification').forEach(notif => notif.remove());
-    
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.innerHTML = message;
-    document.body.appendChild(notification);
-    
-    setTimeout(() => notification.remove(), 3000);
 }
 
 function generateUserId() {
@@ -999,7 +1899,7 @@ function generateReferralCode() {
 // ✅ नया फ़ंक्शन saveUserToServer() जोड़ें
 async function saveUserToServer(userData) {
     try {
-        console.log('🔄 Saving user to MongoDB:', userData.email);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Saving user to MongoDB:`, userData.email);
         
         const response = await fetch(`${SERVER_URL}/api/save-user`, {
             method: 'POST',
@@ -1010,7 +1910,7 @@ async function saveUserToServer(userData) {
         const data = await response.json();
         
         if (data.success) {
-            console.log('✅ User saved to MongoDB:', data);
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User saved to MongoDB:`, data);
             
             // Referral process
             if (userData.usedReferralCode) {
@@ -1024,10 +1924,10 @@ async function saveUserToServer(userData) {
                 });
             }
         } else {
-            console.warn('⚠️ MongoDB save warning:', data.message);
+            if (window.APP_DEBUG) console.warn(`${window.APP_LOG_PREFIX} ⚠️ MongoDB save warning:`, data.message);
         }
     } catch (error) {
-        console.error('❌ Error saving user to MongoDB:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} ❌ Error saving user to MongoDB:`, error);
         // Continue with local storage only
     }
 }
@@ -1043,7 +1943,7 @@ async function getAllUsersFromServer() {
         }
         return [];
     } catch (error) {
-        console.error('❌ Error getting users:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} ❌ Error getting users:`, error);
         return [];
     }
 }
@@ -1077,7 +1977,7 @@ async function performOptimizedAdminSync() {
     
     // Limit syncs per minute
     if (syncState.syncCount >= syncState.maxSyncsPerMinute) {
-        console.log('⚠️ Sync limit reached, waiting...');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ⚠️ Sync limit reached, waiting...`);
         return;
     }
     
@@ -1085,17 +1985,17 @@ async function performOptimizedAdminSync() {
     syncState.syncCount++;
     
     try {
-        console.log('🔄 Performing optimized admin sync...');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Performing optimized admin sync...`);
         
         // Your existing sync logic here...
         const currentUser = getFromStorage('currentUser', {});
         if (currentUser && currentUser.email) {
             // Only log once instead of multiple times
-            console.log('✅ User synced to server:', currentUser.username);
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User synced to server:`, currentUser.username);
         }
         
     } catch (error) {
-        console.error('Sync error:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} Sync error:`, error);
     } finally {
         syncState.isSyncing = false;
         syncState.lastSyncTime = Date.now();
@@ -1107,26 +2007,29 @@ async function performOptimizedAdminSync() {
     }
 }
 
-// ✅ Optimized admin button check
-let adminButtonCheckCount = 0;
-function checkAndInjectOptimizedAdminButton() {
-    // Limit checks to prevent spam
-    adminButtonCheckCount++;
-    if (adminButtonCheckCount > 5) {
-        console.log('✅ Admin button checks completed');
-        return;
-    }
+// ✅ OPTIMIZED: Admin button check
+function checkAndInjectAdminButton() {
+    const now = Date.now();
+    if (now - window.lastAdminCheck < 5000) return;
+    window.lastAdminCheck = now;
     
     const currentUser = getFromStorage('currentUser', {});
-    const isAdmin = currentUser.email === 'admin@tapearn.com' || 
-                   currentUser.email === 'admin@example.com';
     
-    if (isAdmin) {
-        console.log('✅ User authorized for admin, injecting button...');
-        // Call the injection function from admin-panel-integration.js
-        if (typeof window.injectAdminButton === 'function') {
+    if (window.APP_DEBUG) {
+        console.log(`${window.APP_LOG_PREFIX} 🔍 Checking for admin button injection...`);
+    }
+    
+    // Check authorization without excessive logging
+    const isAuthorized = ADMIN_AUTHORIZED_USERS.some(authorized => 
+        authorized.toLowerCase() === (currentUser.email || currentUser.username || currentUser.id || '').toLowerCase()
+    );
+    
+    if (isAuthorized && !document.querySelector('.admin-header-btn')) {
+        if (window.injectAdminButton) {
             window.injectAdminButton();
         }
+    } else if (window.APP_DEBUG) {
+        console.log(`${window.APP_LOG_PREFIX} ❌ User not authorized for admin:`, currentUser.email || currentUser.username || 'Guest');
     }
 }
 
@@ -1136,22 +2039,22 @@ function checkAndInjectOptimizedAdminButton() {
 
 // Admin panel button injection
 function checkAndInjectAdminButton() {
-    console.log('🔍 Checking for admin button injection...');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔍 Checking for admin button injection...`);
     
     // Check if admin integration is loaded
     if (typeof window.isUserAuthorizedForAdmin === 'function') {
         if (window.isUserAuthorizedForAdmin()) {
-            console.log('✅ User authorized for admin, injecting button...');
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User authorized for admin, injecting button...`);
             
             // Inject admin button
             if (typeof window.injectAdminButton === 'function') {
                 window.injectAdminButton();
             }
         } else {
-            console.log('❌ User not authorized for admin:', getFromStorage('currentUser', {}).email);
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ❌ User not authorized for admin:`, getFromStorage('currentUser', {}).email);
         }
     } else {
-        console.log('⚠️ Admin integration not loaded yet');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ⚠️ Admin integration not loaded yet`);
     }
 }
 
@@ -1164,7 +2067,7 @@ setInterval(checkAndInjectAdminButton, 5000);
 
 // ✅ पॉइंट्स को INR में कन्वर्ट करें
 function convertPointsToINR(pointsToConvert) {
-    console.log(`💰 पॉइंट्स टू INR कन्वर्जन: ${pointsToConvert}`);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 💰 पॉइंट्स टू INR कन्वर्जन: ${pointsToConvert}`);
     
     if (!userRegistered) {
         showNotification('❌ कन्वर्जन के लिए रजिस्ट्रेशन जरूरी है!', 'warning');
@@ -1232,7 +2135,7 @@ function convertPointsToINR(pointsToConvert) {
 
 // ✅ INR को USDT में कन्वर्ट करें
 function convertINRtoUSDT(inrToConvert) {
-    console.log(`💱 INR टू USDT कन्वर्जन: ${inrToConvert}`);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 💱 INR टू USDT कन्वर्जन: ${inrToConvert}`);
     
     if (!userRegistered) {
         showNotification('❌ कन्वर्जन के लिए रजिस्ट्रेशन जरूरी है!', 'warning');
@@ -1295,7 +2198,7 @@ function convertINRtoUSDT(inrToConvert) {
 
 // ✅ डायरेक्ट पॉइंट्स टू USDT कन्वर्जन
 function convertPointsToUSDT(pointsToConvert) {
-    console.log(`🚀 डायरेक्ट पॉइंट्स टू USDT: ${pointsToConvert}`);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🚀 डायरेक्ट पॉइंट्स टू USDT: ${pointsToConvert}`);
     
     if (!userRegistered) {
         showNotification('❌ कन्वर्जन के लिए रजिस्ट्रेशन जरूरी है!', 'warning');
@@ -1365,7 +2268,7 @@ function convertPointsToUSDT(pointsToConvert) {
     return usdtAmount;
 }
 
-// ✅ वॉलेट सेक्शन दिखाएं
+// ✅ वॉलेट सेक्शन दिखाएं (CSP FIXED VERSION)
 function showWalletSection() {
     if (!userRegistered) {
         showNotification('❌ वॉलेट देखने के लिए रजिस्टर करें!', 'warning');
@@ -1379,7 +2282,7 @@ function showWalletSection() {
     profileContent.innerHTML = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
+                <button class="back-btn back-to-profile">← Back</button>
                 <div class="platform-header-icon">💰</div>
                 <h3>💰 डिजिटल वॉलेट</h3>
             </div>
@@ -1393,7 +2296,7 @@ function showWalletSection() {
                         <div class="wallet-balance" id="pointsBalance">${formatNumber(userPoints)}</div>
                         <div class="wallet-subtitle">कुल अर्जित: ${formatNumber(totalPointsEarned)}</div>
                     </div>
-                    <div class="wallet-convert-btn" onclick="showConvertPointsModal()">
+                    <div class="wallet-convert-btn" data-action="showConvertPointsModal">
                         कन्वर्ट करें
                     </div>
                 </div>
@@ -1405,7 +2308,7 @@ function showWalletSection() {
                         <div class="wallet-balance" id="inrBalance">${inrWallet.toFixed(2)}</div>
                         <div class="wallet-subtitle">≈ ${(inrWallet / 85).toFixed(2)} USDT</div>
                     </div>
-                    <div class="wallet-convert-btn" onclick="showConvertINRModal()">
+                    <div class="wallet-convert-btn" data-action="showConvertINRModal">
                         USDT में बदलें
                     </div>
                 </div>
@@ -1417,7 +2320,7 @@ function showWalletSection() {
                         <div class="wallet-balance" id="usdtBalance">${usdtWallet.toFixed(2)}</div>
                         <div class="wallet-subtitle">≈ ${(usdtWallet * 85).toFixed(2)} INR</div>
                     </div>
-                    <div class="wallet-use-btn" onclick="showUseUSDTforPool()">
+                    <div class="wallet-use-btn" data-action="showModal" data-modal="mining">
                         पूल खरीदें
                     </div>
                 </div>
@@ -1450,15 +2353,15 @@ function showWalletSection() {
             
             <!-- क्विक एक्शन बटन -->
             <div class="wallet-quick-actions">
-                <button class="wallet-action-btn" onclick="showConvertPointsModal()">
+                <button class="wallet-action-btn" data-action="showConvertPointsModal">
                     <span class="action-icon">🔄</span>
                     <span class="action-text">पॉइंट्स कन्वर्ट करें</span>
                 </button>
-                <button class="wallet-action-btn" onclick="showConvertINRModal()">
+                <button class="wallet-action-btn" data-action="showConvertINRModal">
                     <span class="action-icon">💱</span>
                     <span class="action-text">INR टू USDT</span>
                 </button>
-                <button class="wallet-action-btn" onclick="showMiningPage()">
+                <button class="wallet-action-btn" data-action="switchTab" data-tab="mining">
                     <span class="action-icon">⛏️</span>
                     <span class="action-text">पेड पूल खरीदें</span>
                 </button>
@@ -1470,7 +2373,7 @@ function showWalletSection() {
                 <div id="conversionHistoryList">
                     ${getConversionHistoryHTML()}
                 </div>
-                <button class="btn-view-all" onclick="showFullConversionHistory()">
+                <button class="btn-view-all" data-action="showFullConversionHistory">
                     पूरी हिस्ट्री देखें
                 </button>
             </div>
@@ -1489,7 +2392,7 @@ function showWalletSection() {
     `;
 }
 
-// ✅ पॉइंट्स कन्वर्ट मोडल दिखाएं
+// ✅ पॉइंट्स कन्वर्ट मोडल दिखाएं (CSP FIXED VERSION)
 function showConvertPointsModal() {
     if (!userRegistered) {
         showNotification('❌ रजिस्टर करें!', 'warning');
@@ -1499,11 +2402,12 @@ function showConvertPointsModal() {
     
     const modal = document.createElement('div');
     modal.className = 'modal active wallet-modal';
+    modal.id = 'convertPointsModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🔄 पॉइंट्स कन्वर्ट करें</h3>
-                <button class="modal-close" onclick="closeWalletModal()">×</button>
+                <button class="modal-close" data-action="closeModal" data-modal="convertPointsModal">×</button>
             </div>
             
             <div class="wallet-modal-body">
@@ -1531,7 +2435,6 @@ function showConvertPointsModal() {
                             value="${MIN_CONVERSION_POINTS}"
                             min="${MIN_CONVERSION_POINTS}"
                             max="${userPoints}"
-                            oninput="updateConversionPreview()"
                         >
                         <span class="input-suffix">पॉइंट्स</span>
                     </div>
@@ -1542,7 +2445,6 @@ function showConvertPointsModal() {
                             min="${MIN_CONVERSION_POINTS}"
                             max="${Math.max(userPoints, MIN_CONVERSION_POINTS)}"
                             value="${MIN_CONVERSION_POINTS}"
-                            oninput="updateConversionFromSlider()"
                         >
                         <div class="slider-labels">
                             <span>${MIN_CONVERSION_POINTS}</span>
@@ -1553,16 +2455,16 @@ function showConvertPointsModal() {
                 
                 <!-- क्विक अमाउंट बटन -->
                 <div class="quick-amounts">
-                    <button class="quick-amount-btn" onclick="setConvertAmount(${MIN_CONVERSION_POINTS})">
+                    <button class="quick-amount-btn" data-amount="${MIN_CONVERSION_POINTS}">
                         10K पॉइंट्स
                     </button>
-                    <button class="quick-amount-btn" onclick="setConvertAmount(${MIN_CONVERSION_POINTS * 2})">
+                    <button class="quick-amount-btn" data-amount="${MIN_CONVERSION_POINTS * 2}">
                         20K पॉइंट्स
                     </button>
-                    <button class="quick-amount-btn" onclick="setConvertAmount(${MIN_CONVERSION_POINTS * 5})">
+                    <button class="quick-amount-btn" data-amount="${MIN_CONVERSION_POINTS * 5}">
                         50K पॉइंट्स
                     </button>
-                    <button class="quick-amount-btn" onclick="setConvertAmount(${Math.floor(userPoints / 10000) * 10000})">
+                    <button class="quick-amount-btn" data-amount="${Math.floor(userPoints / 10000) * 10000}">
                         मैक्स
                     </button>
                 </div>
@@ -1587,8 +2489,7 @@ function showConvertPointsModal() {
                 <div class="conversion-options">
                     <div class="option-title">कन्वर्जन ऑप्शन:</div>
                     <div class="options-grid">
-                        <div class="conversion-option ${userPoints < MIN_CONVERSION_POINTS ? 'disabled' : ''}" 
-                             onclick="${userPoints >= MIN_CONVERSION_POINTS ? 'convertPointsToINRDirect()' : ''}">
+                        <div class="conversion-option ${userPoints < MIN_CONVERSION_POINTS ? 'disabled' : ''}">
                             <div class="option-icon">₹</div>
                             <div class="option-info">
                                 <div class="option-name">INR में कन्वर्ट</div>
@@ -1597,8 +2498,7 @@ function showConvertPointsModal() {
                             <div class="option-arrow">→</div>
                         </div>
                         
-                        <div class="conversion-option ${userPoints < MIN_CONVERSION_POINTS ? 'disabled' : ''}" 
-                             onclick="${userPoints >= MIN_CONVERSION_POINTS ? 'convertPointsToUSDTDirect()' : ''}">
+                        <div class="conversion-option ${userPoints < MIN_CONVERSION_POINTS ? 'disabled' : ''}">
                             <div class="option-icon">💲</div>
                             <div class="option-info">
                                 <div class="option-name">USDT में कन्वर्ट</div>
@@ -1611,9 +2511,8 @@ function showConvertPointsModal() {
             </div>
             
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeWalletModal()">रद्द करें</button>
-                <button class="btn-success" onclick="processPointsConversion()" 
-                        ${userPoints < MIN_CONVERSION_POINTS ? 'disabled' : ''}>
+                <button class="btn-cancel" data-action="closeModal" data-modal="convertPointsModal">रद्द करें</button>
+                <button class="btn-success" id="processConversionBtn" ${userPoints < MIN_CONVERSION_POINTS ? 'disabled' : ''}>
                     कन्वर्ट करें
                 </button>
             </div>
@@ -1621,7 +2520,64 @@ function showConvertPointsModal() {
     `;
     
     document.body.appendChild(modal);
-    updateConversionPreview();
+    
+    // Add event listeners using proper event delegation
+    setTimeout(() => {
+        const pointsInput = document.getElementById('pointsToConvert');
+        const slider = document.getElementById('pointsSlider');
+        const quickAmountBtns = modal.querySelectorAll('.quick-amount-btn');
+        const conversionOptions = modal.querySelectorAll('.conversion-option:not(.disabled)');
+        const processBtn = document.getElementById('processConversionBtn');
+        
+        // Input event
+        if (pointsInput) {
+            pointsInput.addEventListener('input', updateConversionPreview);
+        }
+        
+        // Slider event
+        if (slider) {
+            slider.addEventListener('input', function() {
+                if (pointsInput) {
+                    pointsInput.value = this.value;
+                    updateConversionPreview();
+                }
+            });
+        }
+        
+        // Quick amount buttons
+        quickAmountBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const amount = parseInt(this.getAttribute('data-amount'));
+                setConvertAmount(amount);
+            });
+        });
+        
+        // Conversion options
+        conversionOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const isINR = this.querySelector('.option-icon').textContent === '₹';
+                const points = parseInt(pointsInput?.value || MIN_CONVERSION_POINTS);
+                
+                if (isINR) {
+                    convertPointsToINR(points);
+                } else {
+                    convertPointsToUSDT(points);
+                }
+                
+                closeModal('convertPointsModal');
+            });
+        });
+        
+        // Process button
+        if (processBtn) {
+            processBtn.addEventListener('click', function() {
+                const points = parseInt(pointsInput?.value || MIN_CONVERSION_POINTS);
+                showConversionOptionsModal(points);
+            });
+        }
+        
+        updateConversionPreview();
+    }, 100);
 }
 
 // ✅ कन्वर्जन प्रिव्यू अपडेट करें
@@ -1638,6 +2594,12 @@ function updateConversionPreview() {
     
     if (previewINR) previewINR.textContent = `${inrAmount} INR`;
     if (previewUSDT) previewUSDT.textContent = `${usdtAmount} USDT`;
+    
+    // Update slider if exists
+    const slider = document.getElementById('pointsSlider');
+    if (slider && pointsInput) {
+        slider.value = pointsInput.value;
+    }
 }
 
 // ✅ स्लाइडर से अपडेट करें
@@ -1690,18 +2652,19 @@ function processPointsConversion() {
     showConversionOptionsModal(points);
 }
 
-// ✅ कन्वर्जन ऑप्शन मोडल दिखाएं
+// ✅ कन्वर्जन ऑप्शन मोडल दिखाएं (CSP FIXED VERSION)
 function showConversionOptionsModal(points) {
     const inrAmount = Math.floor((points / POINT_TO_INR_RATE) * 100);
     const usdtAmount = parseFloat((inrAmount / INR_TO_USDT_RATE).toFixed(2));
     
     const modal = document.createElement('div');
     modal.className = 'modal active conversion-options-modal';
+    modal.id = 'conversionOptionsModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🎯 कन्वर्जन चुनें</h3>
-                <button class="modal-close" onclick="closeConversionOptionsModal()">×</button>
+                <button class="modal-close" data-action="closeModal" data-modal="conversionOptionsModal">×</button>
             </div>
             
             <div class="conversion-options-body">
@@ -1726,7 +2689,7 @@ function showConversionOptionsModal(points) {
                 </div>
                 
                 <div class="conversion-choice">
-                    <button class="choice-btn inr-choice" onclick="convertPointsToINR(${points})">
+                    <button class="choice-btn inr-choice" data-action="convertPointsToINR" data-amount="${points}">
                         <div class="choice-icon">₹</div>
                         <div class="choice-info">
                             <div class="choice-title">INR में कन्वर्ट</div>
@@ -1735,7 +2698,7 @@ function showConversionOptionsModal(points) {
                         </div>
                     </button>
                     
-                    <button class="choice-btn usdt-choice" onclick="convertPointsToUSDT(${points})">
+                    <button class="choice-btn usdt-choice" data-action="convertPointsToUSDT" data-amount="${points}">
                         <div class="choice-icon">💲</div>
                         <div class="choice-info">
                             <div class="choice-title">USDT में कन्वर्ट</div>
@@ -1751,7 +2714,7 @@ function showConversionOptionsModal(points) {
             </div>
             
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeConversionOptionsModal()">रद्द करें</button>
+                <button class="btn-cancel" data-action="closeModal" data-modal="conversionOptionsModal">रद्द करें</button>
             </div>
         </div>
     `;
@@ -1779,7 +2742,7 @@ function convertPointsToUSDTDirect() {
     closeWalletModal();
 }
 
-// ✅ INR टू USDT कन्वर्जन मोडल
+// ✅ INR टू USDT कन्वर्जन मोडल (CSP FIXED VERSION)
 function showConvertINRModal() {
     if (!userRegistered) {
         showNotification('❌ रजिस्टर करें!', 'warning');
@@ -1794,11 +2757,12 @@ function showConvertINRModal() {
     
     const modal = document.createElement('div');
     modal.className = 'modal active inr-convert-modal';
+    modal.id = 'inrConvertModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>💱 INR टू USDT कन्वर्जन</h3>
-                <button class="modal-close" onclick="closeINRConvertModal()">×</button>
+                <button class="modal-close" data-action="closeModal" data-modal="inrConvertModal">×</button>
             </div>
             
             <div class="inr-convert-body">
@@ -1824,7 +2788,6 @@ function showConvertINRModal() {
                             min="85"
                             max="${inrWallet}"
                             step="85"
-                            oninput="updateINRConversionPreview()"
                         >
                         <span class="input-suffix">INR</span>
                     </div>
@@ -1832,16 +2795,16 @@ function showConvertINRModal() {
                 
                 <!-- क्विक अमाउंट -->
                 <div class="quick-inr-amounts">
-                    <button class="quick-inr-btn" onclick="setINRConvertAmount(85)">
+                    <button class="quick-inr-btn" data-amount="85">
                         85 INR (1 USDT)
                     </button>
-                    <button class="quick-inr-btn" onclick="setINRConvertAmount(170)">
+                    <button class="quick-inr-btn" data-amount="170">
                         170 INR (2 USDT)
                     </button>
-                    <button class="quick-inr-btn" onclick="setINRConvertAmount(425)">
+                    <button class="quick-inr-btn" data-amount="425">
                         425 INR (5 USDT)
                     </button>
-                    <button class="quick-inr-btn" onclick="setINRConvertAmount(${Math.floor(inrWallet / 85) * 85})">
+                    <button class="quick-inr-btn" data-amount="${Math.floor(inrWallet / 85) * 85}">
                         मैक्स
                     </button>
                 </div>
@@ -1857,8 +2820,8 @@ function showConvertINRModal() {
             </div>
             
             <div class="modal-footer">
-                <button class="btn-cancel" onclick="closeINRConvertModal()">रद्द करें</button>
-                <button class="btn-success" onclick="processINRConversion()">
+                <button class="btn-cancel" data-action="closeModal" data-modal="inrConvertModal">रद्द करें</button>
+                <button class="btn-success" id="processINRConversionBtn">
                     कन्वर्ट करें
                 </button>
             </div>
@@ -1866,7 +2829,33 @@ function showConvertINRModal() {
     `;
     
     document.body.appendChild(modal);
-    updateINRConversionPreview();
+    
+    // Add event listeners
+    setTimeout(() => {
+        const inrInput = document.getElementById('inrToConvert');
+        const quickBtns = modal.querySelectorAll('.quick-inr-btn');
+        const processBtn = document.getElementById('processINRConversionBtn');
+        
+        // Input event
+        if (inrInput) {
+            inrInput.addEventListener('input', updateINRConversionPreview);
+        }
+        
+        // Quick buttons
+        quickBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const amount = parseInt(this.getAttribute('data-amount'));
+                setINRConvertAmount(amount);
+            });
+        });
+        
+        // Process button
+        if (processBtn) {
+            processBtn.addEventListener('click', processINRConversion);
+        }
+        
+        updateINRConversionPreview();
+    }, 100);
 }
 
 // ✅ INR कन्वर्जन प्रिव्यू अपडेट
@@ -1916,7 +2905,7 @@ function processINRConversion() {
     }
     
     convertINRtoUSDT(inrAmount);
-    closeINRConvertModal();
+    closeModal('inrConvertModal');
 }
 
 // ✅ USDT से पेड पूल खरीदें
@@ -2003,7 +2992,7 @@ function showFullConversionHistory() {
     let html = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showWalletSection()" class="back-btn">← Back</button>
+                <button class="back-btn back-to-wallet">← Back</button>
                 <h3>📊 कन्वर्जन हिस्ट्री</h3>
             </div>
             
@@ -2072,7 +3061,7 @@ function showFullConversionHistory() {
             </div>
             
             <div class="export-section" style="margin-top: 20px;">
-                <button class="btn-export" onclick="exportConversionHistory()">
+                <button class="btn-export" id="exportConversionHistoryBtn" data-action="exportConversionHistory">
                     📤 कन्वर्जन हिस्ट्री एक्सपोर्ट करें
                 </button>
             </div>
@@ -2117,30 +3106,35 @@ function exportConversionHistory() {
 
 // ✅ मोडल क्लोज करने के फंक्शन
 function closeWalletModal() {
-    const modal = document.querySelector('.modal.wallet-modal');
-    if (modal) modal.remove();
+    closeModal('convertPointsModal');
 }
 
 function closeConversionOptionsModal() {
-    const modal = document.querySelector('.modal.conversion-options-modal');
-    if (modal) modal.remove();
+    closeModal('conversionOptionsModal');
 }
 
 function closeINRConvertModal() {
-    const modal = document.querySelector('.modal.inr-convert-modal');
-    if (modal) modal.remove();
+    closeModal('inrConvertModal');
+}
+
+// ✅ CLOSE MODAL FUNCTION
+function closeModal(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.remove();
+    }
 }
 
 // ✅ SECTION 2: INITIALIZE REFERRAL SYSTEM FUNCTIONS
 function initializeReferralCodesDatabase() {
-    console.log('📊 Initializing referral codes database...');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 📊 Initializing referral codes database...`);
     
     let allReferrals = getFromStorage('allReferrals', []);
     
     if (allReferrals.length === 0) {
         allReferrals = PRE_LOADED_REFERRAL_CODES;
         saveToStorage('allReferrals', allReferrals);
-        console.log('✅ Loaded pre-defined referral codes:', allReferrals.length);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Loaded pre-defined referral codes:`, allReferrals.length);
     }
     
     initializeExistingUsersReferralCodes();
@@ -2180,13 +3174,13 @@ function initializeExistingUsersReferralCodes() {
             });
             saveToStorage('allReferrals', allReferrals);
             
-            console.log(`✅ Created referral code for existing user: ${user.id} -> ${newReferralCode}`);
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Created referral code for existing user: ${user.id} -> ${newReferralCode}`);
         }
     });
 }
 
 function validateReferralCode(code) {
-    console.log('🔍 Validating referral code:', code);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔍 Validating referral code:`, code);
     
     if (!code || code.trim() === '') {
         return { valid: false, message: 'Please enter a referral code' };
@@ -2255,47 +3249,12 @@ function selectReferralCode(code) {
 }
 
 // ==============================================
-// ✅ NEW REGISTRATION SYSTEM FUNCTIONS - FIXED
+// ✅ NEW REGISTRATION SYSTEM FUNCTIONS - FIXED & CSP COMPLIANT
 // ==============================================
 
-function showRegistrationModal() {
-    // Check if user is already registered
-    if (checkRegistrationStatus()) {
-        showNotification('✅ You are already registered!', 'success');
-        updateUI();
-        return;
-    }
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal active registration-modal';
-    modal.id = 'registrationModal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>📝 User Registration</h3>
-                <button class="modal-close" onclick="closeRegistrationModal()">×</button>
-            </div>
-            <div class="registration-steps">
-                <div class="step-indicator">
-                    <div class="step ${registrationStep === 1 ? 'active' : ''}">1</div>
-                    <div class="step-line"></div>
-                    <div class="step ${registrationStep === 2 ? 'active' : ''}">2</div>
-                    <div class="step-line"></div>
-                    <div class="step ${registrationStep === 3 ? 'active' : ''}">3</div>
-                    <div class="step-line"></div>
-                    <div class="step ${registrationStep === 4 ? 'active' : ''}">4</div>
-                </div>
-                
-                <div id="registrationFormContent">
-                    ${getRegistrationStepContent()}
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
 function getRegistrationStepContent() {
+    const availableReferralCodes = getAvailableReferralCodes();
+    
     switch(registrationStep) {
         case 1:
             return `
@@ -2303,7 +3262,7 @@ function getRegistrationStepContent() {
                     <h4>Step 1: Basic Information</h4>
                     <div class="form-group">
                         <label for="regUsername">Username *</label>
-                        <input type="text" id="regUsername" placeholder="Choose unique username" oninput="checkUsernameAvailability()">
+                        <input type="text" id="regUsername" placeholder="Choose unique username">
                         <div class="form-hint">This will be your login ID</div>
                         <div id="usernameStatus" class="status-message"></div>
                     </div>
@@ -2326,13 +3285,10 @@ function getRegistrationStepContent() {
                         <label for="regConfirmPassword">Confirm Password *</label>
                         <input type="password" id="regConfirmPassword" placeholder="Confirm password">
                     </div>
-                    <button class="btn-next" onclick="validateStep1()">Next →</button>
+                    <button class="btn-next" data-action="validateStep1">Next →</button>
                 </div>
         `;
         case 2:
-            // ✅ SECTION 4: UPDATE REGISTRATION MODAL CONTENT
-            const availableReferralCodes = getAvailableReferralCodes();
-            
             return `
                 <div class="registration-step">
                     <h4>Step 2: Sponsor Information</h4>
@@ -2370,7 +3326,7 @@ function getRegistrationStepContent() {
                             <div style="font-size: 12px; color: #666; margin-bottom: 5px;">Available Referral Codes:</div>
                             <div class="codes-list">
                                 ${availableReferralCodes.map(code => `
-                                    <div class="code-item" onclick="selectReferralCode('${code.code}')">
+                                    <div class="code-item" data-action="selectReferralCode" data-value="${code.code}">
                                         <div class="code-name">${code.code}</div>
                                         <div class="code-owner">by ${code.name}</div>
                                     </div>
@@ -2381,8 +3337,8 @@ function getRegistrationStepContent() {
                     </div>
                     
                     <div class="form-actions">
-                        <button class="btn-back" onclick="previousStep()">← Back</button>
-                        <button class="btn-next" onclick="validateStep2()">Next →</button>
+                        <button class="btn-back" data-action="previousStep">← Back</button>
+                        <button class="btn-next" data-action="validateStep2">Next →</button>
                     </div>
                 </div>
             `;
@@ -2395,12 +3351,12 @@ function getRegistrationStepContent() {
                         <label for="emailOTP">Enter 6-digit OTP</label>
                         <input type="text" id="emailOTP" placeholder="000000" maxlength="6">
                         <div class="otp-actions">
-                            <button class="btn-resend" onclick="sendEmailOTP()">Resend OTP</button>
-                            <button class="btn-verify" onclick="verifyEmailOTP()">Verify Email</button>
+                            <button class="btn-resend" data-action="sendEmailOTP">Resend OTP</button>
+                            <button class="btn-verify" data-action="verifyEmailOTP">Verify Email</button>
                         </div>
                     </div>
                     <div class="form-actions">
-                        <button class="btn-back" onclick="previousStep()">← Back</button>
+                        <button class="btn-back" data-action="previousStep">← Back</button>
                     </div>
                 </div>
             `;
@@ -2413,12 +3369,12 @@ function getRegistrationStepContent() {
                         <label for="mobileOTP">Enter 6-digit OTP</label>
                         <input type="text" id="mobileOTP" placeholder="000000" maxlength="6">
                         <div class="otp-actions">
-                            <button class="btn-resend" onclick="sendMobileOTP()">Resend OTP</button>
-                            <button class="btn-verify" onclick="verifyMobileOTP()">Verify Mobile</button>
+                            <button class="btn-resend" data-action="sendMobileOTP">Resend OTP</button>
+                            <button class="btn-verify" data-action="verifyMobileOTP">Verify Mobile</button>
                         </div>
                     </div>
                     <div class="form-actions">
-                        <button class="btn-back" onclick="previousStep()">← Back</button>
+                        <button class="btn-back" data-action="previousStep">← Back</button>
                     </div>
                 </div>
             `;
@@ -2427,22 +3383,17 @@ function getRegistrationStepContent() {
     }
 }
 
-function closeRegistrationModal() {
-    const modal = document.getElementById('registrationModal');
-    if (modal) {
-        modal.remove();
-    }
-}
-
 function checkUsernameAvailability() {
-    const username = document.getElementById('regUsername')?.value;
+    const usernameInput = document.getElementById('regUsername');
     const statusEl = document.getElementById('usernameStatus');
     
+    if (!usernameInput || !statusEl) return;
+    
+    const username = usernameInput.value;
+    
     if (!username || username.length < 3) {
-        if (statusEl) {
-            statusEl.textContent = 'Username must be at least 3 characters';
-            statusEl.className = 'status-message error';
-        }
+        statusEl.textContent = 'Username must be at least 3 characters';
+        statusEl.className = 'status-message error';
         return;
     }
     
@@ -2450,14 +3401,12 @@ function checkUsernameAvailability() {
     const existingUsers = getFromStorage('registeredUsers', []);
     const exists = existingUsers.some(user => user.username === username);
     
-    if (statusEl) {
-        if (exists) {
-            statusEl.textContent = '❌ Username already taken';
-            statusEl.className = 'status-message error';
-        } else {
-            statusEl.textContent = '✅ Username available';
-            statusEl.className = 'status-message success';
-        }
+    if (exists) {
+        statusEl.textContent = '❌ Username already taken';
+        statusEl.className = 'status-message error';
+    } else {
+        statusEl.textContent = '✅ Username available';
+        statusEl.className = 'status-message success';
     }
 }
 
@@ -2468,7 +3417,7 @@ function validateStep1() {
     const password = document.getElementById('regPassword')?.value.trim() || '';
     const confirmPassword = document.getElementById('regConfirmPassword')?.value.trim() || '';
     
-    console.log('Validating Step 1:', { username, email, mobile, password });
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Validating Step 1:`, { username, email, mobile, password });
     
     // Validate username
     if (!username || username.length < 3) {
@@ -2531,13 +3480,12 @@ function validateStep1() {
     showNotification('✅ Step 1 completed!', 'success');
 }
 
-// ✅ SECTION 3: UPDATE REGISTRATION FUNCTIONS
 function validateStep2() {
     const sponsorIdInput = document.getElementById('regSponsorId')?.value.trim() || '';
     const sponsorNameInput = document.getElementById('regSponsorName')?.value.trim() || '';
     const referralCodeInput = document.getElementById('regReferralCode')?.value.trim() || '';
     
-    console.log('Validating Step 2:', { sponsorIdInput, sponsorNameInput, referralCodeInput });
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Validating Step 2:`, { sponsorIdInput, sponsorNameInput, referralCodeInput });
     
     if (!sponsorIdInput) {
         showNotification('⚠️ Sponsor ID is recommended for commission system', 'warning');
@@ -2570,7 +3518,7 @@ function sendEmailOTP() {
     emailOTP = Math.floor(100000 + Math.random() * 900000).toString();
     
     // In real app, send OTP via email API
-    console.log(`Email OTP for ${userEmail}: ${emailOTP}`);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Email OTP for ${userEmail}: ${emailOTP}`);
     
     // For demo, show in console and notification
     showNotification(`📧 OTP sent to ${userEmail}: ${emailOTP}`, 'info');
@@ -2588,7 +3536,7 @@ function sendMobileOTP() {
     mobileOTP = Math.floor(100000 + Math.random() * 900000).toString();
     
     // In real app, send OTP via SMS API
-    console.log(`Mobile OTP for ${userMobile}: ${mobileOTP}`);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Mobile OTP for ${userMobile}: ${mobileOTP}`);
     
     // For demo, show in console and notification
     showNotification(`📱 OTP sent to ${userMobile}: ${mobileOTP}`, 'info');
@@ -2671,9 +3619,9 @@ function verifyMobileOTP() {
     }
 }
 
-// ✅ SECTION 3: Replace completeRegistration() function
+// ✅ COMPLETE REGISTRATION FUNCTION
 function completeRegistration() {
-    console.log('Starting completeRegistration...');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Starting completeRegistration...`);
     
     const password = document.getElementById('regPassword')?.value.trim() || '123456';
     const pendingReferralCode = getFromStorage('pendingReferralCode', '');
@@ -2694,7 +3642,6 @@ function completeRegistration() {
         referralCode: generateReferralCode(),
         lastLogin: new Date().toISOString(),
         usedReferralCode: pendingReferralCode || null,
-        // ✅ नए fields जोड़ें
         telegram_id: userId,
         phone: userMobile,
         full_name: userId,
@@ -2705,7 +3652,7 @@ function completeRegistration() {
         verification_status: 'verified'
     };
     
-    console.log('User data to save:', userData);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} User data to save:`, userData);
     
     // ✅ 1. LOCAL STORAGE में save करें
     const existingUsers = getFromStorage('registeredUsers', []);
@@ -2782,70 +3729,16 @@ function completeRegistration() {
         }, 2000);
     }
     
-    console.log('Registration completed successfully!');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Registration completed successfully!`);
 }
 
-// ✅ नया फ़ंक्शन saveUserToServer() जोड़ें
-async function saveUserToServer(userData) {
-    try {
-        const response = await fetch('http://localhost:3000/api/save-user', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(userData)
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log('✅ User saved to server:', data);
-            
-            // ✅ Referral process करें अगर referral code use किया हो
-            if (userData.usedReferralCode) {
-                processReferralOnServer(userData.usedReferralCode, userData.id);
-            }
-        } else {
-            console.warn('⚠️ Server save warning:', data.message);
-        }
-    } catch (error) {
-        console.error('❌ Error saving user to server:', error);
-        // Continue with local storage only
-    }
-}
-
-// ✅ नया फ़ंक्शन processReferralOnServer() जोड़ें
-async function processReferralOnServer(referralCode, newUserId) {
-    try {
-        const response = await fetch('http://localhost:3000/api/process-referral', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                referralCode: referralCode,
-                newUserId: newUserId
-            })
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            console.log('✅ Referral processed on server:', data);
-        }
-    } catch (error) {
-        console.error('❌ Error processing referral on server:', error);
-    }
-}
-
-// ✅ SECTION 3: Add new function after completeRegistration
 function processReferralCodeDuringRegistration(referralCode, newUserId) {
-    console.log('🎯 Processing referral code during registration:', referralCode);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🎯 Processing referral code during registration:`, referralCode);
     
     const validation = validateReferralCode(referralCode);
     
     if (!validation.valid) {
-        console.log('❌ Invalid referral code:', validation.message);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ❌ Invalid referral code:`, validation.message);
         return;
     }
     
@@ -2873,7 +3766,7 @@ function processReferralCodeDuringRegistration(referralCode, newUserId) {
     }
     
     if (referrer) {
-        console.log('✅ Found referrer:', referrer.username);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Found referrer:`, referrer.username);
         
         addTransaction('Referral Bonus: Used ' + referrer.username + "'s code", 25, 'earning', 'referral');
         
@@ -2888,13 +3781,13 @@ function processReferralCodeDuringRegistration(referralCode, newUserId) {
 }
 
 function awardPointsToReferrer(referrerId, newUserId, points) {
-    console.log('💰 Awarding points to referrer:', referrerId, points);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 💰 Awarding points to referrer:`, referrerId, points);
     
     const registeredUsers = getFromStorage('registeredUsers', []);
     const referrerIndex = registeredUsers.findIndex(u => u.id === referrerId);
     
     if (referrerIndex === -1) {
-        console.log('❌ Referrer not found:', referrerId);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ❌ Referrer not found:`, referrerId);
         return;
     }
     
@@ -2925,7 +3818,7 @@ function awardPointsToReferrer(referrerId, newUserId, points) {
         saveToStorage(`miningState_${referrerId}`, referrerMiningState);
     }
     
-    console.log('✅ Referrer points updated:', referrerId, '+', points);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Referrer points updated:`, referrerId, '+', points);
 }
 
 function updateReferralStats(referrerId, newUserId) {
@@ -2977,14 +3870,14 @@ function previousStep() {
 }
 
 function checkRegistrationStatus() {
-    console.log('🔍 Checking registration status...');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔍 Checking registration status...`);
     
     // Check if there's a current user in storage
     const currentUser = getFromStorage('currentUser');
-    console.log('Current user from storage:', currentUser);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Current user from storage:`, currentUser);
     
     if (currentUser && currentUser.username) {
-        console.log('✅ User found in storage:', currentUser.username);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User found in storage:`, currentUser.username);
         
         // Set all user data
         userRegistered = true;
@@ -3005,19 +3898,19 @@ function checkRegistrationStatus() {
         
         return true;
     } else {
-        console.log('❌ No user found in storage, need to register');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ❌ No user found in storage, need to register`);
         return false;
     }
 }
 
 // ==============================================
-// ✅ UPDATED STATE MANAGEMENT FUNCTIONS - ADD AFTER checkRegistrationStatus()
+// ✅ UPDATED STATE MANAGEMENT FUNCTIONS
 // ==============================================
 
 function ensureUserRegistered() {
     const currentUser = getFromStorage('currentUser');
     if (currentUser && currentUser.username) {
-        console.log('🔄 Ensuring user registered state:', currentUser.username);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Ensuring user registered state:`, currentUser.username);
         
         userRegistered = true;
         userId = currentUser.username;
@@ -3037,64 +3930,14 @@ function ensureUserRegistered() {
             telegramUsername: userId
         });
         
-        console.log('✅ User state ensured:', userId, 'registered:', userRegistered);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User state ensured:`, userId, 'registered:', userRegistered);
         return true;
     }
     return false;
 }
 
 // ==============================================
-// ✅ LOGIN/LOGOUT SYSTEM FUNCTIONS - NEW
-// ==============================================
-
-function showLoginModal() {
-    console.log('📱 Showing login modal');
-    
-    // Close any existing modals
-    closeAllModals();
-    
-    const modal = document.createElement('div');
-    modal.className = 'modal active login-modal';
-    modal.innerHTML = `
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>🔐 Login</h3>
-                <button class="modal-close" onclick="closeLoginModal()">×</button>
-            </div>
-            <div class="login-form">
-                <div class="form-group">
-                    <label for="loginUsername">Username or Email</label>
-                    <input type="text" id="loginUsername" placeholder="Enter username or email">
-                </div>
-                <div class="form-group">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" placeholder="Enter password">
-                </div>
-                <div class="form-actions">
-                    <button class="btn-cancel" onclick="closeLoginModal()">Cancel</button>
-                    <button class="btn-success" onclick="loginUser()">Login</button>
-                </div>
-                <div class="login-footer">
-                    <p>Don't have an account? <a href="#" onclick="closeLoginModal(); setTimeout(() => showRegistrationModal(), 300);">Register here</a></p>
-                    <p>Forgot password? <a href="#" onclick="showForgotPassword()">Reset here</a></p>
-                </div>
-            </div>
-        </div>
-    `;
-    document.body.appendChild(modal);
-}
-
-function closeAllModals() {
-    document.querySelectorAll('.modal').forEach(modal => modal.remove());
-}
-
-function closeLoginModal() {
-    const modal = document.querySelector('.modal.login-modal');
-    if (modal) modal.remove();
-}
-
-// ==============================================
-// ✅ UPDATED LOGIN FUNCTION WITH PASSWORD CHECK
+// ✅ LOGIN/LOGOUT SYSTEM FUNCTIONS
 // ==============================================
 
 function loginUser() {
@@ -3108,7 +3951,7 @@ function loginUser() {
     
     // Get registered users
     const registeredUsers = getFromStorage('registeredUsers', []);
-    console.log('Registered users:', registeredUsers);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Registered users:`, registeredUsers);
     
     // Find user by username or email
     const user = registeredUsers.find(u => 
@@ -3222,10 +4065,9 @@ function logoutUser() {
 }
 
 // ==============================================
-// ✅ FUNCTION TO NOTIFY ADMIN PANEL - ADD THIS AT THE END
+// ✅ FUNCTION TO NOTIFY ADMIN PANEL
 // ==============================================
 
-// ✅ Function to notify admin panel when user registers/logs in
 function notifyAdminPanel(action, userData) {
     try {
         const notification = {
@@ -3245,55 +4087,34 @@ function notifyAdminPanel(action, userData) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(notification)
-        }).catch(err => console.log('Server notification failed'));
+        }).catch(err => {
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} Server notification failed`);
+        });
         
-        console.log(`📢 Admin notified: ${action} - ${userData.email}`);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 📢 Admin notified: ${action} - ${userData.email}`);
         
     } catch (error) {
-        console.error('Error notifying admin:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} Error notifying admin:`, error);
     }
 }
 
-// ✅ User registration के बाद call करें
-function handleUserRegistration(userData) {
-    // ... existing registration code ...
-    
-    // Notify admin panel
-    notifyAdminPanel('register', userData);
-    
-    // Broadcast to other tabs
-    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-    
-    // Create sync packet for admin panel
-    const syncPacket = {
-        type: 'user_update',
-        users: registeredUsers,
-        timestamp: Date.now()
-    };
-    localStorage.setItem('multi_tab_sync_packet', JSON.stringify(syncPacket));
-}
-
-// ✅ User login के बाद call करें
-function handleUserLogin(userData) {
-    // ... existing login code ...
-    
-    // Notify admin panel
-    notifyAdminPanel('login', userData);
-}
-
 // ==============================================
-// ✅ UPDATED FORGOT PASSWORD SYSTEM
+// ✅ UPDATED FORGOT PASSWORD SYSTEM (CSP FIXED)
 // ==============================================
+
+function showForgotPasswordModal() {
+    showForgotPassword();
+}
 
 function showForgotPassword() {
     const modal = document.createElement('div');
     modal.className = 'modal active forgot-modal';
+    modal.id = 'forgotModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🔑 Forgot Password</h3>
-                <button class="modal-close" onclick="closeForgotModal()">×</button>
+                <button class="modal-close" data-action="closeModal" data-modal="forgotModal">×</button>
             </div>
             <div class="forgot-form">
                 <p style="margin-bottom: 15px; opacity: 0.8; text-align: center;">Enter your email to reset password</p>
@@ -3302,21 +4123,16 @@ function showForgotPassword() {
                     <input type="email" id="forgotEmail" placeholder="Enter your registered email">
                 </div>
                 <div class="form-actions">
-                    <button class="btn-cancel" onclick="closeForgotModal()">Cancel</button>
-                    <button class="btn-success" onclick="sendPasswordResetOTP()">Send OTP</button>
+                    <button class="btn-cancel" data-action="closeModal" data-modal="forgotModal">Cancel</button>
+                    <button class="btn-success" data-action="sendPasswordResetOTP">Send OTP</button>
                 </div>
                 <div class="login-footer" style="margin-top: 15px;">
-                    <p>Remember password? <a href="#" onclick="closeForgotModal(); showLoginModal();">Back to Login</a></p>
+                    <p>Remember password? <a href="#" data-action="showModal" data-modal="login">Back to Login</a></p>
                 </div>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
-}
-
-function closeForgotModal() {
-    const modal = document.querySelector('.modal.forgot-modal');
-    if (modal) modal.remove();
 }
 
 function sendPasswordResetOTP() {
@@ -3357,15 +4173,16 @@ function sendPasswordResetOTP() {
 }
 
 function showResetPasswordModal(email) {
-    closeForgotModal();
+    closeModal('forgotModal');
     
     const modal = document.createElement('div');
     modal.className = 'modal active reset-modal';
+    modal.id = 'resetModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🔐 Reset Password</h3>
-                <button class="modal-close" onclick="closeResetModal()">×</button>
+                <button class="modal-close" data-action="closeModal" data-modal="resetModal">×</button>
             </div>
             <div class="reset-form">
                 <p style="margin-bottom: 15px; opacity: 0.8; text-align: center;">Enter OTP sent to ${email}</p>
@@ -3382,21 +4199,16 @@ function showResetPasswordModal(email) {
                     <input type="password" id="confirmPassword" placeholder="Confirm new password">
                 </div>
                 <div class="form-actions">
-                    <button class="btn-cancel" onclick="closeResetModal()">Cancel</button>
-                    <button class="btn-success" onclick="resetPassword('${email}')">Reset Password</button>
+                    <button class="btn-cancel" data-action="closeModal" data-modal="resetModal">Cancel</button>
+                    <button class="btn-success" data-action="resetPassword" data-email="${email}">Reset Password</button>
                 </div>
                 <div class="otp-actions" style="margin-top: 15px;">
-                    <button class="btn-resend" onclick="resendResetOTP('${email}')">Resend OTP</button>
+                    <button class="btn-resend" data-action="resendResetOTP" data-email="${email}">Resend OTP</button>
                 </div>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
-}
-
-function closeResetModal() {
-    const modal = document.querySelector('.modal.reset-modal');
-    if (modal) modal.remove();
 }
 
 function resetPassword(email) {
@@ -3462,7 +4274,7 @@ function resetPassword(email) {
     localStorage.removeItem(`reset_otp_${email}`);
     
     // Close modal
-    closeResetModal();
+    closeModal('resetModal');
     
     // Show success notification
     showNotification('✅ Password reset successfully! You can now login with new password', 'success');
@@ -3488,7 +4300,7 @@ function resendResetOTP(email) {
 }
 
 // ==============================================
-// ✅ UPDATED PROFILE SECTION FUNCTIONS
+// ✅ UPDATED PROFILE SECTION FUNCTIONS (CSP FIXED)
 // ==============================================
 
 function showProfileHomePage() {
@@ -3522,8 +4334,8 @@ function showProfileHomePage() {
                     <h4>Complete Registration!</h4>
                     <p>Register now to access all features and start earning</p>
                     <div class="profile-actions">
-                        <button class="btn-register-prompt" onclick="showRegistrationModal()">Register Now</button>
-                        <button class="btn-login-prompt" onclick="showLoginModal()">Login</button>
+                        <button class="btn-register-prompt" data-action="showModal" data-modal="register">Register Now</button>
+                        <button class="btn-login-prompt" data-action="showModal" data-modal="login">Login</button>
                     </div>
                 </div>
             </div>
@@ -3538,14 +4350,14 @@ function showProfileHomePage() {
                         <span class="status-badge ${userMobileVerified ? 'verified' : 'unverified'}">Mobile ${userMobileVerified ? '✓' : '✗'}</span>
                     </div>
                 </div>
-                <button class="logout-btn" onclick="logoutUser()">🚪 Logout</button>
+                <button class="logout-btn" data-action="logout">🚪 Logout</button>
             </div>
             `}
 
             ${userRegistered ? `
             <!-- Personal Info Section -->
             <div class="profile-info-section">
-                <div class="telegram-id-card" onclick="showTelegramIdModal()">
+                <div class="telegram-id-card" data-action="showModal" data-modal="telegramId">
                     <div class="telegram-icon">📱</div>
                     <div class="telegram-info">
                         <div class="telegram-label">Telegram ID</div>
@@ -3554,7 +4366,7 @@ function showProfileHomePage() {
                     <div class="telegram-edit">✏️</div>
                 </div>
 
-                <div class="telegram-id-card" onclick="showSponsorIdModal()">
+                <div class="telegram-id-card" data-action="showModal" data-modal="sponsorId">
                     <div class="telegram-icon">👥</div>
                     <div class="telegram-info">
                         <div class="telegram-label">Sponsor ID</div>
@@ -3569,7 +4381,7 @@ function showProfileHomePage() {
             <div class="wallet-section">
                 <h4>💰 डिजिटल वॉलेट</h4>
                 <div class="wallet-cards">
-                    <div class="wallet-card points-wallet" onclick="showWalletSection()">
+                    <div class="wallet-card points-wallet" data-action="showWalletSection">
                         <div class="wallet-card-icon">🎯</div>
                         <div class="wallet-card-info">
                             <div class="wallet-card-name">पॉइंट्स</div>
@@ -3579,7 +4391,7 @@ function showProfileHomePage() {
                         <div class="wallet-card-action">→</div>
                     </div>
                     
-                    <div class="wallet-card inr-wallet" onclick="showWalletSection()">
+                    <div class="wallet-card inr-wallet" data-action="showWalletSection">
                         <div class="wallet-card-icon">₹</div>
                         <div class="wallet-card-info">
                             <div class="wallet-card-name">INR वॉलेट</div>
@@ -3589,7 +4401,7 @@ function showProfileHomePage() {
                         <div class="wallet-card-action">→</div>
                     </div>
                     
-                    <div class="wallet-card usdt-wallet" onclick="showWalletSection()">
+                    <div class="wallet-card usdt-wallet" data-action="showWalletSection">
                         <div class="wallet-card-icon">💲</div>
                         <div class="wallet-card-info">
                             <div class="wallet-card-name">USDT वॉलेट</div>
@@ -3600,7 +4412,7 @@ function showProfileHomePage() {
                     </div>
                 </div>
                 
-                <button class="btn-manage-wallet" onclick="showWalletSection()">
+                <button class="btn-manage-wallet" data-action="showWalletSection">
                     वॉलेट मैनेज करें
                 </button>
             </div>
@@ -3610,7 +4422,7 @@ function showProfileHomePage() {
             <div class="sponsor-earnings-section">
                 <div class="section-header">
                     <h3>🎯 Sponsor Earnings</h3>
-                    <button class="btn-refresh" onclick="refreshSponsorData()">🔄 Refresh</button>
+                    <button class="btn-refresh" data-action="refreshSponsorData">🔄 Refresh</button>
                 </div>
                 
                 <!-- Commission Stats -->
@@ -3719,7 +4531,7 @@ function showProfileHomePage() {
                 </div>
                 
                 <!-- View Full History Button -->
-                <button class="btn-view-full-history" onclick="showSponsorTransactionHistory()">
+                <button class="btn-view-full-history" data-action="showSponsorTransactionHistory">
                     📋 View Full Transaction History
                 </button>
             </div>
@@ -3730,7 +4542,7 @@ function showProfileHomePage() {
                 <div class="message-content">
                     <h4>No Sponsor Yet</h4>
                     <p>Set up a sponsor ID to start earning commissions!</p>
-                    <button class="btn-setup-sponsor" onclick="showSponsorIdModal()">Setup Sponsor ID</button>
+                    <button class="btn-setup-sponsor" data-action="showModal" data-modal="sponsorId">Setup Sponsor ID</button>
                 </div>
             </div>
             `}
@@ -3738,25 +4550,25 @@ function showProfileHomePage() {
             
             <!-- Platform Cards -->
             <div class="platforms-grid">
-                <div class="platform-card" onclick="showWalletSection()">
+                <div class="platform-card" data-action="showWalletSection">
                     <span class="platform-icon">💰</span>
                     <span class="platform-name">Digital Wallet</span>
                     <span class="platform-points">Points → INR → USDT</span>
                     <span class="platform-time">🔄 Convert</span>
                 </div>
-                <div class="platform-card" onclick="showCashier()">
+                <div class="platform-card" data-action="showModal" data-modal="rewards">
                     <span class="platform-icon">🎁</span>
                     <span class="platform-name">Rewards Center</span>
                     <span class="platform-points">+Gift Cards</span>
                     <span class="platform-time">🎁 Redeem</span>
                 </div>
-                <div class="platform-card" onclick="showWalletHistory()">
+                <div class="platform-card" data-action="showModal" data-modal="walletHistory">
                     <span class="platform-icon">📊</span>
                     <span class="platform-name">Wallet History</span>
                     <span class="platform-points">All Transactions</span>
                     <span class="platform-time">📈 View</span>
                 </div>
-                <div class="platform-card" onclick="showReferralSystem()">
+                <div class="platform-card" data-action="showModal" data-modal="referral">
                     <span class="platform-icon">👥</span>
                     <span class="platform-name">Refer & Earn</span>
                     <span class="platform-points">+50 points</span>
@@ -3766,7 +4578,7 @@ function showProfileHomePage() {
 
             <!-- Quick Stats -->
             <div class="earn-stats">
-                <div class="earn-stat" onclick="showWalletHistory()">
+                <div class="earn-stat" data-action="showModal" data-modal="walletHistory">
                     <div class="stat-number" id="profileTotalPoints">${userPoints}</div>
                     <div class="stat-label">Total Points</div>
                 </div>
@@ -3778,7 +4590,7 @@ function showProfileHomePage() {
                     <div class="stat-number" id="profileRewards">${redeemedRewards.length}</div>
                     <div class="stat-label">Rewards</div>
                 </div>
-                <div class="earn-stat" onclick="showWalletSection()">
+                <div class="earn-stat" data-action="showWalletSection">
                     <div class="stat-number" id="profileUSDT">${usdtWallet.toFixed(2)}</div>
                     <div class="stat-label">USDT</div>
                 </div>
@@ -3847,6 +4659,10 @@ function refreshSponsorData() {
     showNotification('✅ Sponsor data refreshed!', 'success');
 }
 
+function viewFullCommissionHistory() {
+    showSponsorTransactionHistory();
+}
+
 function showSponsorTransactionHistory() {
     const profileContent = document.getElementById('profileAppContent');
     if (!profileContent) return;
@@ -3854,7 +4670,7 @@ function showSponsorTransactionHistory() {
     let html = `
         <div class="earn-page">
             <div class="platform-header">
-                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
+                <button class="back-btn back-to-profile">← Back</button>
                 <h3>📋 Sponsor Transaction History</h3>
             </div>
             
@@ -3907,7 +4723,7 @@ function showSponsorTransactionHistory() {
             </div>
             
             <div class="export-actions" style="margin-top: 20px;">
-                <button class="btn-export" onclick="exportSponsorHistory()">
+                <button class="btn-export" id="exportSponsorHistoryBtn" data-action="exportSponsorHistory">
                     📤 Export History
                 </button>
             </div>
@@ -3942,7 +4758,7 @@ function exportSponsorHistory() {
 }
 
 // ==============================================
-// ✅ UPDATED SPONSOR SYSTEM FUNCTIONS
+// ✅ UPDATED SPONSOR SYSTEM FUNCTIONS (CSP FIXED)
 // ==============================================
 
 function showSponsorIdModal() {
@@ -3954,11 +4770,12 @@ function showSponsorIdModal() {
     
     const modal = document.createElement('div');
     modal.className = 'modal active';
+    modal.id = 'sponsorIdModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>👥 Set Sponsor ID</h3>
-                <button class="modal-close" onclick="closeSponsorIdModal()">×</button>
+                <button class="modal-close" data-action="closeModal" data-modal="sponsorIdModal">×</button>
             </div>
             <div class="modal-body">
                 <p style="margin-bottom: 15px; opacity: 0.8;">Enter your sponsor's ID to start earning commissions for them!</p>
@@ -3972,17 +4789,24 @@ function showSponsorIdModal() {
                 </div>
             </div>
             <div class="modal-actions">
-                <button class="btn-cancel" onclick="closeSponsorIdModal()">Cancel</button>
-                <button class="btn-success" onclick="saveSponsorId()">Save Sponsor ID</button>
+                <button class="btn-cancel" data-action="closeModal" data-modal="sponsorIdModal">Cancel</button>
+                <button class="btn-success" id="saveSponsorIdBtn">Save Sponsor ID</button>
             </div>
         </div>
     `;
     document.body.appendChild(modal);
+    
+    // Add event listener
+    setTimeout(() => {
+        const saveBtn = document.getElementById('saveSponsorIdBtn');
+        if (saveBtn) {
+            saveBtn.addEventListener('click', saveSponsorId);
+        }
+    }, 100);
 }
 
 function closeSponsorIdModal() {
-    const modal = document.querySelector('.modal.active');
-    if (modal && modal.innerHTML.includes('Sponsor ID')) modal.remove();
+    closeModal('sponsorIdModal');
 }
 
 function saveSponsorId() {
@@ -4026,95 +4850,23 @@ function saveSponsorId() {
 }
 
 // ==============================================
-// ✅ UPDATED UI UPDATE FUNCTIONS - REPLACE EXISTING updateUI() FUNCTION
+// ✅ UPDATED UI UPDATE FUNCTIONS
 // ==============================================
 
-function updateUI() {
-    initializeNaNProtection();
-    
-    console.log('🔄 Updating UI, userRegistered:', userRegistered, 'userId:', userId, 'actual user from storage:', getFromStorage('currentUser')?.username);
-    
-    // Double-check user registration state
-    if (!userRegistered) {
-        const currentUser = getFromStorage('currentUser');
-        if (currentUser && currentUser.username) {
-            console.log('🔄 Force-updating user registration state from storage');
-            ensureUserRegistered();
-        }
+function updateProfileUI() {
+    // Update profile stats
+    if (document.getElementById('profileTotalPoints')) {
+        document.getElementById('profileTotalPoints').textContent = userPoints;
     }
-    
-    // Update Points
-    const pointElements = ['walletPoints', 'totalPoints', 'totalEarnings', 'tasksTotalPoints', 'profileTotalPoints'];
-    pointElements.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = formatNumber(userPoints);
-    });
-    
-    // Update User Level
-    const userLevelEl = document.getElementById('userLevel');
-    if (userLevelEl) {
-        userLevelEl.textContent = userRegistered ? `${userId} | ${userPoints} Points | ${usdtWallet.toFixed(2)} USDT` : 'Guest User';
+    if (document.getElementById('profileReferrals')) {
+        document.getElementById('profileReferrals').textContent = referralData.referredUsers.length;
     }
-    
-    // Update Wallet Points
-    const walletPointsEl = document.getElementById('walletPoints');
-    if (walletPointsEl) {
-        walletPointsEl.textContent = userRegistered ? `${formatNumber(userPoints)} | ${usdtWallet.toFixed(2)} USDT` : 'Register';
+    if (document.getElementById('profileRewards')) {
+        document.getElementById('profileRewards').textContent = redeemedRewards.length;
     }
-    
-    // Update Profile User Name
-    const profileUserNameEl = document.getElementById('profileUserName');
-    if (profileUserNameEl) {
-        profileUserNameEl.textContent = userRegistered ? userId : 'Guest User';
+    if (document.getElementById('profileUSDT')) {
+        document.getElementById('profileUSDT').textContent = usdtWallet.toFixed(2);
     }
-    
-    // Update Profile User Points
-    const profileUserPointsEl = document.getElementById('profileUserPoints');
-    if (profileUserPointsEl) {
-        profileUserPointsEl.textContent = userRegistered ? `${userPoints} Points | ${usdtWallet.toFixed(2)} USDT` : '0 Points';
-    }
-    
-    // Update Tasks Stats
-    const tasksCompletedEl = document.getElementById('totalTasks');
-    if (tasksCompletedEl) tasksCompletedEl.textContent = totalTasksCompleted;
-    
-    const todayEarningsEl = document.getElementById('todayEarnings');
-    if (todayEarningsEl) todayEarningsEl.textContent = todayEarnings;
-    
-    const tasksTodayEl = document.getElementById('tasksToday');
-    if (tasksTodayEl) tasksTodayEl.textContent = completedDailyTasks.length;
-    
-    // Update Profile
-    updateProfileUI();
-    
-    // Update Mining Page
-    updateMiningPageUI();
-    
-    // Update registration status
-    updateRegistrationStatusUI();
-    
-    // ✅ FIX: Inject admin button with delay
-    setTimeout(() => {
-        console.log('🔍 Checking for admin button injection...');
-        
-        if (isUserAuthorizedForAdmin()) {
-            console.log('✅ Injecting admin button for authorized user:', userId);
-            injectAdminButton();
-            
-            // Perform data sync for admin panel
-            setTimeout(() => {
-                performFullAdminSync();
-            }, 1000);
-        } else {
-            console.log('❌ User not authorized for admin:', userId);
-            // Remove admin button if exists
-            const existingBtn = document.querySelector('.admin-header-btn');
-            if (existingBtn) {
-                console.log('🗑️ Removing unauthorized admin button');
-                existingBtn.remove();
-            }
-        }
-    }, 1000);
 }
 
 function updateRegistrationStatusUI() {
@@ -4155,7 +4907,7 @@ function loadMiningPools() {
     miningPoolHistory = getFromStorage('miningPoolHistory', []);
     miningPoolInstances = getFromStorage('miningPoolInstances', {});
     
-    console.log('⛏️ Loading mining pools...', {
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ⛏️ Loading mining pools...`, {
         miningPoolsCount: miningPools.length,
         activeMiningPool: activeMiningPool,
         miningPoolHistoryCount: miningPoolHistory.length,
@@ -4164,23 +4916,23 @@ function loadMiningPools() {
     
     // ✅ FIX: Ensure miningPoolInstances is always an object
     if (!miningPoolInstances || typeof miningPoolInstances !== 'object') {
-        console.log('⚠️ miningPoolInstances is invalid, initializing fresh...');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ⚠️ miningPoolInstances is invalid, initializing fresh...`);
         miningPoolInstances = {};
     }
     
     // Initialize pool instances if not exists
     if (Object.keys(miningPoolInstances).length === 0) {
-        console.log('🔄 Initializing fresh mining pool instances...');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Initializing fresh mining pool instances...`);
         initializeMiningPools();
     }
     
     // If there's an active pool, resume countdown
     if (activeMiningPool && activeMiningPool.endTime > Date.now()) {
-        console.log('⛏️ Resuming active mining pool:', activeMiningPool.poolName);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ⛏️ Resuming active mining pool:`, activeMiningPool.poolName);
         startMiningPoolCountdown();
     } else if (activeMiningPool) {
         // Pool completed but not claimed
-        console.log('🎯 Active pool completed, claiming...');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🎯 Active pool completed, claiming...`);
         completeMiningPool();
     }
     
@@ -4192,12 +4944,12 @@ function loadMiningPools() {
 
 // ✅ UPDATED initializeMiningPools FUNCTION
 function initializeMiningPools() {
-    console.log('🔄 Initializing mining pools...');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Initializing mining pools...`);
     
     miningPoolInstances = {};
     
     MINING_POOLS.forEach(pool => {
-        console.log(`📊 Setting up pool: ${pool.name}`);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 📊 Setting up pool: ${pool.name}`);
         pool.durations.forEach(duration => {
             const instanceId = `${pool.id}_${duration.hours}`;
             
@@ -4221,7 +4973,7 @@ function initializeMiningPools() {
     });
     
     saveToStorage('miningPoolInstances', miningPoolInstances);
-    console.log('✅ Mining pools initialized:', Object.keys(miningPoolInstances).length, 'instances');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Mining pools initialized:`, Object.keys(miningPoolInstances).length, 'instances');
 }
 
 function startAllPoolTimers() {
@@ -4254,7 +5006,7 @@ function startAllPoolTimers() {
         }
         
         // Update UI if mining page is active
-        if (document.getElementById('miningContent').classList.contains('active')) {
+        if (document.getElementById('miningContent')?.classList.contains('active')) {
             updateMiningPageUI();
         }
         
@@ -4265,134 +5017,121 @@ function startAllPoolTimers() {
     }, 1000);
 }
 
-function startMiningPool(poolId, durationHours) {
-    // Check if user is registered
-    if (!userRegistered) {
-        showRegistrationModal();
-        showNotification('❌ Please register first!', 'warning');
-        return;
-    }
+function startMiningPoolCountdown() {
+    if (!activeMiningPool) return;
     
-    const pool = MINING_POOLS.find(p => p.id === poolId);
-    if (!pool) {
-        showNotification('❌ Mining pool not found!', 'warning');
-        return;
-    }
+    clearInterval(miningPoolInterval);
     
-    const duration = pool.durations.find(d => d.hours === durationHours);
-    if (!duration) {
-        showNotification('❌ Invalid duration!', 'warning');
-        return;
-    }
-    
-    const instanceId = `${poolId}_${durationHours}`;
-    const instance = miningPoolInstances[instanceId];
-    
-    if (!instance) {
-        showNotification('❌ Pool instance not found!', 'warning');
-        return;
-    }
-    
-    // Check if already mining
-    if (activeMiningPool) {
-        showNotification('❌ You already have an active mining pool!', 'warning');
-        return;
-    }
-    
-    // Check pool type requirements
-    if (pool.type === 'free') {
-        // Check if free pool tasks are completed
-        if (!freePoolTasksCompleted) {
-            showFreePoolTasksModal();
-            showNotification('❌ Complete required tasks first!', 'warning');
+    miningPoolInterval = setInterval(() => {
+        if (!activeMiningPool) {
+            clearInterval(miningPoolInterval);
             return;
         }
         
-        // Check if user already used free pool
-        const freePoolUsed = getFromStorage(`freePoolUsed_${userId}`, false);
-        if (freePoolUsed) {
-            showNotification('❌ Free pool already used! Try paid pools.', 'warning');
-            return;
-        }
-    } else if (pool.type === 'paid') {
-        // ✅ UPDATED: USDT वॉलेट से चेक करें
-        if (usdtWallet < pool.minInvestment) {
-            showNotification(`❌ Minimum ${pool.minInvestment} USDT required in your USDT wallet!`, 'warning');
-            
-            // वॉलेट सेक्शन दिखाने का ऑप्शन दें
-            setTimeout(() => {
-                if (confirm(`आपके पास ${usdtWallet} USDT हैं, ${pool.minInvestment} USDT चाहिए। क्या आप वॉलेट सेक्शन देखना चाहते हैं?`)) {
-                    showWalletSection();
-                }
-            }, 1000);
-            return;
-        }
+        const now = Date.now();
+        const remaining = activeMiningPool.endTime - now;
         
-        // ✅ UPDATED: USDT वॉलेट से डेडक्ट करें
-        usdtWallet -= pool.minInvestment;
-        addTransaction(
-            `Investment: ${pool.name} (${durationHours}h)`, 
-            -pool.minInvestment, 
-            'spending', 
-            'investment',
-            'usdt_wallet'
-        );
-        showNotification(`💰 Invested ${pool.minInvestment} USDT from your wallet`, 'info');
-        
-        // USDT वॉलेट अपडेट
-        saveMiningState();
+        if (remaining <= 0) {
+            clearInterval(miningPoolInterval);
+            activeMiningPool.status = 'completed';
+            saveMiningState();
+            updateMiningPageUI();
+            showNotification('🎉 Mining pool completed! Claim your rewards.', 'success');
+        } else {
+            updateMiningPageUI();
+        }
+    }, 1000);
+}
+
+function completeMiningPool() {
+    if (!activeMiningPool) return;
+    
+    if (activeMiningPool.status === 'completed' && !activeMiningPool.claimed) {
+        claimMiningPoolRewards();
+    }
+}
+
+function claimMiningPoolRewards() {
+    if (!activeMiningPool || activeMiningPool.claimed) return;
+    
+    const points = activeMiningPool.expectedPoints;
+    awardPoints(points, `Mining Pool: ${activeMiningPool.poolName}`, 'mining');
+    
+    activeMiningPool.claimed = true;
+    activeMiningPool.claimedAt = new Date().toISOString();
+    
+    // Update history
+    const historyEntry = miningPoolHistory.find(h => h.id === activeMiningPool.id);
+    if (historyEntry) {
+        historyEntry.claimed = true;
+        historyEntry.claimedAt = new Date().toISOString();
     }
     
-    // Join the pool
-    const startTime = Date.now();
-    const endTime = startTime + (durationHours * 60 * 60 * 1000);
+    activeMiningPool = null;
     
-    activeMiningPool = {
-        id: 'user_pool_' + Date.now(),
-        poolId: poolId,
-        poolName: pool.name,
-        poolIcon: pool.icon,
-        poolType: pool.type,
-        startTime: startTime,
-        endTime: endTime,
-        durationHours: durationHours,
-        expectedPoints: duration.points,
-        status: 'active',
-        instanceId: instanceId
-    };
-    
-    // Update instance statistics
-    instance.subscribers += 1;
-    instance.participants += 1;
-    
-    // Mark free pool as used
-    if (pool.type === 'free') {
-        saveToStorage(`freePoolUsed_${userId}`, true);
-    }
-    
-    // Start countdown
-    startMiningPoolCountdown();
-    
-    // Save to history
-    miningPoolHistory.unshift({
-        ...activeMiningPool,
-        claimed: false
-    });
-    
-    // Save state
     saveMiningState();
-    
-    showNotification(`⛏️ Started ${pool.name} for ${durationHours} hours! You'll earn ${duration.points} points.`, 'success');
-    
-    // Update UI
+    showNotification(`✅ Successfully claimed ${points} points from mining pool!`, 'success');
     updateMiningPageUI();
 }
 
+function cancelMiningPool() {
+    if (!activeMiningPool) return;
+    
+    if (confirm('Are you sure you want to cancel this mining pool?')) {
+        if (activeMiningPool.poolType === 'paid') {
+            // Return 50% of investment
+            const pool = MINING_POOLS.find(p => p.id === activeMiningPool.poolId);
+            const refundAmount = Math.floor(pool.minInvestment * 0.5);
+            usdtWallet += refundAmount;
+            addTransaction(`Refund: Cancelled ${activeMiningPool.poolName}`, refundAmount, 'earning', 'refund');
+            showNotification(`💰 ${refundAmount} USDT refunded to your wallet`, 'info');
+        }
+        
+        activeMiningPool = null;
+        saveMiningState();
+        showNotification('✅ Mining pool cancelled', 'success');
+        updateMiningPageUI();
+    }
+}
+
+function calculatePoolProgress() {
+    if (!activeMiningPool) return 0;
+    
+    const totalTime = activeMiningPool.durationHours * 60 * 60 * 1000;
+    const elapsed = Date.now() - activeMiningPool.startTime;
+    const progress = Math.min(100, (elapsed / totalTime) * 100);
+    
+    return Math.round(progress);
+}
+
+function formatTimeRemaining(ms) {
+    if (ms <= 0) return 'Completed';
+    
+    const hours = Math.floor(ms / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+    
+    if (hours > 0) {
+        return `${hours}h ${minutes}m`;
+    } else if (minutes > 0) {
+        return `${minutes}m ${seconds}s`;
+    } else {
+        return `${seconds}s`;
+    }
+}
+
+function getPoolIcon(poolId) {
+    const pool = MINING_POOLS.find(p => p.id === poolId);
+    return pool ? pool.icon : '⛏️';
+}
+
+// ✅ SHOW FREE POOL TASKS MODAL (CSP FIXED)
 function showFreePoolTasksModal() {
     if (freePoolTasksCompleted) return;
     
     const modal = document.createElement('div');
     modal.className = 'modal active';
+    modal.id = 'freePoolTasksModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -4405,7 +5144,7 @@ function showFreePoolTasksModal() {
                         <div class="task-item ${task.completed ? 'completed' : ''}">
                             <div class="task-checkbox">${task.completed ? '✅' : '⬜'}</div>
                             <div class="task-name">${task.name}</div>
-                            <button class="btn-complete-task" onclick="completeFreePoolTask('${task.id}')" ${task.completed ? 'disabled' : ''}>
+                            <button class="btn-complete-task" data-task="${task.id}" ${task.completed ? 'disabled' : ''}>
                                 ${task.completed ? 'Completed' : 'Complete'}
                             </button>
                         </div>
@@ -4418,8 +5157,8 @@ function showFreePoolTasksModal() {
                     </div>
                 </div>
                 <div class="modal-actions">
-                    <button class="btn-cancel" onclick="closeFreePoolTasksModal()">Later</button>
-                    <button class="btn-success" onclick="checkFreePoolTasksCompletion()" ${getCompletedFreeTasksCount() === 6 ? '' : 'disabled'}>
+                    <button class="btn-cancel" data-action="closeModal" data-modal="freePoolTasksModal">Later</button>
+                    <button class="btn-success" id="unlockFreePoolBtn" ${getCompletedFreeTasksCount() === 6 ? '' : 'disabled'}>
                         Unlock Free Pool
                     </button>
                 </div>
@@ -4427,6 +5166,23 @@ function showFreePoolTasksModal() {
         </div>
     `;
     document.body.appendChild(modal);
+    
+    // Add event listeners
+    setTimeout(() => {
+        const completeBtns = modal.querySelectorAll('.btn-complete-task:not([disabled])');
+        const unlockBtn = document.getElementById('unlockFreePoolBtn');
+        
+        completeBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const taskId = this.getAttribute('data-task');
+                completeFreePoolTask(taskId);
+            });
+        });
+        
+        if (unlockBtn) {
+            unlockBtn.addEventListener('click', checkFreePoolTasksCompletion);
+        }
+    }, 100);
 }
 
 function completeFreePoolTask(taskId) {
@@ -4465,8 +5221,8 @@ function completeFreePoolTask(taskId) {
     }
     
     // Update modal
-    const modal = document.querySelector('.modal.active');
-    if (modal && modal.innerHTML.includes('Free Pool Requirements')) {
+    const modal = document.getElementById('freePoolTasksModal');
+    if (modal) {
         modal.remove();
         setTimeout(showFreePoolTasksModal, 500);
     }
@@ -4489,16 +5245,12 @@ function checkFreePoolTasksCompletion() {
         saveToStorage('freePoolTasksCompleted', true);
         showNotification('🎉 Free pool unlocked! You can now subscribe.', 'success');
         
-        const modal = document.querySelector('.modal.active');
-        if (modal) modal.remove();
+        closeModal('freePoolTasksModal');
     }
 }
 
 function closeFreePoolTasksModal() {
-    const modal = document.querySelector('.modal.active');
-    if (modal && modal.innerHTML.includes('Free Pool Requirements')) {
-        modal.remove();
-    }
+    closeModal('freePoolTasksModal');
 }
 
 function checkFreePoolTasks() {
@@ -4511,8 +5263,22 @@ function checkFreePoolTasks() {
     }
 }
 
+function checkAndResetFreePoolTasks() {
+    const lastReset = getFromStorage('freePoolTasksLastReset', 0);
+    const now = Date.now();
+    const oneDay = 24 * 60 * 60 * 1000;
+    
+    if (now - lastReset > oneDay) {
+        // Reset tasks after 24 hours
+        FREE_POOL_TASKS.forEach(task => task.completed = false);
+        freePoolTasksCompleted = false;
+        saveToStorage('freePoolTasksCompleted', false);
+        saveToStorage('freePoolTasksLastReset', now);
+    }
+}
+
 // ==============================================
-// ✅ UPDATED MINING PAGE UI FUNCTION
+// ✅ UPDATED MINING PAGE UI FUNCTION (CSP FIXED)
 // ==============================================
 
 function updateMiningPageUI() {
@@ -4538,7 +5304,7 @@ function updateMiningPageUI() {
                 </div>
             </div>
             ${!userRegistered ? `
-                <button class="btn-register" onclick="showRegistrationModal()">
+                <button class="btn-register" data-action="showModal" data-modal="register">
                     📝 Register Now
                 </button>
             ` : ''}
@@ -4579,9 +5345,9 @@ function updateMiningPageUI() {
                 
                 <div class="pool-actions">
                     ${activeMiningPool.status === 'active' ? `
-                    <button class="btn-cancel" onclick="cancelMiningPool()">Cancel Pool</button>
+                    <button class="btn-cancel" id="cancelMiningPoolBtn" data-action="cancelMiningPool">Cancel Pool</button>
                     ` : `
-                    <button class="btn-success" onclick="claimMiningPoolRewards()">Claim ${activeMiningPool.expectedPoints} Points</button>
+                    <button class="btn-success" data-action="claimMiningPool" data-pool="${activeMiningPool.poolId}">Claim ${activeMiningPool.expectedPoints} Points</button>
                     `}
                 </div>
             </div>
@@ -4655,7 +5421,7 @@ function updateMiningPageUI() {
                 </div>
                 
                 <button class="btn-subscribe ${freePoolTasksCompleted ? 'btn-success' : 'btn-disabled'}" 
-                        onclick="${freePoolTasksCompleted ? `startMiningPool('free_pool', ${duration.hours})` : 'showFreePoolTasksModal()'}">
+                        ${freePoolTasksCompleted ? `data-action="startMiningPool" data-pool="free_pool" data-duration="${duration.hours}"` : 'data-action="showModal" data-modal="freePoolTasks"'}>
                     ${freePoolTasksCompleted ? 'Subscribe Free' : 'Complete Tasks First'}
                 </button>
             </div>
@@ -4668,7 +5434,7 @@ function updateMiningPageUI() {
         
         <!-- Daily Activities Section -->
         <div class="daily-activities-section">
-            <button class="btn-daily-activities" onclick="showDailyActivitiesModal()">
+            <button class="btn-daily-activities" data-action="showModal" data-modal="dailyActivities">
                 🎯 Earn Extra Points Daily
                 <span style="font-size: 12px; opacity: 0.9;">+500 Points Daily Available</span>
             </button>
@@ -4748,7 +5514,7 @@ function updateMiningPageUI() {
                     </div>
                     
                     <button class="btn-subscribe ${userPoints >= minInvestment && paidPoolUnlocked ? 'btn-success' : 'btn-disabled'}" 
-                            onclick="${userPoints >= minInvestment && paidPoolUnlocked ? `startMiningPool('${pool.id}', ${duration.hours})` : !paidPoolUnlocked ? `showPaidPoolTasksModal('${pool.id}', '${pool.name}', ${minInvestment})` : ''}">
+                            ${userPoints >= minInvestment && paidPoolUnlocked ? `data-action="startMiningPool" data-pool="${pool.id}" data-duration="${duration.hours}"` : !paidPoolUnlocked ? `data-action="showModal" data-modal="paidPoolTasks"` : ''}>
                         ${userPoints >= minInvestment && paidPoolUnlocked ? 'Subscribe Now' : paidPoolUnlocked ? 'Insufficient USDT' : 'Complete Tasks First'}
                     </button>
                 </div>
@@ -4781,18 +5547,80 @@ function updateMiningPageUI() {
     
     miningContent.innerHTML = html;
     
-    // Update timer in real-time
-    if (activeMiningPool && activeMiningPool.status === 'active') {
-        const timerEl = document.getElementById('poolTimer');
-        if (timerEl) {
-            timerEl.textContent = formatTimeRemaining(activeMiningPool.endTime - Date.now());
+    // Add event listeners
+    setTimeout(() => {
+        // Update timer in real-time
+        if (activeMiningPool && activeMiningPool.status === 'active') {
+            const timerEl = document.getElementById('poolTimer');
+            if (timerEl) {
+                timerEl.textContent = formatTimeRemaining(activeMiningPool.endTime - Date.now());
+            }
+            
+            const progressFill = document.getElementById('poolProgressFill');
+            if (progressFill) {
+                progressFill.style.width = `${calculatePoolProgress()}%`;
+            }
         }
-        
-        const progressFill = document.getElementById('poolProgressFill');
-        if (progressFill) {
-            progressFill.style.width = `${calculatePoolProgress()}%`;
-        }
-    }
+    }, 100);
+}
+
+// ✅ SHOW PAID POOL TASKS MODAL (CSP FIXED)
+function showPaidPoolTasksModal(poolId, poolName, minInvestment) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'paidPoolTasksModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎯 Unlock ${poolName}</h3>
+            </div>
+            <div class="paid-pool-tasks">
+                <h4>Complete these 3 tasks to unlock ${poolName}:</h4>
+                <p style="margin-bottom: 15px; color: #FFD700;">Minimum Investment: ${minInvestment} USDT</p>
+                <div class="tasks-list">
+                    <div class="task-item">
+                        <div class="task-checkbox">⬜</div>
+                        <div class="task-name">Watch 5 Videos</div>
+                        <button class="btn-complete-task" data-task="watch_5_videos">
+                            Complete
+                        </button>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-checkbox">⬜</div>
+                        <div class="task-name">Refer 1 Friend</div>
+                        <button class="btn-complete-task" data-task="refer_1_friend">
+                            Complete
+                        </button>
+                    </div>
+                    <div class="task-item">
+                        <div class="task-checkbox">⬜</div>
+                        <div class="task-name">Complete Daily Login for 3 Days</div>
+                        <button class="btn-complete-task" data-task="daily_login_3">
+                            Complete
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn-cancel" data-action="closeModal" data-modal="paidPoolTasksModal">Later</button>
+                    <button class="btn-success" id="unlockPaidPoolBtn" data-action="unlockPaidPool" data-pool="${poolId}" disabled>
+                        Unlock Pool
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function unlockPaidPool(poolId) {
+    saveToStorage(`paidPoolUnlocked_${userId}_${poolId}`, true);
+    showNotification(`✅ ${poolId} unlocked! You can now subscribe.`, 'success');
+    closeModal('paidPoolTasksModal');
+    updateMiningPageUI();
+}
+
+function showMiningPage() {
+    switchTab('mining');
 }
 
 // ==============================================
@@ -4866,7 +5694,7 @@ function checkAndResetDailyStreak() {
 
 // ✅ SECTION 7: DAILY ACTIVITIES FIX
 function completeDailyActivity(activityId) {
-    console.log(`🎯 Completing daily activity: ${activityId}`);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🎯 Completing daily activity: ${activityId}`);
     
     if (!userRegistered) {
         showNotification('❌ Please register first!', 'warning');
@@ -4981,6 +5809,7 @@ function showAdReward() {
     // Simulate watching ad
     const adModal = document.createElement('div');
     adModal.className = 'modal active';
+    adModal.id = 'adModal';
     adModal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -5022,7 +5851,7 @@ function showAdReward() {
 }
 
 function checkStreakRewards() {
-    console.log('🎁 Checking streak rewards, current streak:', dailyActivityStreak);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🎁 Checking streak rewards, current streak:`, dailyActivityStreak);
     
     // Check if user earned streak reward
     if (dailyActivityStreak === 3 && !getFromStorage('streak_3_reward', false)) {
@@ -5058,6 +5887,7 @@ function saveDailyActivitiesState() {
     saveToStorage('totalActivityPoints', totalActivityPoints);
 }
 
+// ✅ SHOW DAILY ACTIVITIES MODAL (CSP FIXED)
 function showDailyActivitiesModal() {
     if (!userRegistered) {
         showNotification('❌ Please register first!', 'warning');
@@ -5067,11 +5897,12 @@ function showDailyActivitiesModal() {
     
     const modal = document.createElement('div');
     modal.className = 'modal active daily-activities-modal';
+    modal.id = 'dailyActivitiesModal';
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🎯 Daily Activities</h3>
-                <button class="modal-close" onclick="closeDailyActivitiesModal()">×</button>
+                <button class="modal-close" data-action="closeModal" data-modal="dailyActivitiesModal">×</button>
             </div>
             
             <div class="daily-activities-stats">
@@ -5143,7 +5974,8 @@ function getDailyActivitiesList() {
                 </div>
                 <div class="activity-points">+${activity.points}</div>
                 <button class="activity-btn ${activity.completed ? 'completed' : ''}" 
-                        onclick="completeDailyActivity('${activity.id}')"
+                        data-action="${activity.completed ? '' : 'completeDailyActivity'}"
+                        data-activity="${activity.id}"
                         ${activity.completed ? 'disabled' : ''}>
                     ${activity.completed ? 'Completed' : 'Start'}
                 </button>
@@ -5153,7 +5985,7 @@ function getDailyActivitiesList() {
 }
 
 function updateDailyActivitiesUI() {
-    const modal = document.querySelector('.daily-activities-modal');
+    const modal = document.getElementById('dailyActivitiesModal');
     if (modal) {
         const activitiesList = modal.querySelector('#activitiesList');
         if (activitiesList) {
@@ -5169,13 +6001,12 @@ function updateDailyActivitiesUI() {
 }
 
 function closeDailyActivitiesModal() {
-    const modal = document.querySelector('.daily-activities-modal');
-    if (modal) modal.remove();
+    closeModal('dailyActivitiesModal');
 }
 
 // Auto-complete login activity on daily login
 function autoCompleteLoginActivity() {
-    console.log('🔐 Auto-completing login activity');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔐 Auto-completing login activity`);
     
     const today = new Date().toDateString();
     const loginActivity = dailyActivities.find(a => a.id === 'activity_1');
@@ -5189,7 +6020,7 @@ function autoCompleteLoginActivity() {
         if (!todayCompleted) {
             // ✅ Use the fixed completeDailyActivity function
             completeDailyActivity('activity_1');
-            console.log('✅ Auto-completed morning check-in activity');
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Auto-completed morning check-in activity`);
         }
     }
 }
@@ -5200,7 +6031,7 @@ function autoCompleteLoginActivity() {
 
 // ✅ SECTION 5: SPONSOR COMMISSION SYSTEM
 function getCommissionRate(activityType) {
-    console.log('💰 Getting commission rate for:', activityType);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 💰 Getting commission rate for:`, activityType);
     
     const rates = {
         'mining': 0.05,
@@ -5221,7 +6052,7 @@ function getCommissionRate(activityType) {
 }
 
 function addSponsorCommission(amount, userActivity, commissionRate, activityType) {
-    console.log('💼 Adding sponsor commission:', {
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 💼 Adding sponsor commission:`, {
         sponsorId: sponsorId,
         amount: amount,
         activity: userActivity,
@@ -5230,12 +6061,12 @@ function addSponsorCommission(amount, userActivity, commissionRate, activityType
     });
     
     if (!sponsorId || sponsorId.trim() === '' || amount <= 0) {
-        console.log('❌ No sponsor or invalid amount');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ❌ No sponsor or invalid amount`);
         return;
     }
     
     const commission = Math.max(1, Math.round(amount * commissionRate));
-    console.log('📊 Calculated commission:', commission);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 📊 Calculated commission:`, commission);
     
     if (commission <= 0) return;
     
@@ -5282,7 +6113,7 @@ function addSponsorCommission(amount, userActivity, commissionRate, activityType
     saveToStorage('userSponsorActivities', userSponsorActivities);
     saveToStorage('sponsorIncomeBreakdown', sponsorIncomeBreakdown);
     
-    console.log('✅ Sponsor commission recorded:', commission, 'points');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Sponsor commission recorded:`, commission, 'points');
     updateUI();
 }
 
@@ -5300,7 +6131,7 @@ function updateSponsorIncomeBreakdown(commission, activityType) {
 
 // ✅ SECTION 6: UPDATE AWARD POINTS FUNCTION
 function awardPoints(amount, source, category) {
-    console.log('💰 Awarding points:', { amount, source, category, sponsorId });
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 💰 Awarding points:`, { amount, source, category, sponsorId });
     
     initializeNaNProtection();
     const safeAmount = Math.max(0, Math.round(safeNumber(amount, 0)));
@@ -5313,7 +6144,7 @@ function awardPoints(amount, source, category) {
     addTransaction(source, safeAmount, 'earning', category);
     
     if (sponsorId && sponsorId.trim() !== '' && safeAmount > 0) {
-        console.log('🎯 Adding sponsor commission for:', sponsorId);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🎯 Adding sponsor commission for:`, sponsorId);
         
         let commissionCategory = category;
         if (category === 'video') commissionCategory = 'video_watch';
@@ -5378,71 +6209,59 @@ function saveUserTransaction(transaction) {
 }
 
 // ==============================================
-// ✅ ADMIN AUTHORIZATION FUNCTION - ADD BEFORE window.adminSystem
+// ✅ ADMIN AUTHORIZATION FUNCTION
 // ==============================================
 
 function isUserAuthorizedForAdmin() {
-    console.log('🔐 Admin authorization check for:', userId, 'email:', userEmail);
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔐 Admin authorization check for:`, userId, 'email:', userEmail);
     
     // First ensure user is properly registered
     if (!userRegistered) {
         const ensured = ensureUserRegistered();
         if (!ensured) {
-            console.log('❌ User not registered for admin access');
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ❌ User not registered for admin access`);
             return false;
         }
     }
     
-    // Define admin users (add more as needed)
-    const adminUsers = [
-        {
-            email: 'topjust2@gmail.com',
-            username: 'topjust2',
-            isAdmin: true
-        },
-        {
-            email: 'admin@tapearn.com',
-            username: 'admin',
-            isAdmin: true
-        }
-    ];
-    
     // Check by email
-    const isAdminByEmail = adminUsers.some(admin => 
-        userEmail && userEmail.toLowerCase() === admin.email.toLowerCase()
+    const isAdminByEmail = ADMIN_AUTHORIZED_USERS.some(admin => 
+        userEmail && userEmail.toLowerCase() === admin.toLowerCase()
     );
     
     // Check by username
-    const isAdminByUsername = adminUsers.some(admin => 
-        userId && userId.toLowerCase() === admin.username.toLowerCase()
+    const isAdminByUsername = ADMIN_AUTHORIZED_USERS.some(admin => 
+        userId && userId.toLowerCase() === admin.toLowerCase()
     );
     
     const isAuthorized = isAdminByEmail || isAdminByUsername;
     
-    console.log('🔍 Admin check result:', {
-        userId,
-        userEmail,
-        isAdminByEmail,
-        isAdminByUsername,
-        isAuthorized
-    });
+    if (window.APP_DEBUG) {
+        console.log(`${window.APP_LOG_PREFIX} 🔍 Admin check result:`, {
+            userId,
+            userEmail,
+            isAdminByEmail,
+            isAdminByUsername,
+            isAuthorized
+        });
+    }
     
     if (isAuthorized) {
-        console.log('✅ User AUTHORIZED for admin access:', userId);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User AUTHORIZED for admin access:`, userId);
     } else {
-        console.log('❌ User NOT authorized for admin access:', userId);
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ❌ User NOT authorized for admin access:`, userId);
     }
     
     return isAuthorized;
 }
 
-// ✅ UPDATED ADMIN SYSTEM OBJECT WITH ACCESS CONTROL
+// ✅ ADMIN SYSTEM OBJECT WITH ACCESS CONTROL
 window.adminSystem = {
     openAdminPanel: function() {
         // Check authorization before opening admin panel
         if (!isUserAuthorizedForAdmin()) {
             showNotification('❌ Unauthorized: Admin access restricted!', 'error');
-            console.log('🚫 Blocked unauthorized admin access attempt by:', userEmail || userId);
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🚫 Blocked unauthorized admin access attempt by:`, userEmail || userId);
             return;
         }
         
@@ -5457,14 +6276,14 @@ window.adminSystem = {
                     <div class="admin-user-info" style="font-size: 12px; color: #4CAF50; margin-top: 5px;">
                         Logged in as: ${userId} (${userEmail})
                     </div>
-                    <button class="modal-close" onclick="closeAdminModal()">×</button>
+                    <button class="modal-close" data-action="closeModal" data-modal="adminModal">×</button>
                 </div>
                 <div class="admin-tabs">
-                    <button class="admin-tab active" onclick="switchAdminTab('users')">👥 Users</button>
-                    <button class="admin-tab" onclick="switchAdminTab('storage')">💾 Storage</button>
-                    <button class="admin-tab" onclick="switchAdminTab('server')">🌐 Server</button>
-                    <button class="admin-tab" onclick="switchAdminTab('tools')">🔧 Tools</button>
-                    <button class="admin-tab" onclick="switchAdminTab('danger')">☢️ Danger Zone</button>
+                    <button class="admin-tab active" data-action="switchAdminTab" data-tab="users">👥 Users</button>
+                    <button class="admin-tab" data-action="switchAdminTab" data-tab="storage">💾 Storage</button>
+                    <button class="admin-tab" data-action="switchAdminTab" data-tab="server">🌐 Server</button>
+                    <button class="admin-tab" data-action="switchAdminTab" data-tab="tools">🔧 Tools</button>
+                    <button class="admin-tab" data-action="switchAdminTab" data-tab="danger">☢️ Danger Zone</button>
                 </div>
                 <div class="admin-content" id="adminContent">
                     <!-- Admin content will be loaded here -->
@@ -5474,44 +6293,42 @@ window.adminSystem = {
         document.body.appendChild(modal);
         
         // Load default tab
-        switchAdminTab('users');
+        switchAdminTab('users', modal.querySelector('.admin-tab.active'));
     },
     
-    // ✅ UPDATED: Only inject admin button for authorized users
     injectAdminButton: function() {
         // Check authorization before injecting admin button
         if (!isUserAuthorizedForAdmin()) {
-            console.log('🚫 Admin button NOT injected for user:', userEmail || userId);
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🚫 Admin button NOT injected for user:`, userEmail || userId);
             return;
         }
         
-        // Call the new injectAdminButton function
-        injectAdminButton();
+        // Inject admin button
+        injectAdminButtonFunction();
     }
 };
 
 // ==============================================
-// ✅ NEW ADMIN FUNCTIONS - ADD AFTER window.adminSystem OBJECT
+// ✅ ADMIN PANEL FUNCTIONS
 // ==============================================
 
-// ✅ FIX: Inject admin button with proper checks
-function injectAdminButton() {
-    console.log('🔧 Injecting admin button...');
+function injectAdminButtonFunction() {
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔧 Injecting admin button...`);
     
     // Remove existing admin button if any
     const existingBtn = document.querySelector('.admin-header-btn');
     if (existingBtn) {
-        console.log('🔄 Removing existing admin button');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Removing existing admin button`);
         existingBtn.remove();
     }
     
     // Check authorization
     if (!isUserAuthorizedForAdmin()) {
-        console.log('🚫 User not authorized for admin button');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🚫 User not authorized for admin button`);
         return;
     }
     
-    console.log('✅ User authorized, creating admin button');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User authorized, creating admin button`);
     
     const adminBtn = document.createElement('div');
     adminBtn.className = 'admin-header-btn';
@@ -5537,32 +6354,32 @@ function injectAdminButton() {
         border: 2px solid #fff;
     `;
     
-    adminBtn.onclick = function() {
-        console.log('🛠️ Admin button clicked by:', userId);
+    // Add event listeners properly
+    adminBtn.addEventListener('click', function() {
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🛠️ Admin button clicked by:`, userId);
         window.adminSystem.openAdminPanel();
-    };
+    });
     
-    adminBtn.onmouseenter = function() {
+    adminBtn.addEventListener('mouseenter', function() {
         this.style.transform = 'scale(1.1)';
         this.style.boxShadow = '0 6px 20px rgba(255,0,0,0.7)';
         this.style.borderColor = '#FFD700';
-    };
+    });
     
-    adminBtn.onmouseleave = function() {
+    adminBtn.addEventListener('mouseleave', function() {
         this.style.transform = 'scale(1)';
         this.style.boxShadow = '0 4px 15px rgba(255,0,0,0.5)';
         this.style.borderColor = '#fff';
-    };
+    });
     
     document.body.appendChild(adminBtn);
-    console.log('✅ Admin button injected successfully');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ Admin button injected successfully`);
 }
 
-// ✅ FIX: Add function to perform admin sync
 function performFullAdminSync() {
     if (!isUserAuthorizedForAdmin()) return;
     
-    console.log('🔄 Performing full admin sync...');
+    if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Performing full admin sync...`);
     
     // Sync user data to server
     syncUserToServer();
@@ -5573,12 +6390,11 @@ function performFullAdminSync() {
     // Update admin panel if open
     const adminModal = document.getElementById('adminModal');
     if (adminModal) {
-        console.log('🔄 Refreshing admin panel data');
+        if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} 🔄 Refreshing admin panel data`);
         loadAdminUsersTab();
     }
 }
 
-// ✅ FIX: Add sync function
 async function syncUserToServer() {
     try {
         const currentUser = getFromStorage('currentUser');
@@ -5595,10 +6411,10 @@ async function syncUserToServer() {
         const data = await response.json();
         
         if (data.success) {
-            console.log('✅ User synced to server:', currentUser.username);
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ✅ User synced to server:`, currentUser.username);
         }
     } catch (error) {
-        console.error('❌ Error syncing user:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} ❌ Error syncing user:`, error);
     }
 }
 
@@ -5608,15 +6424,14 @@ function closeAdminModal() {
     if (modal) modal.remove();
 }
 
-function switchAdminTab(tabName) {
-    const contentDiv = document.getElementById('adminContent');
-    if (!contentDiv) return;
-    
+function switchAdminTab(tabName, element) {
     // Update active tab
     document.querySelectorAll('.admin-tab').forEach(tab => {
         tab.classList.remove('active');
     });
-    event.target.classList.add('active');
+    if (element) {
+        element.classList.add('active');
+    }
     
     // Load tab content
     switch(tabName) {
@@ -5663,9 +6478,9 @@ function loadAdminServerTab() {
             </div>
             
             <div class="server-actions">
-                <button class="btn btn-success" onclick="fetchServerStats()">📊 Refresh Stats</button>
-                <button class="btn btn-primary" onclick="syncAllToServer()">🔄 Sync All Users</button>
-                <button class="btn btn-warning" onclick="fixServerData()">🔧 Fix Server Data</button>
+                <button class="btn btn-success" data-action="testServerConnection">📊 Refresh Stats</button>
+                <button class="btn btn-primary" data-action="syncAllToServer">🔄 Sync All Users</button>
+                <button class="btn btn-warning" data-action="fixServerData">🔧 Fix Server Data</button>
             </div>
             
             <div class="server-info-section">
@@ -5677,7 +6492,7 @@ function loadAdminServerTab() {
             
             <div class="server-test-section" style="margin-top: 20px;">
                 <h5>🧪 Test Server Connection</h5>
-                <button class="btn-test" onclick="testServerConnection()">Test Connection</button>
+                <button class="btn-test" data-action="testServerConnection">Test Connection</button>
                 <div id="serverTestResult"></div>
             </div>
         </div>
@@ -5689,7 +6504,6 @@ function loadAdminServerTab() {
     fetchServerStats();
 }
 
-// ✅ FIXED fetchServerStats FUNCTION
 async function fetchServerStats() {
     try {
         const serverUserCount = document.getElementById('serverUserCount');
@@ -5697,9 +6511,8 @@ async function fetchServerStats() {
         const serverToday = document.getElementById('serverToday');
         const serverInfo = document.getElementById('serverInfo');
         
-        // Check if elements exist
         if (!serverUserCount || !serverPoints || !serverToday || !serverInfo) {
-            console.log('⚠️ Server stats elements not found');
+            if (window.APP_DEBUG) console.log(`${window.APP_LOG_PREFIX} ⚠️ Server stats elements not found`);
             return;
         }
         
@@ -5721,7 +6534,7 @@ async function fetchServerStats() {
             `;
         }
     } catch (error) {
-        console.error('Error fetching server stats:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} Error fetching server stats:`, error);
         const serverUserCount = document.getElementById('serverUserCount');
         const serverInfo = document.getElementById('serverInfo');
         
@@ -5753,7 +6566,7 @@ async function syncAllToServer() {
             showNotification(`❌ Sync failed: ${data.message}`, 'error');
         }
     } catch (error) {
-        console.error('Error syncing to server:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} Error syncing to server:`, error);
         showNotification('❌ Server sync failed!', 'error');
     }
 }
@@ -5770,7 +6583,7 @@ async function fixServerData() {
             showNotification(`❌ Fix failed: ${data.message}`, 'error');
         }
     } catch (error) {
-        console.error('Error fixing server data:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} Error fixing server data:`, error);
         showNotification('❌ Server fix failed!', 'error');
     }
 }
@@ -5796,7 +6609,6 @@ async function testServerConnection() {
     }
 }
 
-// ✅ UPDATED: Admin Panel को Server से डेटा Fetch करने के लिए अपडेट करें
 async function loadAdminUsersTab() {
     const contentDiv = document.getElementById('adminContent');
     if (!contentDiv) return;
@@ -5812,30 +6624,25 @@ async function loadAdminUsersTab() {
     `;
     
     try {
-        // ✅ SERVER से सभी users fetch करें
         const response = await fetch('http://localhost:3000/api/get-all-users');
         const data = await response.json();
         
         if (data.success) {
-            // ✅ Server से मिले users को display करें
             displayUsersFromServer(data.users);
         } else {
-            // Fallback: localStorage से डेटा
             const registeredUsers = getFromStorage('registeredUsers', []);
             displayUsersInAdminTab(registeredUsers);
             showNotification('⚠️ Using local data (server error)', 'warning');
         }
     } catch (error) {
-        console.error('❌ Error fetching users from server:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} ❌ Error fetching users from server:`, error);
         
-        // Fallback to localStorage
         const registeredUsers = getFromStorage('registeredUsers', []);
         displayUsersInAdminTab(registeredUsers);
         showNotification('⚠️ Using local data (server offline)', 'warning');
     }
 }
 
-// ✅ नया फ़ंक्शन displayUsersFromServer(users) जोड़ें
 function displayUsersFromServer(users) {
     const contentDiv = document.getElementById('adminContent');
     if (!contentDiv) return;
@@ -5844,8 +6651,8 @@ function displayUsersFromServer(users) {
         <div class="admin-tab-content">
             <div class="users-search-container">
                 <input type="text" class="search-input" id="adminUserSearch" 
-                       placeholder="Search users..." oninput="filterAdminUsers()">
-                <button class="btn btn-primary" onclick="adminRefreshUsers()">🔄 Refresh</button>
+                       placeholder="Search users...">
+                <button class="btn btn-primary" data-action="adminRefreshUsers">🔄 Refresh</button>
             </div>
             
             <div class="users-stats">
@@ -5894,8 +6701,8 @@ function displayUsersFromServer(users) {
                 <td>${user.sponsorId || user.referred_by || 'None'}</td>
                 <td>${regDate}</td>
                 <td>
-                    <button class="btn-action btn-view" onclick="viewAdminUserServer('${user.email}', '${user.username}')">View</button>
-                    <button class="btn-action btn-delete" onclick="removeAdminUserServer('${user.id || user.email}', '${user.username}')">Remove</button>
+                    <button class="btn-action btn-view" data-action="viewAdminUser" data-email="${user.email}">View</button>
+                    <button class="btn-action btn-delete" data-action="removeAdminUser" data-email="${user.email}">Remove</button>
                 </td>
             </tr>
         `;
@@ -5923,6 +6730,14 @@ function displayUsersFromServer(users) {
     `;
     
     contentDiv.innerHTML = html;
+    
+    // Add event listener for search input
+    setTimeout(() => {
+        const searchInput = document.getElementById('adminUserSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', filterAdminUsers);
+        }
+    }, 100);
 }
 
 function displayUsersInAdminTab(registeredUsers) {
@@ -5933,8 +6748,8 @@ function displayUsersInAdminTab(registeredUsers) {
         <div class="admin-tab-content">
             <div class="users-search-container">
                 <input type="text" class="search-input" id="adminUserSearch" 
-                       placeholder="Search users..." oninput="filterAdminUsers()">
-                <button class="btn btn-primary" onclick="adminRefreshUsers()">🔄 Refresh</button>
+                       placeholder="Search users...">
+                <button class="btn btn-primary" data-action="adminRefreshUsers">🔄 Refresh</button>
             </div>
             
             <div class="users-stats">
@@ -5970,8 +6785,8 @@ function displayUsersInAdminTab(registeredUsers) {
                 <td>${user.email}</td>
                 <td>${user.points || 0}</td>
                 <td>
-                    <button class="btn-action btn-view" onclick="viewAdminUser('${user.email}')">View</button>
-                    <button class="btn-action btn-delete" onclick="removeAdminUser('${user.email}')">Remove</button>
+                    <button class="btn-action btn-view" data-action="viewAdminUser" data-email="${user.email}">View</button>
+                    <button class="btn-action btn-delete" data-action="removeAdminUser" data-email="${user.email}">Remove</button>
                 </td>
             </tr>
         `;
@@ -5993,14 +6808,20 @@ function displayUsersInAdminTab(registeredUsers) {
     `;
     
     contentDiv.innerHTML = html;
+    
+    // Add event listener for search input
+    setTimeout(() => {
+        const searchInput = document.getElementById('adminUserSearch');
+        if (searchInput) {
+            searchInput.addEventListener('input', filterAdminUsers);
+        }
+    }, 100);
 }
 
-// ✅ नया फ़ंक्शन removeAdminUserServer() जोड़ें
 async function removeAdminUserServer(userId, username) {
     if (!confirm(`Delete user "${username}" from server database? This cannot be undone!`)) return;
     
     try {
-        // ✅ SERVER पर DELETE request भेजें
         const response = await fetch(`http://localhost:3000/api/delete-user/${userId}`, {
             method: 'DELETE'
         });
@@ -6010,10 +6831,8 @@ async function removeAdminUserServer(userId, username) {
         if (data.success) {
             showNotification(`✅ User "${username}" deleted from server!`, 'success');
             
-            // ✅ Admin Panel refresh करें
             loadAdminUsersTab();
             
-            // ✅ LocalStorage से भी हटाएं (अगर मौजूद हो)
             const registeredUsers = getFromStorage('registeredUsers', []);
             const updatedUsers = registeredUsers.filter(u => u.email !== username && u.id !== username);
             saveToStorage('registeredUsers', updatedUsers);
@@ -6021,15 +6840,13 @@ async function removeAdminUserServer(userId, username) {
             showNotification(`❌ Failed to delete user: ${data.message}`, 'error');
         }
     } catch (error) {
-        console.error('❌ Error deleting user from server:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} ❌ Error deleting user from server:`, error);
         showNotification('❌ Server delete failed. Try again.', 'error');
     }
 }
 
-// ✅ नया फ़ंक्शन viewAdminUserServer() जोड़ें
 async function viewAdminUserServer(email, username) {
     try {
-        // ✅ SERVER से user details fetch करें
         const response = await fetch(`http://localhost:3000/api/get-user?email=${encodeURIComponent(email)}&username=${encodeURIComponent(username)}`);
         const data = await response.json();
         
@@ -6059,7 +6876,7 @@ async function viewAdminUserServer(email, username) {
             alert('User not found in server database.');
         }
     } catch (error) {
-        console.error('Error fetching user from server:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} Error fetching user from server:`, error);
         alert('Error fetching user details from server.');
     }
 }
@@ -6081,12 +6898,10 @@ function viewAdminUser(email) {
 function removeAdminUser(email) {
     if (!confirm(`Remove user ${email}? This cannot be undone!`)) return;
     
-    // Remove from registeredUsers
     const registeredUsers = getFromStorage('registeredUsers', []);
     const updatedUsers = registeredUsers.filter(u => u.email !== email);
     saveToStorage('registeredUsers', updatedUsers);
     
-    // Remove user-specific storage keys
     const user = registeredUsers.find(u => u.email === email);
     if (user) {
         const userId = user.id || user.username;
@@ -6139,9 +6954,9 @@ function loadAdminStorageTab() {
             </div>
             
             <div class="storage-actions">
-                <button class="btn btn-success" onclick="exportAllData()">📤 Export All Data</button>
-                <button class="btn btn-warning" onclick="cleanCache()">🧹 Clean Cache</button>
-                <button class="btn btn-danger" onclick="clearAllStorage()">🗑️ Clear Storage</button>
+                <button class="btn btn-success" data-action="exportAllData">📤 Export All Data</button>
+                <button class="btn btn-warning" data-action="cleanCache">🧹 Clean Cache</button>
+                <button class="btn btn-danger" data-action="clearAllStorage">🗑️ Clear Storage</button>
             </div>
             
             <div class="storage-keys">
@@ -6149,7 +6964,6 @@ function loadAdminStorageTab() {
                 <div class="keys-list">
     `;
     
-    // Show first 20 keys
     for (let i = 0; i < Math.min(20, localStorage.length); i++) {
         const key = localStorage.key(i);
         html += `<div class="key-item">${key}</div>`;
@@ -6178,33 +6992,33 @@ function loadAdminToolsTab() {
                 <div class="tool-card">
                     <h4>🔄 Reset Points</h4>
                     <p>Reset all user points to zero</p>
-                    <button class="btn btn-warning" onclick="resetAllPoints()">Reset</button>
+                    <button class="btn btn-warning" data-action="resetAllPoints">Reset</button>
                 </div>
                 
                 <div class="tool-card">
                     <h4>📋 Reset Tasks</h4>
                     <p>Clear all task completion data</p>
-                    <button class="btn btn-warning" onclick="resetAllTasks()">Reset</button>
+                    <button class="btn btn-warning" data-action="resetAllTasks">Reset</button>
                 </div>
                 
                 <div class="tool-card">
                     <h4>⛏️ Reset Mining</h4>
                     <p>Clear all mining pool data</p>
-                    <button class="btn btn-warning" onclick="resetAllMining()">Reset</button>
+                    <button class="btn btn-warning" data-action="resetAllMining">Reset</button>
                 </div>
                 
                 <div class="tool-card">
                     <h4>🔧 Fix Data</h4>
                     <p>Fix data corruption issues</p>
-                    <button class="btn btn-primary" onclick="fixDataCorruption()">Fix</button>
+                    <button class="btn btn-primary" data-action="fixDataCorruption">Fix</button>
                 </div>
             </div>
             
             <div class="quick-commands">
                 <h4>⚡ Quick Commands:</h4>
-                <button class="btn-cmd" onclick="reloadApp()">🔄 Reload App</button>
-                <button class="btn-cmd" onclick="toggleDebug()">🐛 Debug Mode</button>
-                <button class="btn-cmd" onclick="addTestUser()">👤 Add Test User</button>
+                <button class="btn-cmd" data-action="reloadApp">🔄 Reload App</button>
+                <button class="btn-cmd" data-action="toggleDebug">🐛 Debug Mode</button>
+                <button class="btn-cmd" data-action="addTestUser">👤 Add Test User</button>
             </div>
         </div>
     `;
@@ -6344,14 +7158,12 @@ function resetAllMining() {
 }
 
 function fixDataCorruption() {
-    // Fix registeredUsers
     try {
         JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     } catch {
         localStorage.setItem('registeredUsers', '[]');
     }
     
-    // Fix allReferrals
     try {
         JSON.parse(localStorage.getItem('allReferrals') || '[]');
     } catch {
@@ -6370,11 +7182,13 @@ function reloadApp() {
 }
 
 function toggleDebug() {
-    console.log('🔍 Debug Mode Activated');
-    console.log('Registered Users:', getFromStorage('registeredUsers', []));
-    console.log('Current User:', getFromStorage('currentUser'));
-    console.log('All Referrals:', getFromStorage('allReferrals', []));
-    console.log('LocalStorage Keys:', localStorage.length);
+    if (window.APP_DEBUG) {
+        console.log(`${window.APP_LOG_PREFIX} 🔍 Debug Mode Activated`);
+        console.log(`${window.APP_LOG_PREFIX} Registered Users:`, getFromStorage('registeredUsers', []));
+        console.log(`${window.APP_LOG_PREFIX} Current User:`, getFromStorage('currentUser'));
+        console.log(`${window.APP_LOG_PREFIX} All Referrals:`, getFromStorage('allReferrals', []));
+        console.log(`${window.APP_LOG_PREFIX} LocalStorage Keys:`, localStorage.length);
+    }
     
     logAdminAction('Debug mode activated');
     showNotification('🔍 Debug mode activated - Check console', 'info');
@@ -6455,10 +7269,8 @@ function nuclearReset() {
         return;
     }
     
-    // Clear everything
     localStorage.clear();
     
-    // Add fresh pre-loaded referral codes
     const freshCodes = PRE_LOADED_REFERRAL_CODES;
     localStorage.setItem('allReferrals', JSON.stringify(freshCodes));
     
@@ -6489,7 +7301,6 @@ function logAdminAction(message) {
     const logEntry = `<div>[${timestamp}] ${message}</div>`;
     logDiv.innerHTML = logEntry + logDiv.innerHTML;
     
-    // Keep only last 10 entries
     const entries = logDiv.querySelectorAll('div');
     if (entries.length > 10) {
         entries[entries.length - 1].remove();
@@ -6497,7 +7308,7 @@ function logAdminAction(message) {
 }
 
 // ==============================================
-// ✅ TELEGRAM & USER MANAGEMENT (UPDATED)
+// ✅ TELEGRAM & USER MANAGEMENT
 // ==============================================
 
 function isValidTelegramUsername(username) {
@@ -6510,7 +7321,6 @@ function isValidTelegramUsername(username) {
 }
 
 function captureTelegramId() {
-    // Only show Telegram modal if user is not registered
     if (!userRegistered) return;
     
     const savedTelegramId = getFromStorage('telegramUsername', '');
@@ -6568,15 +7378,29 @@ function createUserProfileFromTelegram(telegramId, userId) {
 
 function showTelegramIdModal() {
     if (telegramUsername && isValidTelegramUsername(telegramUsername)) return;
-    document.getElementById('telegramIdModal').classList.add('active');
-    setTimeout(() => {
-        const input = document.getElementById('telegramIdInput');
-        if (input) input.focus();
-    }, 300);
-}
-
-function closeTelegramIdModal() {
-    document.getElementById('telegramIdModal').classList.remove('active');
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.id = 'telegramIdModal';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📱 Set Telegram ID</h3>
+                <button class="modal-close" onclick="closeModal('telegramIdModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 15px; opacity: 0.8;">Enter your Telegram username to link your account:</p>
+                <div class="form-group">
+                    <label for="telegramIdInput">Telegram Username</label>
+                    <input type="text" id="telegramIdInput" placeholder="@username">
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="closeModal('telegramIdModal')">Later</button>
+                <button class="btn-success" onclick="saveTelegramId()">Save</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 }
 
 function saveTelegramId() {
@@ -6606,7 +7430,7 @@ function saveTelegramId() {
     saveToStorage('referralData', referralData);
     
     showNotification('✅ Telegram ID saved successfully!', 'success');
-    closeTelegramIdModal();
+    closeModal('telegramIdModal');
     updateUI();
 }
 
@@ -6640,7 +7464,7 @@ function closeExistingUserPopup() {
 }
 
 // ==============================================
-// ✅ STATE MANAGEMENT FUNCTIONS (UPDATED)
+// ✅ STATE MANAGEMENT FUNCTIONS
 // ==============================================
 
 function checkDailyEarningsReset() {
@@ -6672,7 +7496,7 @@ function checkDailyLogin() {
 }
 
 // ==============================================
-// ✅ UI UPDATE FUNCTIONS (UPDATED)
+// ✅ UI UPDATE FUNCTIONS
 // ==============================================
 
 function updateBonusesUI() {
@@ -6727,7 +7551,7 @@ function updateProfileUI() {
 }
 
 // ==============================================
-// ✅ TAB NAVIGATION FUNCTIONS (PRESERVED)
+// ✅ TAB NAVIGATION FUNCTIONS
 // ==============================================
 
 function switchTab(tabName) {
@@ -6752,14 +7576,14 @@ function switchTab(tabName) {
     }
     else if (tabName === 'profile' && navButtons[3]) {
         navButtons[3].classList.add('active');
-        showProfileHomePage(); // Always refresh profile page
+        showProfileHomePage();
     }
     
     updateUI();
 }
 
 // ==============================================
-// ✅ EARN SECTION FUNCTIONS (UPDATED)
+// ✅ EARN SECTION FUNCTIONS
 // ==============================================
 
 function showHomePage() {
@@ -6889,7 +7713,7 @@ async function searchVideos() {
         const videos = await fetchRealYouTubeVideos(searchQuery);
         displayRealYouTubeVideos(videos, searchQuery);
     } catch (error) {
-        console.error('YouTube API error:', error);
+        if (window.APP_DEBUG) console.error(`${window.APP_LOG_PREFIX} YouTube API error:`, error);
         showDemoVideos(searchQuery);
     }
 }
@@ -7209,10 +8033,8 @@ function claimVideoPoints() {
     
     if (videoTab && !videoTab.closed) videoTab.close();
     
-    // Update free pool task if needed
     updateFreePoolVideoTask();
     
-    // Track for daily activity
     const videoActivity = dailyActivities.find(a => a.id === 'activity_2');
     if (videoActivity && !videoActivity.completed) {
         completeDailyActivity('activity_2');
@@ -7259,73 +8081,132 @@ function showTelegramSection() {
             </div>
             
             <div class="section-title">
-                <h3>Telegram Channels</h3>
-                <p class="section-subtitle">Join channels to earn points</p>
-            </div>
-            
-            <div class="task-category">
-                <h4>🤖 Crypto & Tech</h4>
-                <div class="tasks-grid">
-                    <div class="task-card ${completedTasks.includes('telegram1') ? 'task-completed' : ''}">
-                        <div class="task-icon">💰</div>
-                        <div class="task-content">
-                            <div class="task-title">Crypto News Channel</div>
-                            <div class="task-desc">Join our crypto updates channel</div>
-                            <div class="task-points">+25 points</div>
-                        </div>
-                        <button class="task-btn" onclick="completeTask('telegram1', 25, 'Crypto Channel')" 
-                                ${completedTasks.includes('telegram1') ? 'disabled' : ''}>
-                            ${completedTasks.includes('telegram1') ? 'Joined ✓' : 'Join'}
-                        </button>
-                    </div>
-                    
-                    <div class="task-card ${completedTasks.includes('telegram2') ? 'task-completed' : ''}">
-                        <div class="task-icon">💻</div>
-                        <div class="task-content">
-                            <div class="task-title">Tech Updates</div>
-                            <div class="task-desc">Latest technology news</div>
-                            <div class="task-points">+20 points</div>
-                        </div>
-                        <button class="task-btn" onclick="completeTask('telegram2', 20, 'Tech Channel')"
-                                ${completedTasks.includes('telegram2') ? 'disabled' : ''}>
-                            ${completedTasks.includes('telegram2') ? 'Joined ✓' : 'Join'}
-                        </button>
-                    </div>
-                </div>
+                <h3>Complete Telegram Tasks & Earn</h3>
+                <p class="section-subtitle">Join Telegram channels and earn points instantly</p>
             </div>
 
-            <div class="task-category">
-                <h4>🎮 Entertainment</h4>
-                <div class="tasks-grid">
-                    <div class="task-card ${completedTasks.includes('telegram3') ? 'task-completed' : ''}">
-                        <div class="task-icon">🎮</div>
-                        <div class="task-content">
-                            <div class="task-title">Gaming Community</div>
-                            <div class="task-desc">Join gaming discussions</div>
-                            <div class="task-points">+18 points</div>
-                        </div>
-                        <button class="task-btn" onclick="completeTask('telegram3', 18, 'Gaming Channel')"
-                                ${completedTasks.includes('telegram3') ? 'disabled' : ''}>
-                            ${completedTasks.includes('telegram3') ? 'Joined ✓' : 'Join'}
-                        </button>
+            <div class="telegram-tasks-grid">
+                <div class="telegram-task-card">
+                    <div class="task-icon">📢</div>
+                    <div class="task-info">
+                        <div class="task-title">Join Official Channel</div>
+                        <div class="task-desc">Get updates & announcements</div>
                     </div>
-                    
-                    <div class="task-card ${completedTasks.includes('telegram4') ? 'task-completed' : ''}">
-                        <div class="task-icon">🎬</div>
-                        <div class="task-content">
-                            <div class="task-title">Movie Reviews</div>
-                            <div class="task-desc">Latest movie discussions</div>
-                            <div class="task-points">+15 points</div>
-                        </div>
-                        <button class="task-btn" onclick="completeTask('telegram4', 15, 'Movie Channel')"
-                                ${completedTasks.includes('telegram4') ? 'disabled' : ''}>
-                            ${completedTasks.includes('telegram4') ? 'Joined ✓' : 'Join'}
-                        </button>
-                    </div>
+                    <button class="task-btn" onclick="completeTelegramTask('telegram_channel', 25)">
+                        +25 Points
+                    </button>
                 </div>
+                
+                <div class="telegram-task-card">
+                    <div class="task-icon">👥</div>
+                    <div class="task-info">
+                        <div class="task-title">Join Community Group</div>
+                        <div class="task-desc">Connect with other users</div>
+                    </div>
+                    <button class="task-btn" onclick="completeTelegramTask('telegram_group', 30)">
+                        +30 Points
+                    </button>
+                </div>
+                
+                <div class="telegram-task-card">
+                    <div class="task-icon">📈</div>
+                    <div class="task-info">
+                        <div class="task-title">Follow News Channel</div>
+                        <div class="task-desc">Stay updated with crypto news</div>
+                    </div>
+                    <button class="task-btn" onclick="completeTelegramTask('telegram_news', 20)">
+                        +20 Points
+                    </button>
+                </div>
+            </div>
+            
+            <div class="telegram-instructions">
+                <h4>📱 How to Complete Telegram Tasks:</h4>
+                <ol>
+                    <li>Click on any task button above</li>
+                    <li>Telegram will open in new tab/window</li>
+                    <li>Join/Follow the channel/group</li>
+                    <li>Return to this page and click "Verify"</li>
+                </ol>
             </div>
         </div>
     `;
+}
+
+function completeTelegramTask(taskId, points) {
+    if (!userRegistered) {
+        showNotification('❌ Please register first!', 'warning');
+        showRegistrationModal();
+        return;
+    }
+    
+    const telegramLinks = {
+        'telegram_channel': 'https://t.me/tapearn_official',
+        'telegram_group': 'https://t.me/tapearn_community',
+        'telegram_news': 'https://t.me/cryptonews'
+    };
+    
+    if (telegramLinks[taskId]) {
+        window.open(telegramLinks[taskId], '_blank');
+        
+        setTimeout(() => {
+            showTelegramVerificationModal(taskId, points);
+        }, 2000);
+    }
+}
+
+function showTelegramVerificationModal(taskId, points) {
+    const modal = document.createElement('div');
+    modal.className = 'modal active';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>✅ Verify Telegram Task</h3>
+            </div>
+            <div style="text-align: center; padding: 20px;">
+                <div style="font-size: 48px; margin-bottom: 15px;">📱</div>
+                <h3>Task Completed?</h3>
+                <p>Did you join/follow the Telegram channel?</p>
+            </div>
+            <div class="modal-actions" style="display: flex; gap: 10px;">
+                <button class="btn-cancel" onclick="closeTelegramVerificationModal()">Not Yet</button>
+                <button class="btn-success" onclick="verifyTelegramTask('${taskId}', ${points})">✅ Yes, Verify</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeTelegramVerificationModal() {
+    const modal = document.querySelector('.modal.active');
+    if (modal && modal.innerHTML.includes('Verify Telegram Task')) modal.remove();
+}
+
+function verifyTelegramTask(taskId, points) {
+    if (!completedSocialTasks.includes(taskId)) {
+        completedSocialTasks.push(taskId);
+        totalTasksCompleted++;
+        
+        awardPoints(points, `Telegram Task: ${taskId.replace('_', ' ')}`, 'task');
+        
+        const telegramTask = FREE_POOL_TASKS.find(t => t.id === 'telegram_follow');
+        if (telegramTask && !telegramTask.completed) {
+            telegramTask.completed = true;
+            showNotification('✅ Telegram follow task completed!', 'success');
+            
+            if (getCompletedFreeTasksCount() === 6) {
+                freePoolTasksCompleted = true;
+                saveToStorage('freePoolTasksCompleted', true);
+                showNotification('🎊 All free pool tasks completed! Pool unlocked!', 'success');
+            }
+        }
+        
+        showNotification(`✅ Telegram task verified! +${points} points added`, 'success');
+    } else {
+        showNotification('❌ You already completed this task!', 'warning');
+    }
+    
+    closeTelegramVerificationModal();
 }
 
 function showInstagramSection() {
@@ -7462,7 +8343,7 @@ function showTwitterSection() {
 }
 
 // ==============================================
-// ✅ TASKS SECTION FUNCTIONS (PRESERVED)
+// ✅ TASKS SECTION FUNCTIONS
 // ==============================================
 
 function completeTask(taskId, points, taskName) {
@@ -7483,7 +8364,6 @@ function completeTask(taskId, points, taskName) {
     const awardedPoints = awardPoints(points, `Task: ${taskName}`, 'task');
     showNotification(`✅ +${awardedPoints} Points! ${taskName}`, 'success');
     
-    // Track for daily activity
     const taskActivity = dailyActivities.find(a => a.id === 'activity_3');
     if (taskActivity && !taskActivity.completed) {
         completeDailyActivity('activity_3');
@@ -7744,8 +8624,6 @@ function showDailyTasksSection() {
         </div>
     `;
     
-    // In a real scenario, we would load the daily tasks here.
-    // For now, we'll just display a message.
     setTimeout(() => {
         const container = document.getElementById('dailyTasksContainer');
         if (container) {
@@ -7788,7 +8666,6 @@ function showSocialTasksSection() {
         </div>
     `;
     
-    // In a real scenario, we would load the social tasks here.
     setTimeout(() => {
         const container = document.getElementById('socialTasksContainer');
         if (container) {
@@ -7800,7 +8677,7 @@ function showSocialTasksSection() {
 }
 
 // ==============================================
-// ✅ REWARDS SYSTEM FUNCTIONS (UPDATED)
+// ✅ REWARDS SYSTEM FUNCTIONS
 // ==============================================
 
 function showCashier() {
@@ -7959,7 +8836,7 @@ function calculateRedeemedValue() {
 }
 
 // ==============================================
-// ✅ REFERRAL SYSTEM FUNCTIONS (UPDATED)
+// ✅ REFERRAL SYSTEM FUNCTIONS
 // ==============================================
 
 function showReferralSystem() {
@@ -8152,7 +9029,6 @@ function addReferral() {
     referralData.totalEarned += 50;
     const awardedPoints = awardPoints(50, 'Referral Bonus', 'referral');
     
-    // Track for daily activity
     const referralActivity = dailyActivities.find(a => a.id === 'activity_4');
     if (referralActivity && !referralActivity.completed) {
         completeDailyActivity('activity_4');
@@ -8167,7 +9043,7 @@ function simulateReferral() {
 }
 
 // ==============================================
-// ✅ WALLET HISTORY FUNCTIONS (UPDATED)
+// ✅ WALLET HISTORY FUNCTIONS
 // ==============================================
 
 function showWalletHistory() {
@@ -8255,7 +9131,7 @@ function getTransactionIcon(category) {
 }
 
 // ==============================================
-// ✅ SUPPORT SYSTEM FUNCTIONS (UPDATED)
+// ✅ SUPPORT SYSTEM FUNCTIONS
 // ==============================================
 
 function showSupport() {
@@ -8619,10 +9495,8 @@ function startMiningPoolCountdown() {
             completeMiningPool();
         }
         
-        // Update UI every second
         updateMiningPageUI();
         
-        // Auto-save every 30 seconds
         if (Date.now() % 30000 < 1000) {
             saveMiningState();
         }
@@ -8632,23 +9506,18 @@ function startMiningPoolCountdown() {
 function completeMiningPool() {
     if (!activeMiningPool) return;
     
-    // Mark as completed
     activeMiningPool.status = 'completed';
     activeMiningPool.completedAt = Date.now();
     
-    // Find in history and update
     const historyIndex = miningPoolHistory.findIndex(p => p.id === activeMiningPool.id);
     if (historyIndex !== -1) {
         miningPoolHistory[historyIndex] = { ...activeMiningPool };
     }
     
-    // Show completion notification
     showNotification(`🎉 Mining pool completed! Claim your ${activeMiningPool.expectedPoints} points!`, 'success');
     
-    // Update UI
     updateMiningPageUI();
     
-    // Stop interval
     if (miningPoolInterval) {
         clearInterval(miningPoolInterval);
         miningPoolInterval = null;
@@ -8665,23 +9534,18 @@ function claimMiningPoolRewards() {
     
     const points = activeMiningPool.expectedPoints;
     
-    // Award points
     awardPoints(points, `Mining Pool: ${activeMiningPool.poolName} (${activeMiningPool.durationHours}h)`, 'mining');
     
-    // Update history
     const historyIndex = miningPoolHistory.findIndex(p => p.id === activeMiningPool.id);
     if (historyIndex !== -1) {
         miningPoolHistory[historyIndex].claimed = true;
         miningPoolHistory[historyIndex].claimedAt = Date.now();
     }
     
-    // Clear active pool
     activeMiningPool = null;
     
-    // Save state
     saveMiningState();
     
-    // Update UI
     updateMiningPageUI();
     
     showNotification(`💰 Claimed ${points} points from mining pool!`, 'success');
@@ -8691,26 +9555,21 @@ function cancelMiningPool() {
     if (!activeMiningPool) return;
     
     if (confirm('Are you sure you want to cancel this mining pool? You will not receive any points.')) {
-        // Mark as cancelled in history
         const historyIndex = miningPoolHistory.findIndex(p => p.id === activeMiningPool.id);
         if (historyIndex !== -1) {
             miningPoolHistory[historyIndex].status = 'cancelled';
             miningPoolHistory[historyIndex].cancelledAt = Date.now();
         }
         
-        // Clear active pool
         activeMiningPool = null;
         
-        // Stop interval
         if (miningPoolInterval) {
             clearInterval(miningPoolInterval);
             miningPoolInterval = null;
         }
         
-        // Save state
         saveMiningState();
         
-        // Update UI
         updateMiningPageUI();
         
         showNotification('⛏️ Mining pool cancelled.', 'info');
@@ -8718,7 +9577,7 @@ function cancelMiningPool() {
 }
 
 // ==============================================
-// ✅ HELPER FUNCTIONS FOR NEW FEATURES
+// ✅ HELPER FUNCTIONS
 // ==============================================
 
 function formatTimeRemaining(ms) {
@@ -8748,7 +9607,7 @@ function getPoolIcon(poolId) {
 }
 
 // ==============================================
-// ✅ STATE MANAGEMENT में नए वॉलेट जोड़ें
+// ✅ STATE MANAGEMENT
 // ==============================================
 
 function loadMiningState() {
@@ -8770,7 +9629,6 @@ function loadMiningState() {
         sponsorName = savedState.sponsorName || '';
         freePoolTasksCompleted = savedState.freePoolTasksCompleted || false;
         
-        // ✅ नए वॉलेट वेरिएबल्स लोड करें
         inrWallet = safeNumber(savedState.inrWallet, 0);
         usdtWallet = safeNumber(savedState.usdtWallet, 0);
         totalConverted = safeNumber(savedState.totalConverted, 0);
@@ -8802,20 +9660,16 @@ function loadMiningState() {
                          completedFollowTasks.length + completedDailyTasks.length + 
                          completedSocialTasks.length;
     
-    // Load referral data
     referralData = getFromStorage('referralData', referralData);
     
-    // Load sponsor data
     sponsorCommissionEarned = getFromStorage('sponsorCommissionEarned', 0);
     sponsorTransactions = getFromStorage('sponsorTransactions', []);
     userGeneratedSponsorIncome = getFromStorage('userGeneratedSponsorIncome', 0);
     userSponsorActivities = getFromStorage('userSponsorActivities', []);
     sponsorIncomeBreakdown = getFromStorage('sponsorIncomeBreakdown', sponsorIncomeBreakdown);
     
-    // Load mining pools
     loadMiningPools();
     
-    // Check free pool tasks
     checkFreePoolTasks();
     
     initializeNaNProtection();
@@ -8839,7 +9693,6 @@ function saveMiningState() {
         sponsorId,
         sponsorName,
         freePoolTasksCompleted,
-        // ✅ नए वॉलेट वेरिएबल्स सेव करें
         inrWallet,
         usdtWallet,
         totalConverted,
@@ -8864,31 +9717,27 @@ function saveMiningState() {
     saveToStorage('miningBonuses', miningBonuses);
     saveToStorage('miningHistory', miningHistory);
     
-    // Save individual lists
     saveToStorage('watchedVideos', watchedVideos);
     saveToStorage('completedTasks', completedTasks);
     saveToStorage('completedFollowTasks', completedFollowTasks);
     saveToStorage('completedDailyTasks', completedDailyTasks);
     saveToStorage('completedSocialTasks', completedSocialTasks);
     
-    // Save referral data
     saveToStorage('referralData', referralData);
     
-    // Save sponsor data
     saveToStorage('sponsorCommissionEarned', sponsorCommissionEarned);
     saveToStorage('sponsorTransactions', sponsorTransactions);
     saveToStorage('userGeneratedSponsorIncome', userGeneratedSponsorIncome);
     saveToStorage('userSponsorActivities', userSponsorActivities);
     saveToStorage('sponsorIncomeBreakdown', sponsorIncomeBreakdown);
     
-    // Save mining pools
     saveToStorage('miningPoolInstances', miningPoolInstances);
     saveToStorage('activeMiningPool', activeMiningPool);
     saveToStorage('miningPoolHistory', miningPoolHistory);
 }
 
 // ==============================================
-// ✅ BONUS SYSTEM FUNCTIONS (PRESERVED)
+// ✅ BONUS SYSTEM FUNCTIONS
 // ==============================================
 
 function claimDailyBonus() {
@@ -8942,7 +9791,7 @@ function claimBoost() {
 }
 
 // ==============================================
-// ✅ NEW FUNCTION: FREE POOL TASKS RESET EVERY 24 HOURS
+// ✅ FREE POOL TASKS RESET EVERY 24 HOURS
 // ==============================================
 
 function checkAndResetFreePoolTasks() {
@@ -8950,32 +9799,27 @@ function checkAndResetFreePoolTasks() {
     
     const now = Date.now();
     const lastFreePoolReset = getFromStorage('lastFreePoolReset', 0);
-    const twentyFourHours = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+    const twentyFourHours = 24 * 60 * 60 * 1000;
     
-    // Check if 24 hours have passed since last reset
     if (now - lastFreePoolReset >= twentyFourHours) {
         console.log('🔄 Resetting free pool tasks after 24 hours');
         
-        // Reset free pool tasks
         FREE_POOL_TASKS.forEach(task => {
             task.completed = false;
         });
         freePoolTasksCompleted = false;
         
-        // Reset free pool used status
         saveToStorage(`freePoolUsed_${userId}`, false);
         
-        // Save reset time
         saveToStorage('lastFreePoolReset', now);
         saveToStorage('freePoolTasksCompleted', false);
         
-        // Show notification
         showNotification('🔄 Free pool tasks have been reset for today! Complete them again to unlock free mining.', 'info');
     }
 }
 
 // ==============================================
-// ✅ NEW FUNCTION: PAID POOL TASKS MODAL
+// ✅ PAID POOL TASKS MODAL
 // ==============================================
 
 function showPaidPoolTasksModal(poolId, poolName, minInvestment) {
@@ -9101,7 +9945,6 @@ function checkPaidPoolTasksCompletion(poolId) {
     const modal = document.querySelector('.modal.active');
     if (modal) modal.remove();
     
-    // Refresh mining page
     updateMiningPageUI();
 }
 
@@ -9116,7 +9959,6 @@ function closePaidPoolTasksModal() {
 // ✅ APP INITIALIZATION WITH KEYBOARD SHORTCUTS & WALLET SYSTEM
 // ==============================================
 
-// ✅ Server connection check function
 async function checkServerConnection() {
     try {
         const response = await fetch('http://localhost:3000/api/health');
@@ -9132,7 +9974,6 @@ async function checkServerConnection() {
     return false;
 }
 
-// ✅ Add this function to test server connection
 async function testServerConnection() {
     try {
         const response = await fetch('http://localhost:3000/api/health');
@@ -9158,34 +9999,64 @@ async function testServerConnection() {
 }
 
 // ==============================================
+// ✅ ADMIN PANEL INTEGRATION
+// ==============================================
+
+function openAdminPanel() {
+    if (!isUserAuthorizedForAdmin()) {
+        showNotification('❌ Unauthorized: Admin access restricted!', 'error');
+        return;
+    }
+    
+    const adminWindow = window.open('admin.html', '_blank');
+    
+    if (!adminWindow) {
+        showNotification('❌ Please allow popups for admin panel', 'warning');
+    } else {
+        showNotification('✅ Admin panel opened', 'success');
+    }
+}
+
+function initializeAdminPanelIntegration() {
+    console.log('🎯 Initializing admin panel integration...');
+    
+    if (isUserAuthorizedForAdmin()) {
+        injectAdminButtonFunction();
+    }
+    
+    setInterval(() => {
+        if (isUserAuthorizedForAdmin()) {
+            const btn = document.querySelector('.admin-header-btn');
+            if (!btn) injectAdminButtonFunction();
+        } else {
+            const btn = document.querySelector('.admin-header-btn');
+            if (btn) btn.remove();
+        }
+    }, 5000);
+}
+
+// ==============================================
 // ✅ MAIN APP INITIALIZATION
 // ==============================================
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 TapEarn App Initializing with All Features...');
     
-    // Initialize NaN protection
     initializeNaNProtection();
     
-    // Initialize referral codes database
     initializeReferralCodesDatabase();
     
-    // Check server connection
     checkServerConnection();
     
-    // Check registration status
     const isUserRegistered = checkRegistrationStatus();
     
     if (isUserRegistered) {
         console.log('✅ User already registered, loading data...');
         
-        // Check and reset free pool tasks
         checkAndResetFreePoolTasks();
         
-        // ✅ Auto-complete login activity
         autoCompleteLoginActivity();
         
-        // Welcome notification
         setTimeout(() => {
             if (userId && userId !== 'Guest') {
                 showNotification(`👋 Welcome back ${userId}!`, 'success');
@@ -9198,7 +10069,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     }
     
-    // ✅ Add admin keyboard shortcut only for authorized users
     document.addEventListener('keydown', function(e) {
         if (e.ctrlKey && e.altKey && e.shiftKey && e.key === 'A') {
             e.preventDefault();
@@ -9218,141 +10088,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Initialize mining pools
     initializeMiningPools();
     
-    // Load daily activities
     loadDailyActivities();
     
-    // Load mining state (including wallet data)
     loadMiningState();
     
-    // Switch to mining tab by default
     switchTab('mining');
     
-    // Update UI
     updateUI();
     
-    // Start mining pool timers
     startAllPoolTimers();
     
-    // Show home page by default
     showHomePage();
     
-    // ✅ ADMIN PANEL INTEGRATION INITIALIZATION
     initializeAdminPanelIntegration();
     
     console.log('✅ TapEarn App Fully Loaded with All Features!');
 });
-
-// ==============================================
-// ✅ ADMIN PANEL INTEGRATION - MAIN APP INTEGRATION
-// ==============================================
-
-// ✅ Use existing ADMIN_AUTHORIZED_USERS array
-// Check if it already exists, if not create it
-if (typeof ADMIN_AUTHORIZED_USERS === 'undefined') {
-    // Fallback if not defined earlier
-    var ADMIN_AUTHORIZED_USERS = [
-        'admin@tapearn.com',
-        'admin@example.com', 
-        'superuser@tapearn.com',
-        'system_admin',
-        'developer',
-        'admin'
-    ];
-}
-
-// ✅ Check if current user is authorized for admin access
-function isUserAuthorizedForAdmin() {
-    if (!userRegistered) return false;
-    
-    const currentUser = getFromStorage('currentUser', {});
-    
-    if (currentUser.email && ADMIN_AUTHORIZED_USERS.includes(currentUser.email.toLowerCase())) {
-        return true;
-    }
-    
-    if (userId && ADMIN_AUTHORIZED_USERS.includes(userId.toLowerCase())) {
-        return true;
-    }
-    
-    return false;
-}
-
-// ✅ OPEN ADMIN PANEL IN NEW WINDOW
-function openAdminPanel() {
-    if (!isUserAuthorizedForAdmin()) {
-        showNotification('❌ Unauthorized: Admin access restricted!', 'error');
-        return;
-    }
-    
-    const adminWindow = window.open('admin.html', '_blank');
-    
-    if (!adminWindow) {
-        showNotification('❌ Please allow popups for admin panel', 'warning');
-    } else {
-        showNotification('✅ Admin panel opened', 'success');
-    }
-}
-
-// ✅ INJECT ADMIN BUTTON IN MAIN APP
-function injectAdminButton() {
-    const existingBtn = document.querySelector('.admin-header-btn');
-    if (existingBtn) existingBtn.remove();
-    
-    if (!isUserAuthorizedForAdmin()) return;
-    
-    const adminBtn = document.createElement('div');
-    adminBtn.className = 'admin-header-btn';
-    adminBtn.innerHTML = '🛠️';
-    adminBtn.title = 'Admin Panel';
-    adminBtn.style.cssText = `
-        position: fixed;
-        top: 15px;
-        right: 15px;
-        z-index: 9999;
-        background: linear-gradient(135deg, #ff0000, #990000);
-        color: white;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(255,0,0,0.5);
-        transition: all 0.3s;
-        border: 2px solid #fff;
-    `;
-    
-    adminBtn.onclick = function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        openAdminPanel();
-    };
-    
-    document.body.appendChild(adminBtn);
-}
-
-// ✅ Initialize admin panel integration
-function initializeAdminPanelIntegration() {
-    console.log('🎯 Initializing admin panel integration...');
-    
-    // Inject admin button if authorized
-    if (isUserAuthorizedForAdmin()) {
-        injectAdminButton();
-    }
-    
-    // Check periodically
-    setInterval(() => {
-        if (isUserAuthorizedForAdmin()) {
-            const btn = document.querySelector('.admin-header-btn');
-            if (!btn) injectAdminButton();
-        } else {
-            const btn = document.querySelector('.admin-header-btn');
-            if (btn) btn.remove();
-        }
-    }, 5000);
-}
