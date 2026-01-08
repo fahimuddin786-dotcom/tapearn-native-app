@@ -1,25 +1,22 @@
 // ==============================================
-// ADMIN PANEL INTEGRATION - OPTIMIZED VERSION 2.0
+// ADMIN PANEL INTEGRATION - OPTIMIZED VERSION 3.0
 // ✅ FIXED: All duplication and spam issues resolved
 // ✅ OPTIMIZED: Proper throttling and debouncing implemented
 // ✅ SPONSOR SYSTEM: Fully integrated
+// ✅ NO DUPLICATION: Single instance guaranteed
 // ==============================================
 
-// ✅ Check if already loaded to prevent duplicate declaration
+// ✅ Prevent duplicate loading
 if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
     window.ADMIN_INTEGRATION_LOADED = true;
     
-    console.log('🔧 Admin Panel Integration Loading (Optimized)...');
-
-    // ✅ ADMIN AUTHORIZED USERS LIST
-    const ADMIN_AUTHORIZED_USERS = [
-        'admin@tapearn.com',
-        'admin@example.com', 
-        'superuser@tapearn.com',
-        'system_admin',
-        'developer',
-        'admin'
-    ];
+    // ✅ DEBUG CONFIG - SET TO FALSE IN PRODUCTION
+    const ADMIN_DEBUG = false;
+    const ADMIN_LOG_PREFIX = '🔧 [Admin]';
+    
+    // ✅ Use the existing ADMIN_AUTHORIZED_USERS from main app
+    // NOTE: ADMIN_AUTHORIZED_USERS is already defined at the top of app.js
+    // We'll use the existing one instead of redeclaring
 
     // ✅ OPTIMIZED: Throttling configuration
     const SYNC_CONFIG = {
@@ -47,7 +44,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             const item = localStorage.getItem(key);
             return item ? JSON.parse(item) : defaultValue;
         } catch (error) {
-            console.error('Error reading from storage:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error reading from storage:`, error);
             return defaultValue;
         }
     }
@@ -57,14 +54,14 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             localStorage.setItem(key, JSON.stringify(value));
             return true;
         } catch (error) {
-            console.error('Error saving to storage:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error saving to storage:`, error);
             return false;
         }
     }
 
     // ✅ Show notification function
     function showNotification(message, type = 'info') {
-        console.log(`[${type.toUpperCase()}] ${message}`);
+        if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} [${type.toUpperCase()}] ${message}`);
         // You can implement actual notification display here
     }
 
@@ -73,7 +70,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
         performance.broadcastCount = 0;
         performance.syncCount = 0;
         performance.notificationCount = 0;
-        console.log('🔄 Performance counters reset');
+        if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} 🔄 Performance counters reset`);
     }
 
     // Start performance reset timer
@@ -95,8 +92,9 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
         ].filter(Boolean).map(id => id.toLowerCase());
         
         // Check if any identifier is in authorized list
+        // Use the existing ADMIN_AUTHORIZED_USERS from main app
         for (const identifier of userIdentifiers) {
-            if (ADMIN_AUTHORIZED_USERS.some(authorized => 
+            if (window.ADMIN_AUTHORIZED_USERS && window.ADMIN_AUTHORIZED_USERS.some(authorized => 
                 authorized.toLowerCase() === identifier)) {
                 return true;
             }
@@ -158,6 +156,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
 
     // ✅ INJECT ADMIN BUTTON IN MAIN APP (ONLY FOR AUTHORIZED ADMINS)
     let adminButtonInjected = false;
+    let lastAdminButtonCheck = 0;
     
     function injectAdminButton() {
         // Prevent duplicate injection
@@ -225,12 +224,16 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
         
         document.body.appendChild(adminBtn);
         adminButtonInjected = true;
-        console.log('✅ Admin button injected');
+        if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} ✅ Admin button injected`);
     }
 
     // ✅ Debounced function to check and inject admin button
     let checkAdminButtonTimeout = null;
     function checkAndInjectAdminButton() {
+        const now = Date.now();
+        if (now - lastAdminButtonCheck < 5000) return;
+        lastAdminButtonCheck = now;
+        
         if (checkAdminButtonTimeout) clearTimeout(checkAdminButtonTimeout);
         
         checkAdminButtonTimeout = setTimeout(() => {
@@ -253,7 +256,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             
             return true;
         } catch (error) {
-            console.error('Error saving with sync:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error saving with sync:`, error);
             return false;
         }
     }
@@ -296,7 +299,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             performance.lastBroadcast = Date.now();
             
         } catch (error) {
-            console.error('Error broadcasting storage change:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error broadcasting storage change:`, error);
         }
     }
 
@@ -384,7 +387,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             }
             
         } catch (error) {
-            console.error('Error broadcasting all users data:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error broadcasting all users data:`, error);
         }
     }
 
@@ -468,14 +471,14 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
                     });
                     
                     if (response.ok) {
-                        if (!silent) {
-                            console.log('✅ Data synced to server');
+                        if (!silent && ADMIN_DEBUG) {
+                            console.log(`${ADMIN_LOG_PREFIX} ✅ Data synced to server`);
                         }
                     }
                 }
             } catch (serverError) {
-                if (!silent) {
-                    console.log('⚠️ Server sync failed, using local sync only');
+                if (!silent && ADMIN_DEBUG) {
+                    console.log(`${ADMIN_LOG_PREFIX} ⚠️ Server sync failed, using local sync only`);
                 }
             }
             
@@ -489,7 +492,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
                 sponsorAssignments: sponsorAssignments
             };
         } catch (error) {
-            console.error('Error syncing all users data:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error syncing all users data:`, error);
             return null;
         } finally {
             isSyncing = false;
@@ -544,7 +547,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
                     }
                     
                 } catch (error) {
-                    console.error('Error processing data sync:', error);
+                    if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error processing data sync:`, error);
                 }
             }
             
@@ -775,7 +778,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
                 window.broadcastStorageChange('userRegistrationEvent', broadcastData);
             }
             
-            console.log('📢 User registration broadcasted:', userEmail);
+            if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} 📢 User registration broadcasted:`, userEmail);
             
             // Remove after 5 seconds to prevent buildup
             setTimeout(() => {
@@ -783,7 +786,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             }, 5000);
             
         } catch (error) {
-            console.error('Error broadcasting registration:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error broadcasting registration:`, error);
         }
     }
 
@@ -805,7 +808,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
                 window.broadcastStorageChange('userLoginEvent', broadcastData);
             }
             
-            console.log('📢 User login broadcasted:', userEmail);
+            if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} 📢 User login broadcasted:`, userEmail);
             
             // Remove after 5 seconds to prevent buildup
             setTimeout(() => {
@@ -813,19 +816,18 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             }, 5000);
             
         } catch (error) {
-            console.error('Error broadcasting login:', error);
+            if (ADMIN_DEBUG) console.error(`${ADMIN_LOG_PREFIX} Error broadcasting login:`, error);
         }
     }
 
     function saveUserToServer(userData) {
-        // TODO: Implement server save
-        console.log('Saving user to server:', userData);
+        if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} Saving user to server:`, userData);
         // You can implement actual server API call here
     }
 
     // ✅ INITIALIZE ADMIN PANEL INTEGRATION WITH SPONSOR SYSTEM
     function initializeAdminPanelIntegration() {
-        console.log('🚀 Initializing optimized admin panel integration...');
+        if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} 🚀 Initializing optimized admin panel integration...`);
         
         // Step 1: Setup data sync for ALL USERS with sponsor system
         setupAllUsersDataSync();
@@ -843,7 +845,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             }
         }, 5000);
         
-        console.log('✅ Admin panel integration initialized successfully');
+        if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} ✅ Admin panel integration initialized successfully`);
     }
 
     // ✅ EXPORT FUNCTIONS FOR GLOBAL ACCESS
@@ -860,12 +862,13 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
         window.broadcastUserLogin = broadcastUserLogin;
         window.saveUserToServer = saveUserToServer;
         window.broadcastStorageChange = broadcastStorageChange;
+        window.checkAndInjectAdminButton = checkAndInjectAdminButton;
     }
 
     // ✅ WAIT FOR APP TO BE READY (Optimized)
     function waitForAppReady() {
         let readyChecks = 0;
-        const maxChecks = 30; // 30 seconds max
+        const maxChecks = 15; // 15 seconds max
         
         const checkAppReady = setInterval(() => {
             readyChecks++;
@@ -882,7 +885,7 @@ if (typeof window.ADMIN_INTEGRATION_LOADED === 'undefined') {
             
             if (readyChecks >= maxChecks) {
                 clearInterval(checkAppReady);
-                console.log('⚠️ App ready check timeout, initializing anyway...');
+                if (ADMIN_DEBUG) console.log(`${ADMIN_LOG_PREFIX} ⚠️ App ready check timeout, initializing anyway...`);
                 initializeAdminPanelIntegration();
             }
         }, 1000);
