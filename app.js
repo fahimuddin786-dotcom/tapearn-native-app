@@ -2358,8 +2358,8 @@ function sendEmailOTP() {
     // In real app, send OTP via email API
     console.log(`Email OTP for ${userEmail}: ${emailOTP}`);
     
-    // For demo, show in console and notification
-    showNotification(`📧 OTP sent to ${userEmail}: ${emailOTP}`, 'info');
+    // ✅ Show alert instead of notification
+    alert(`📧 Email OTP Sent!\n\nEmail: ${userEmail}\nOTP: ${emailOTP}\n\nCopy this OTP and paste in the verification box.`);
     
     // Save OTP to localStorage for verification
     saveToStorage(`email_otp_${userEmail}`, {
@@ -2367,6 +2367,12 @@ function sendEmailOTP() {
         timestamp: Date.now(),
         expires: Date.now() + 300000 // 5 minutes
     });
+    
+    // Also auto-fill in input field
+    const emailOTPInput = document.getElementById('emailOTP');
+    if (emailOTPInput) {
+        emailOTPInput.value = emailOTP;
+    }
 }
 
 function sendMobileOTP() {
@@ -2376,8 +2382,8 @@ function sendMobileOTP() {
     // In real app, send OTP via SMS API
     console.log(`Mobile OTP for ${userMobile}: ${mobileOTP}`);
     
-    // For demo, show in console and notification
-    showNotification(`📱 OTP sent to ${userMobile}: ${mobileOTP}`, 'info');
+    // ✅ Show alert instead of notification
+    alert(`📱 Mobile OTP Sent!\n\nMobile: ${userMobile}\nOTP: ${mobileOTP}\n\nCopy this OTP and paste in the verification box.`);
     
     // Save OTP to localStorage for verification
     saveToStorage(`mobile_otp_${userMobile}`, {
@@ -2385,6 +2391,12 @@ function sendMobileOTP() {
         timestamp: Date.now(),
         expires: Date.now() + 300000 // 5 minutes
     });
+    
+    // Also auto-fill in input field
+    const mobileOTPInput = document.getElementById('mobileOTP');
+    if (mobileOTPInput) {
+        mobileOTPInput.value = mobileOTP;
+    }
 }
 
 function verifyEmailOTP() {
