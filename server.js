@@ -5,22 +5,13 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-const axios = require('axios'); // For external pings
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// ✅ FIXED: Proper MongoDB Atlas Connection String
+// ✅ FIXED MongoDB Atlas Connection String
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
-
-// ✅ FIXED: Check connection string format
-if (MONGODB_URI && !MONGODB_URI.startsWith('mongodb://') && !MONGODB_URI.startsWith('mongodb+srv://')) {
-  console.error('❌ ERROR: Invalid MongoDB connection string format');
-  console.error('Expected format: mongodb+srv://username:password@cluster.mongodb.net/dbname');
-} else {
-  console.log('✅ MongoDB connection string format is correct');
-}
 
 // ✅ Security Middleware with CSP fix
 app.use(helmet({
@@ -30,7 +21,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
       styleSrc: ["'self'", "'unsafe-inline'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "http://localhost:10000", "ws://localhost:*"],
+      connectSrc: ["'self'", "http://localhost:3000", "ws://localhost:*"],
       fontSrc: ["'self'"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -65,13 +56,13 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // ==========================================
-// ✅ MONGODB CONNECTION (FIXED)
+// ✅ MONGODB CONNECTION
 // ==========================================
 
 console.log('🔄 Connecting to MongoDB Atlas...');
 
 mongoose.connect(MONGODB_URI, {
-  serverSelectionTimeoutMS: 30000, // Increased timeout
+  serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 45000,
   maxPoolSize: 10,
   retryWrites: true,
@@ -83,20 +74,12 @@ mongoose.connect(MONGODB_URI, {
   console.log('🌐 Host:', mongoose.connection.host);
   console.log('📈 Ready State:', mongoose.connection.readyState);
   
-  // Check if database exists
-  mongoose.connection.db.admin().listDatabases((err, result) => {
+  mongoose.connection.db.listCollections().toArray((err, collections) => {
     if (err) {
-      console.log('📋 Checking collections...');
-      mongoose.connection.db.listCollections().toArray((err, collections) => {
-        if (err) {
-          console.log('📋 No existing collections found (will create on first use)');
-        } else {
-          console.log(`📋 Found ${collections.length} collections:`);
-          collections.forEach(col => console.log(`   - ${col.name}`));
-        }
-      });
+      console.log('📋 No existing collections found (will create on first use)');
     } else {
-      console.log(`📊 Total databases: ${result.databases.length}`);
+      console.log(`📋 Found ${collections.length} collections:`);
+      collections.forEach(col => console.log(`   - ${col.name}`));
     }
   });
 })
@@ -112,77 +95,52 @@ mongoose.connect(MONGODB_URI, {
 });
 
 // ==========================================
-// ✅ MONGOOSE SCHEMAS (Same as before)
+// ✅ MONGOOSE SCHEMAS
 // ==========================================
 
-// ✅ User Schema
 const userSchema = new mongoose.Schema({
-  // Basic Information
   email: { type: String, required: true, unique: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  
-  // Personal Details
   telegram_id: String,
   phone: String,
   full_name: String,
-  
-  // Wallet & Earnings
   points: { type: Number, default: 0 },
   total_earned: { type: Number, default: 0 },
   inr_wallet: { type: Number, default: 0 },
   usdt_wallet: { type: Number, default: 0 },
   total_converted: { type: Number, default: 0 },
-  
-  // Referral System
   referral_code: { type: String, unique: true },
   referred_by: String,
   sponsor_id: String,
   sponsor_name: String,
-  
-  // Stats & Levels
   level: { type: Number, default: 1 },
   tasks_completed: { type: Number, default: 0 },
   daily_streak: { type: Number, default: 0 },
   last_login_date: Date,
   last_daily_activity: Date,
-  
-  // Verification
   email_verified: { type: Boolean, default: false },
   mobile_verified: { type: Boolean, default: false },
   verification_status: { type: String, default: 'pending' },
-  
-  // Status & Dates
   status: { type: String, default: 'active' },
   registration_date: { type: Date, default: Date.now },
   last_login: { type: Date, default: Date.now },
-  
-  // Additional Fields
   free_pool_completed: { type: Boolean, default: false },
   free_pool_tasks: [{
     task_id: String,
     completed: Boolean,
     completed_at: Date
   }],
-  
-  // Tracking
   today_earnings: { type: Number, default: 0 },
   total_mining_time: { type: Number, default: 0 },
   session_count: { type: Number, default: 0 },
-  
-  // Admin Fields
   is_admin: { type: Boolean, default: false },
   admin_level: { type: Number, default: 0 },
-  
-  // Metadata
   ip_address: String,
   user_agent: String,
   device_type: String
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Wallet Transaction Schema
 const walletTransactionSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   transaction_type: { type: String, required: true },
@@ -195,155 +153,107 @@ const walletTransactionSchema = new mongoose.Schema({
   currency: { type: String, default: 'points' },
   status: { type: String, default: 'completed' },
   transaction_date: { type: Date, default: Date.now },
-  
   conversion_rate: Number,
   converted_from: String,
   converted_to: String,
-  
   reference_id: String,
   reference_type: String
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Mining Pool Schema
 const miningPoolSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   pool_id: { type: String, required: true },
   pool_name: String,
   pool_icon: String,
   pool_type: { type: String, default: 'free' },
-  
   investment_amount: { type: Number, default: 0 },
   investment_currency: { type: String, default: 'points' },
-  
   duration_hours: Number,
   expected_points: Number,
   actual_points: Number,
-  
   start_time: { type: Date, default: Date.now },
   end_time: Date,
   completed_at: Date,
-  
   progress: { type: Number, default: 0 },
   status: { type: String, default: 'active' },
-  
   base_rate: Number,
   multiplier: Number,
   min_investment: Number,
-  
   transaction_id: String,
   claimed: { type: Boolean, default: false },
   claim_date: Date
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Task Completion Schema
 const taskCompletionSchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   task_id: { type: String, required: true },
   task_type: String,
   task_name: String,
-  
   completed_at: { type: Date, default: Date.now },
   points_earned: Number,
-  
   platform: String,
   video_id: String,
   channel_id: String,
-  
   verified: { type: Boolean, default: true },
   verification_method: String,
-  
   ip_address: String,
   user_agent: String
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Referral Schema
 const referralSchema = new mongoose.Schema({
   referrer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   referred_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  
   referral_code: String,
   points_earned: { type: Number, default: 25 },
-  
   status: { type: String, default: 'active' },
   completed: { type: Boolean, default: false },
-  
   referral_date: { type: Date, default: Date.now },
   completed_at: Date,
-  
   commission_paid: { type: Boolean, default: false },
   commission_amount: Number
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Sponsor Commission Schema
 const sponsorCommissionSchema = new mongoose.Schema({
   sponsor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  
   commission_type: String,
   amount: { type: Number, required: true },
   percentage: Number,
-  
   activity_type: String,
   activity_description: String,
   original_amount: Number,
-  
   status: { type: String, default: 'pending' },
   paid: { type: Boolean, default: false },
   paid_date: Date,
-  
   transaction_id: String,
   wallet_transaction_id: String
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Daily Activity Schema
 const dailyActivitySchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   activity_id: { type: String, required: true },
   activity_type: String,
-  
   completed_at: { type: Date, default: Date.now },
   points_earned: Number,
-  
   date: { type: String, required: true },
   streak_day: Number,
-  
   platform: String,
   verified: { type: Boolean, default: true }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Admin Log Schema
 const adminLogSchema = new mongoose.Schema({
   admin_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   action: { type: String, required: true },
-  
   target_type: String,
   target_id: String,
   target_description: String,
-  
   changes_before: mongoose.Schema.Types.Mixed,
   changes_after: mongoose.Schema.Types.Mixed,
-  
   ip_address: String,
   user_agent: String,
-  
   status: { type: String, default: 'completed' }
-}, {
-  timestamps: true
-});
+}, { timestamps: true });
 
-// ✅ Create Models
 const User = mongoose.model('User', userSchema);
 const WalletTransaction = mongoose.model('WalletTransaction', walletTransactionSchema);
 const MiningPool = mongoose.model('MiningPool', miningPoolSchema);
@@ -385,68 +295,47 @@ async function logAdminAction(adminId, action, targetType, targetId, changesBefo
 }
 
 // ==========================================
-// ✅ FIXED KEEP-ALIVE MECHANISM FOR RENDER.COM
+// ✅ KEEP-ALIVE MECHANISM
 // ==========================================
 
-let isKeepAliveRunning = false;
+function setupKeepAlive() {
+  const http = require('http');
+  const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000;
+  
+  console.log(`🔧 Setting up keep-alive (interval: ${KEEP_ALIVE_INTERVAL/60000} minutes)`);
+  
+  const pingServer = () => {
+    const options = {
+      hostname: 'localhost',
+      port: PORT,
+      path: '/ping',
+      method: 'GET',
+      timeout: 3000
+    };
 
-function startKeepAlive() {
-  if (isKeepAliveRunning) return;
-  
-  const KEEP_ALIVE_INTERVAL = 10 * 60 * 1000; // हर 10 मिनट
-  const SERVER_URL = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
-  
-  console.log(`🔋 Starting keep-alive for URL: ${SERVER_URL}`);
-  
-  const keepAlivePing = async () => {
-    try {
-      // Use axios for external ping (works better on Render)
-      const response = await axios.get(`${SERVER_URL}/ping`, {
-        timeout: 5000
-      });
-      
-      console.log(`✅ Keep-alive successful: ${response.status} at ${new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
-    } catch (error) {
-      console.log(`⚠️ Keep-alive ping failed: ${error.message}`);
-      
-      // Fallback to internal ping
-      try {
-        const http = require('http');
-        const req = http.request({
-          hostname: 'localhost',
-          port: PORT,
-          path: '/ping',
-          method: 'GET',
-          timeout: 5000
-        }, (res) => {
-          console.log(`🔄 Internal keep-alive: ${res.statusCode}`);
-        });
-        
-        req.on('error', () => {
-          console.log('⚠️ Both external and internal pings failed');
-        });
-        
-        req.end();
-      } catch (fallbackError) {
-        console.log('⚠️ Fallback ping also failed');
-      }
-    }
+    const req = http.request(options, (res) => {
+      console.log(`✅ Keep-alive ping successful at ${new Date().toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
+    });
+
+    req.on('error', (err) => {
+      console.log(`⚠️ Keep-alive ping error: ${err.message}`);
+    });
+
+    req.on('timeout', () => {
+      req.destroy();
+      console.log('⚠️ Keep-alive ping timeout');
+    });
+
+    req.end();
   };
 
-  // Start interval
-  setInterval(keepAlivePing, KEEP_ALIVE_INTERVAL);
-  
-  // Initial ping after 30 seconds
-  setTimeout(keepAlivePing, 30000);
-  
-  isKeepAliveRunning = true;
-  console.log(`✅ Keep-alive mechanism started (every ${KEEP_ALIVE_INTERVAL/60000} minutes)`);
+  setTimeout(() => {
+    pingServer();
+    setInterval(pingServer, KEEP_ALIVE_INTERVAL);
+    console.log(`✅ Keep-alive service started (interval: ${KEEP_ALIVE_INTERVAL/60000} minutes)`);
+  }, 2 * 60 * 1000);
 }
 
-// ==========================================
-// ✅ ALL YOUR EXISTING API ENDPOINTS (SAME AS BEFORE)
-// ==========================================
-// [All your existing endpoints remain exactly the same...]
 // ==========================================
 // ✅ USER MANAGEMENT ENDPOINTS
 // ==========================================
@@ -566,6 +455,7 @@ app.delete('/api/delete-user/:id', async (req, res) => {
   }
 });
 
+// ✅ FIXED: SYNC-USER ENDPOINT (Syntax Error Fixed)
 app.post('/api/sync-user', async (req, res) => {
   try {
     const currentUser = req.body;
@@ -1692,82 +1582,6 @@ app.get('/api/admin/search-users', async (req, res) => {
 });
 
 // ==========================================
-// ✅ NOTIFICATION AND ACTIVITY ENDPOINTS
-// ==========================================
-
-app.post('/api/notify-admin', (req, res) => {
-  const notification = req.body;
-  console.log('📢 Admin notification:', notification);
-  
-  res.json({ success: true, message: 'Notification received' });
-});
-
-app.get('/api/admin/recent-activities', async (req, res) => {
-  try {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    const recentUsers = await User.find({
-      registration_date: { $gte: today }
-    })
-    .select('id username email registration_date')
-    .sort({ registration_date: -1 })
-    .limit(50);
-    
-    const recentLogins = await User.find({
-      last_login: { $gte: today }
-    })
-    .select('id username email last_login')
-    .sort({ last_login: -1 })
-    .limit(50);
-    
-    res.json({
-      success: true,
-      recentRegistrations: recentUsers || [],
-      recentLogins: recentLogins || [],
-      timestamp: new Date().toISOString()
-    });
-  } catch (error) {
-    console.error('Error in recent-activities:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-app.get('/api/admin/realtime-sync', async (req, res) => {
-  try {
-    const lastSync = req.query.lastSync || 0;
-    const now = Date.now();
-    
-    const recentUsers = await User.find({
-      registration_date: { 
-        $gte: new Date(now - 5 * 60 * 1000)
-      }
-    })
-    .select('id username email registration_date')
-    .sort({ registration_date: -1 });
-    
-    const recentLogins = await User.find({
-      last_login: { 
-        $gte: new Date(now - 5 * 60 * 1000)
-      }
-    })
-    .select('id username email last_login')
-    .sort({ last_login: -1 });
-    
-    res.json({
-      success: true,
-      recentUsers: recentUsers || [],
-      recentLogins: recentLogins || [],
-      timestamp: now,
-      lastSync: lastSync
-    });
-  } catch (error) {
-    console.error('Error in realtime-sync:', error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ==========================================
 // ✅ UTILITY ENDPOINTS
 // ==========================================
 
@@ -1855,7 +1669,7 @@ app.get('/api/user-by-referral/:referralCode', async (req, res) => {
 });
 
 // ==========================================
-// ✅ KEEP-ALIVE ENDPOINTS FOR RENDER.COM (FIXED)
+// ✅ KEEP-ALIVE ENDPOINTS
 // ==========================================
 
 app.get('/api/health', async (req, res) => {
@@ -1889,7 +1703,6 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Simple ping endpoint for external services
 app.get('/ping', (req, res) => {
   const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   console.log(`🏓 Ping received from ${ip} at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
@@ -1905,7 +1718,6 @@ app.get('/ping', (req, res) => {
   });
 });
 
-// Keep-alive endpoint for manual triggering
 app.get('/keep-alive', (req, res) => {
   console.log(`🔋 Keep-alive triggered at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
   res.json({ 
@@ -1973,34 +1785,28 @@ app.get('/admin', (req, res) => {
 });
 
 // ==========================================
-// ✅ START SERVER WITH KEEP-ALIVE
+// ✅ START SERVER
 // ==========================================
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`🔗 API endpoints available at http://localhost:${PORT}/api/`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🏓 Ping endpoint: http://localhost:${PORT}/ping`);
-  console.log(`🔋 Keep-alive endpoint: http://localhost:${PORT}/keep-alive`);
-  console.log(`👑 Admin Panel: http://localhost:${PORT}/admin`);
+  console.log(`🔗 External URL: https://tapearn-native-app.onrender.com`);
+  console.log(`🔗 API endpoints available at https://tapearn-native-app.onrender.com/api/`);
+  console.log(`🏥 Health check: https://tapearn-native-app.onrender.com/api/health`);
+  console.log(`🏓 Ping endpoint: https://tapearn-native-app.onrender.com/ping`);
+  console.log(`🔋 Keep-alive endpoint: https://tapearn-native-app.onrender.com/keep-alive`);
+  console.log(`👑 Admin Panel: https://tapearn-native-app.onrender.com/admin`);
   console.log(`✅ Server started successfully at ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}`);
   
-  // Important message for Render.com
   console.log('\n⚠️  IMPORTANT FOR RENDER.COM FREE TIER:');
-  console.log('1. Keep-alive mechanism will start in 30 seconds');
+  console.log('1. Keep-alive mechanism will start in 2 minutes');
   console.log('2. Server will NOT sleep due to auto-ping every 10 minutes');
-  console.log('3. For external monitoring, use these URLs:');
-  console.log('   - Health check: https://tapearn-native-app.onrender.com/api/health');
-  console.log('   - Ping endpoint: https://tapearn-native-app.onrender.com/ping');
-  console.log('4. External monitoring setup:');
+  console.log('3. Setup external monitoring (optional):');
   console.log('   - UptimeRobot.com: Ping /ping every 5 minutes');
   console.log('   - cron-job.org: Schedule every 14 minutes');
   console.log('   - Render Cron: Add cron job in Render dashboard');
   
-  // Start the keep-alive mechanism after 30 seconds
-  setTimeout(() => {
-    startKeepAlive();
-  }, 30000);
+  setupKeepAlive();
 });
 
 process.on('SIGINT', async () => {
