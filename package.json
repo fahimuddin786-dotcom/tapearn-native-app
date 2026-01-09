@@ -1,13 +1,13 @@
 {
-  "name": "tapearn-native-app",
+  "name": "tapearn-app",
   "version": "2.0.0",
-  "description": "TapEarn App with MongoDB Server - Complete Solution",
+  "description": "TapEarn App with MongoDB Server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
     "server": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -25,16 +25,11 @@
     "tapearn",
     "earn-money",
     "mobile-app",
-    "mongodb",
-    "express"
+    "mongodb"
   ],
   "author": "TapEarn Team",
   "license": "ISC",
   "engines": {
     "node": ">=16.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/fahimuddin786-dotcom/tapearn-native-app"
   }
 }
