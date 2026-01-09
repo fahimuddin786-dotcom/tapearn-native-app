@@ -1,23 +1,51 @@
-// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH SPONSOR SYSTEM + REAL-TIME REFRESH)
+// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH UNIVERSAL REAL-TIME SYNC + SPONSOR SYSTEM)
+
+// Auto-detect current server and use universal endpoints
+const getServerBase = () => {
+    // Try to detect current server
+    const currentHost = window.location.hostname;
+    const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+    
+    if (isLocalhost) {
+        return 'http://localhost:3000';
+    } else {
+        // For production/deployed versions
+        return window.location.origin || 'https://tapearn-native-app.onrender.com';
+    }
+};
+
+const SERVER_BASE = getServerBase();
+console.log(`🚀 Admin Panel connected to: ${SERVER_BASE}`);
 
 const AdminPanel = {
-    // Server endpoints
+    // Dynamic endpoints based on current server
     endpoints: {
-        getUsers: 'http://localhost:3000/api/get-all-users',
-        getTransactions: 'http://localhost:3000/api/get-all-transactions',
-        getUserStats: 'http://localhost:3000/api/admin/user-stats',
-        deleteUser: 'http://localhost:3000/api/delete-user/',
-        syncUsers: 'http://localhost:3000/api/admin/sync-all',
-        fixDatabase: 'http://localhost:3000/api/admin/fix-database',
-        health: 'http://localhost:3000/api/health',
-        databaseInfo: 'http://localhost:3000/api/admin/database-info',
-        sponsorStats: 'http://localhost:3000/api/admin/sponsor-stats',
-        realtimeSync: 'http://localhost:3000/api/admin/realtime-sync' // New endpoint
+        getUsers: `${SERVER_BASE}/api/get-all-users`,
+        getTransactions: `${SERVER_BASE}/api/get-all-transactions`,
+        getUserStats: `${SERVER_BASE}/api/admin/user-stats`,
+        deleteUser: `${SERVER_BASE}/api/delete-user/`,
+        syncUsers: `${SERVER_BASE}/api/admin/sync-all`,
+        fixDatabase: `${SERVER_BASE}/api/admin/fix-database`,
+        health: `${SERVER_BASE}/api/health`,
+        databaseInfo: `${SERVER_BASE}/api/admin/database-info`,
+        sponsorStats: `${SERVER_BASE}/api/admin/sponsor-stats`,
+        realtimeSync: `${SERVER_BASE}/api/admin/realtime-sync`,
+        assignSponsor: `${SERVER_BASE}/api/assign-sponsor`,
+        removeSponsor: `${SERVER_BASE}/api/remove-sponsor`,
+        bulkAssignSponsors: `${SERVER_BASE}/api/bulk-assign-sponsors`,
+        updateUser: `${SERVER_BASE}/api/update-user/`,
+        addPoints: `${SERVER_BASE}/api/add-points`
     },
+
+    // Real-time refresh settings
+    refreshInterval: 5000, // 5 seconds
+    autoRefreshEnabled: true,
+    refreshTimer: null,
 
     // Initialize admin panel
     init: async function() {
-        console.log('🔧 Initializing Admin Panel with Sponsor System...');
+        console.log('🔧 Initializing Universal Admin Panel with Real-Time Sync...');
+        console.log(`📡 Server Base: ${SERVER_BASE}`);
         
         // Check authentication
         if (!this.checkAuth()) {
@@ -39,12 +67,15 @@ const AdminPanel = {
         // Initialize sponsor system
         this.initializeSponsorSystem();
         
-        // Add real-time refresh button if on admin page
+        // Add real-time UI controls if on admin page
         if (window.location.pathname.includes('admin.html')) {
-            setTimeout(() => this.addRealTimeRefreshButton(), 1000);
+            setTimeout(() => {
+                this.addRealTimeControls();
+                this.addServerStatusDisplay();
+            }, 1000);
         }
         
-        console.log('✅ Admin Panel Initialized with Sponsor System');
+        console.log('✅ Universal Admin Panel Initialized');
     },
 
     // Check admin authentication
@@ -55,7 +86,8 @@ const AdminPanel = {
             'admin@example.com',
             'superuser@tapearn.com',
             'system_admin',
-            'developer'
+            'developer',
+            'test@tapearn.com'
         ];
 
         if (!currentUser.email || !ADMIN_AUTHORIZED_USERS.includes(currentUser.email)) {
@@ -66,17 +98,28 @@ const AdminPanel = {
         return true;
     },
 
-    // Load initial data
+    // Load initial data from server
     loadInitialData: async function() {
         try {
+            console.log('📥 Loading data from server...');
+            
+            // Check server health first
+            const healthCheck = await this.testServerConnection();
+            if (!healthCheck.success) {
+                console.warn('⚠️ Server not responding, using local data');
+                this.loadFromLocalStorage();
+                return;
+            }
+            
             // Load users
             const usersResponse = await fetch(this.endpoints.getUsers);
             if (usersResponse.ok) {
                 const data = await usersResponse.json();
                 if (data.success) {
                     window.adminData = window.adminData || {};
-                    window.adminData.users = data.users;
-                    console.log(`✅ Loaded ${data.users.length} users from server`);
+                    const filteredUsers = this.filterDeletedUsers(data.users || data.data || []);
+                    window.adminData.users = filteredUsers;
+                    console.log(`✅ Loaded ${filteredUsers.length} users from server`);
                 }
             }
 
@@ -85,8 +128,8 @@ const AdminPanel = {
             if (txResponse.ok) {
                 const data = await txResponse.json();
                 if (data.success) {
-                    window.adminData.transactions = data.transactions;
-                    console.log(`✅ Loaded ${data.transactions.length} transactions`);
+                    window.adminData.transactions = data.transactions || data.data || [];
+                    console.log(`✅ Loaded ${window.adminData.transactions.length} transactions`);
                 }
             }
 
@@ -97,12 +140,20 @@ const AdminPanel = {
             await this.loadServerStats();
 
             window.adminData.lastUpdated = new Date();
+            window.adminData.serverConnected = true;
+            
+            // Update UI timestamp
+            this.updateLastSyncTimestamp();
             
             // Dispatch event for UI updates
             this.dispatchEvent('adminDataLoaded', window.adminData);
             
+            // Show success notification
+            this.showNotification('✅ Data loaded successfully from server', 'success');
+            
         } catch (error) {
             console.error('❌ Error loading admin data:', error);
+            this.showNotification('⚠️ Using local data (server offline)', 'warning');
             this.loadFromLocalStorage();
         }
     },
@@ -114,8 +165,8 @@ const AdminPanel = {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    window.adminData.sponsorStats = data.stats;
-                    console.log('✅ Sponsor stats loaded:', data.stats);
+                    window.adminData.sponsorStats = data.stats || data.data || {};
+                    console.log('✅ Sponsor stats loaded');
                 }
             }
         } catch (error) {
@@ -142,7 +193,8 @@ const AdminPanel = {
             sponsoredUsers: usersWithSponsor.length,
             commissionEarnings: commissionEarnings,
             sponsorConversionRate: users.length > 0 ? ((usersWithSponsor.length / users.length) * 100).toFixed(1) : 0,
-            topSponsors: this.getTopSponsors(users)
+            topSponsors: this.getTopSponsors(users),
+            lastCalculated: new Date().toISOString()
         };
     },
 
@@ -159,10 +211,10 @@ const AdminPanel = {
         return Object.entries(sponsorMap)
             .map(([sponsorId, count]) => ({
                 sponsorId,
-                count,
+                referrals: count,
                 sponsorData: users.find(u => u.email === sponsorId || u.id === sponsorId)
             }))
-            .sort((a, b) => b.count - a.count)
+            .sort((a, b) => b.referrals - a.referrals)
             .slice(0, 10);
     },
 
@@ -175,7 +227,8 @@ const AdminPanel = {
             window.adminData = {
                 users: registeredUsers,
                 transactions: allTransactions,
-                lastUpdated: new Date()
+                lastUpdated: new Date(),
+                serverConnected: false
             };
             
             console.log(`⚠️ Loaded ${registeredUsers.length} users from localStorage`);
@@ -186,6 +239,12 @@ const AdminPanel = {
             this.dispatchEvent('adminDataLoaded', window.adminData);
         } catch (error) {
             console.error('❌ Failed to load any data:', error);
+            window.adminData = {
+                users: [],
+                transactions: [],
+                lastUpdated: new Date(),
+                serverConnected: false
+            };
         }
     },
 
@@ -196,7 +255,7 @@ const AdminPanel = {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    window.adminData.serverStats = data.stats;
+                    window.adminData.serverStats = data.stats || data.data || {};
                 }
             }
         } catch (error) {
@@ -206,13 +265,9 @@ const AdminPanel = {
 
     // Setup real-time updates
     setupRealTimeUpdates: function() {
-        // Auto-refresh every 30 seconds
-        setInterval(async () => {
-            await this.loadSponsorStats();
-            await this.loadServerStats();
-            this.dispatchEvent('adminDataUpdated', window.adminData);
-        }, 30000);
-
+        // Auto-refresh every 5 seconds if enabled
+        this.startAutoRefresh();
+        
         // Listen for storage changes (multi-browser sync)
         window.addEventListener('storage', (event) => {
             if (event.key === 'registeredUsers' || event.key === 'allUsersTransactions') {
@@ -247,6 +302,52 @@ const AdminPanel = {
             console.log('🔄 Sponsor removed event:', event.detail);
             this.loadSponsorStats();
         });
+        
+        // Listen for manual refresh requests
+        window.addEventListener('manualRefreshRequest', () => {
+            this.loadInitialData();
+        });
+    },
+    
+    // Start auto-refresh
+    startAutoRefresh: function() {
+        if (this.refreshTimer) {
+            clearInterval(this.refreshTimer);
+        }
+        
+        this.refreshTimer = setInterval(async () => {
+            if (this.autoRefreshEnabled) {
+                console.log('🔄 Auto-refresh triggered');
+                await this.loadInitialData();
+                this.dispatchEvent('adminDataUpdated', window.adminData);
+            }
+        }, this.refreshInterval);
+        
+        console.log('✅ Auto-refresh started (5s interval)');
+    },
+    
+    // Stop auto-refresh
+    stopAutoRefresh: function() {
+        if (this.refreshTimer) {
+            clearInterval(this.refreshTimer);
+            this.refreshTimer = null;
+            console.log('⏸️ Auto-refresh stopped');
+        }
+    },
+    
+    // Toggle auto-refresh
+    toggleAutoRefresh: function() {
+        this.autoRefreshEnabled = !this.autoRefreshEnabled;
+        
+        if (this.autoRefreshEnabled) {
+            this.startAutoRefresh();
+            this.showNotification('✅ Auto-refresh enabled', 'success');
+        } else {
+            this.stopAutoRefresh();
+            this.showNotification('⏸️ Auto-refresh disabled', 'warning');
+        }
+        
+        return this.autoRefreshEnabled;
     },
 
     // Initialize sponsor system
@@ -321,156 +422,195 @@ const AdminPanel = {
         console.log('✅ Admin panel button injected');
     },
 
-    // ✅ NEW: Add Real-Time Refresh Button to Admin Panel
-    addRealTimeRefreshButton: function() {
-        // Check if already exists
-        if (document.querySelector('#realTimeRefreshBtn')) return;
+    // Add real-time controls to admin panel
+    addRealTimeControls: function() {
+        // Remove existing controls if any
+        const existingControls = document.getElementById('realTimeControls');
+        if (existingControls) existingControls.remove();
         
-        const headerActions = document.querySelector('.admin-actions');
-        if (!headerActions) {
-            // Try to find admin header
-            const adminHeader = document.querySelector('.admin-header');
-            if (adminHeader) {
-                headerActions = adminHeader.querySelector('.actions') || adminHeader;
-            }
-        }
+        // Create controls container
+        const controlsDiv = document.createElement('div');
+        controlsDiv.id = 'realTimeControls';
+        controlsDiv.className = 'real-time-controls';
+        controlsDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            min-width: 300px;
+            border: 1px solid #e0e0e0;
+        `;
         
-        if (!headerActions) {
-            console.warn('⚠️ Could not find admin actions container');
-            // Create one if doesn't exist
-            headerActions = document.createElement('div');
-            headerActions.className = 'admin-actions';
-            headerActions.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                z-index: 1000;
-                display: flex;
-                gap: 10px;
-            `;
-            
-            const adminHeader = document.querySelector('.admin-header');
-            if (adminHeader) {
-                adminHeader.appendChild(headerActions);
-            } else {
-                document.body.appendChild(headerActions);
-            }
-        }
+        // Server info
+        const serverInfo = document.createElement('div');
+        serverInfo.className = 'server-info';
+        serverInfo.style.cssText = `
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 10px;
+        `;
+        serverInfo.innerHTML = `
+            <h4 style="margin: 0 0 5px 0; color: #333;">
+                <i class="fas fa-server"></i> Server: ${SERVER_BASE.replace('https://', '').replace('http://', '')}
+            </h4>
+            <div id="serverStatusBadge" style="display: inline-block; padding: 3px 8px; border-radius: 12px; background: #4CAF50; color: white; font-size: 12px;">
+                <i class="fas fa-circle"></i> Checking...
+            </div>
+        `;
         
-        const realTimeBtn = document.createElement('button');
-        realTimeBtn.id = 'realTimeRefreshBtn';
-        realTimeBtn.className = 'btn btn-warning';
-        realTimeBtn.innerHTML = '<i class="fas fa-bolt"></i> Real-Time Sync';
-        realTimeBtn.style.cssText = `
-            background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        // Refresh controls
+        const refreshControls = document.createElement('div');
+        refreshControls.className = 'refresh-controls';
+        refreshControls.style.cssText = `
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        `;
+        
+        // Manual refresh button
+        const manualRefreshBtn = document.createElement('button');
+        manualRefreshBtn.id = 'manualRefreshBtn';
+        manualRefreshBtn.className = 'btn-refresh';
+        manualRefreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Now';
+        manualRefreshBtn.style.cssText = `
+            flex: 1;
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 10px;
             border-radius: 6px;
             cursor: pointer;
             font-weight: bold;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
-            box-shadow: 0 4px 10px rgba(246, 211, 101, 0.4);
             transition: all 0.3s;
         `;
         
-        realTimeBtn.onclick = async () => {
-            try {
-                // Show loading state
-                realTimeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
-                realTimeBtn.disabled = true;
-                
-                // Force refresh from server
-                const response = await fetch(this.endpoints.getUsers);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        // Filter deleted users
-                        const filteredUsers = this.filterDeletedUsers(data.users);
-                        
-                        // Update global adminData
-                        window.adminData.users = filteredUsers;
-                        window.adminData.lastUpdated = new Date();
-                        
-                        // Update user count badge if exists
-                        const userCountBadge = document.getElementById('userCountBadge');
-                        if (userCountBadge) {
-                            userCountBadge.textContent = filteredUsers.length;
-                        }
-                        
-                        // Refresh current view
-                        const adminHeaderTitle = document.querySelector('.admin-header h2');
-                        if (adminHeaderTitle && adminHeaderTitle.textContent.includes('Users')) {
-                            this.showUsers && this.showUsers();
-                        } else {
-                            this.showDashboard && this.showDashboard();
-                        }
-                        
-                        // Show success notification
-                        this.showNotification('✅ Real-time sync completed!', 'success');
-                        
-                        // Also sync sponsor stats
-                        await this.loadSponsorStats();
-                    }
-                }
-            } catch (error) {
-                console.error('Error in real-time sync:', error);
-                this.showNotification('❌ Real-time sync failed!', 'error');
-            } finally {
-                // Reset button state
-                setTimeout(() => {
-                    realTimeBtn.innerHTML = '<i class="fas fa-bolt"></i> Real-Time Sync';
-                    realTimeBtn.disabled = false;
-                }, 1000);
-            }
-        };
-        
-        realTimeBtn.onmouseenter = () => {
-            realTimeBtn.style.transform = 'translateY(-2px)';
-            realTimeBtn.style.boxShadow = '0 6px 15px rgba(246, 211, 101, 0.6)';
-        };
-        
-        realTimeBtn.onmouseleave = () => {
-            realTimeBtn.style.transform = 'translateY(0)';
-            realTimeBtn.style.boxShadow = '0 4px 10px rgba(246, 211, 101, 0.4)';
-        };
-        
-        headerActions.appendChild(realTimeBtn);
-        console.log('✅ Real-Time Refresh Button added');
-        
-        // Also add a timestamp display
-        this.addLastSyncTimestamp();
-    },
-    
-    // ✅ NEW: Add Last Sync Timestamp
-    addLastSyncTimestamp: function() {
-        const timestampDiv = document.createElement('div');
-        timestampDiv.id = 'lastSyncTimestamp';
-        timestampDiv.className = 'sync-timestamp';
-        timestampDiv.innerHTML = `
-            <i class="fas fa-clock"></i>
-            <span>Last sync: ${new Date().toLocaleTimeString()}</span>
-        `;
-        timestampDiv.style.cssText = `
-            font-size: 12px;
-            color: #666;
-            background: #f5f5f5;
-            padding: 4px 8px;
-            border-radius: 4px;
+        // Auto-refresh toggle
+        const autoRefreshBtn = document.createElement('button');
+        autoRefreshBtn.id = 'autoRefreshBtn';
+        autoRefreshBtn.className = 'btn-toggle';
+        autoRefreshBtn.innerHTML = '<i class="fas fa-toggle-on"></i> Auto-Refresh ON';
+        autoRefreshBtn.style.cssText = `
+            flex: 1;
+            background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
             display: flex;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s;
         `;
         
-        const headerActions = document.querySelector('.admin-actions');
-        if (headerActions) {
-            headerActions.appendChild(timestampDiv);
+        // Last sync info
+        const lastSyncDiv = document.createElement('div');
+        lastSyncDiv.id = 'lastSyncInfo';
+        lastSyncDiv.className = 'last-sync';
+        lastSyncDiv.style.cssText = `
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            margin-top: 5px;
+        `;
+        lastSyncDiv.innerHTML = `
+            <i class="fas fa-clock"></i>
+            <span>Last sync: <span id="lastSyncTime">Never</span></span>
+        `;
+        
+        // Assemble controls
+        refreshControls.appendChild(manualRefreshBtn);
+        refreshControls.appendChild(autoRefreshBtn);
+        
+        controlsDiv.appendChild(serverInfo);
+        controlsDiv.appendChild(refreshControls);
+        controlsDiv.appendChild(lastSyncDiv);
+        
+        // Add to document
+        document.body.appendChild(controlsDiv);
+        
+        // Add event listeners
+        manualRefreshBtn.addEventListener('click', async () => {
+            manualRefreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+            manualRefreshBtn.disabled = true;
+            
+            await this.loadInitialData();
+            
+            setTimeout(() => {
+                manualRefreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Now';
+                manualRefreshBtn.disabled = false;
+            }, 1000);
+        });
+        
+        autoRefreshBtn.addEventListener('click', () => {
+            const isEnabled = this.toggleAutoRefresh();
+            autoRefreshBtn.innerHTML = isEnabled ? 
+                '<i class="fas fa-toggle-on"></i> Auto-Refresh ON' : 
+                '<i class="fas fa-toggle-off"></i> Auto-Refresh OFF';
+            autoRefreshBtn.style.background = isEnabled ? 
+                'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)' : 
+                'linear-gradient(135deg, #757575 0%, #616161 100%)';
+        });
+        
+        // Check server status initially
+        this.updateServerStatusDisplay();
+        
+        console.log('✅ Real-time controls added');
+    },
+    
+    // Update server status display
+    updateServerStatusDisplay: async function() {
+        const statusBadge = document.getElementById('serverStatusBadge');
+        if (!statusBadge) return;
+        
+        const healthCheck = await this.testServerConnection();
+        
+        if (healthCheck.success && healthCheck.status === 'online') {
+            statusBadge.innerHTML = `<i class="fas fa-circle" style="color: #4CAF50;"></i> Online (${healthCheck.responseTime}ms)`;
+            statusBadge.style.background = '#4CAF50';
+            window.adminData.serverConnected = true;
+        } else {
+            statusBadge.innerHTML = '<i class="fas fa-circle" style="color: #f44336;"></i> Offline';
+            statusBadge.style.background = '#f44336';
+            window.adminData.serverConnected = false;
         }
     },
     
-    // ✅ NEW: Filter deleted users
+    // Add server status display
+    addServerStatusDisplay: function() {
+        // Update status every 30 seconds
+        setInterval(() => {
+            this.updateServerStatusDisplay();
+        }, 30000);
+    },
+    
+    // Update last sync timestamp
+    updateLastSyncTimestamp: function() {
+        const lastSyncTime = document.getElementById('lastSyncTime');
+        if (!lastSyncTime) return;
+        
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
+        lastSyncTime.textContent = timeStr;
+    },
+
+    // Filter deleted users
     filterDeletedUsers: function(users) {
         return users.filter(user => 
             !user.isDeleted && 
@@ -479,7 +619,7 @@ const AdminPanel = {
         );
     },
 
-    // ✅ UPDATED: Get real-time statistics WITH SPONSOR STATS
+    // Get real-time statistics WITH SPONSOR STATS
     getStats: function() {
         const users = window.adminData.users || [];
         const transactions = window.adminData.transactions || [];
@@ -526,6 +666,8 @@ const AdminPanel = {
                 return regDate.toDateString() === new Date().toDateString();
             }).length,
             
+            // Server status
+            serverConnected: window.adminData.serverConnected || false,
             lastUpdated: window.adminData.lastUpdated,
             sponsorStats: sponsorStats
         };
@@ -541,19 +683,22 @@ const AdminPanel = {
             const data = await response.json();
             if (data.success) {
                 this.dispatchEvent('userDeleted', { userId });
+                this.showNotification('✅ User deleted successfully', 'success');
                 return { success: true, message: 'User deleted from server' };
             } else {
+                this.showNotification(`❌ ${data.message}`, 'error');
                 return { success: false, message: data.message };
             }
         } catch (error) {
             console.error('Error deleting user:', error);
+            this.showNotification('❌ Server error while deleting user', 'error');
             return { success: false, message: 'Server error' };
         }
     },
 
     updateUser: async function(userId, updates) {
         try {
-            const response = await fetch(`http://localhost:3000/api/update-user/${userId}`, {
+            const response = await fetch(`${this.endpoints.updateUser}${userId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updates)
@@ -562,17 +707,19 @@ const AdminPanel = {
             const data = await response.json();
             if (data.success) {
                 this.dispatchEvent('userUpdated', { userId, updates });
+                this.showNotification('✅ User updated successfully', 'success');
                 return { success: true, message: 'User updated' };
             }
         } catch (error) {
             console.error('Error updating user:', error);
+            this.showNotification('❌ Server error while updating user', 'error');
             return { success: false, message: 'Server error' };
         }
     },
 
     addPointsToUser: async function(userId, points, reason) {
         try {
-            const response = await fetch(`http://localhost:3000/api/add-points`, {
+            const response = await fetch(this.endpoints.addPoints, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, points, reason })
@@ -581,18 +728,20 @@ const AdminPanel = {
             const data = await response.json();
             if (data.success) {
                 this.dispatchEvent('pointsAdded', { userId, points, reason });
+                this.showNotification(`✅ ${points} points added to user`, 'success');
                 return { success: true, message: 'Points added' };
             }
         } catch (error) {
             console.error('Error adding points:', error);
+            this.showNotification('❌ Server error while adding points', 'error');
             return { success: false, message: 'Server error' };
         }
     },
 
-    // ✅ NEW: Sponsor Management Methods
+    // Sponsor Management Methods
     assignSponsor: async function(userId, sponsorId, reason = 'Manual assignment') {
         try {
-            const response = await fetch(`http://localhost:3000/api/assign-sponsor`, {
+            const response = await fetch(this.endpoints.assignSponsor, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userId, sponsorId, reason })
@@ -609,17 +758,19 @@ const AdminPanel = {
                 }
                 
                 this.dispatchEvent('sponsorAssigned', { userId, sponsorId, reason });
+                this.showNotification(`✅ Sponsor assigned to user`, 'success');
                 return { success: true, message: 'Sponsor assigned' };
             }
         } catch (error) {
             console.error('Error assigning sponsor:', error);
+            this.showNotification('❌ Server error while assigning sponsor', 'error');
             return { success: false, message: 'Server error' };
         }
     },
 
     removeSponsor: async function(userId, reason = 'Manual removal') {
         try {
-            const response = await fetch(`http://localhost:3000/api/remove-sponsor/${userId}`, {
+            const response = await fetch(`${this.endpoints.removeSponsor}/${userId}`, {
                 method: 'DELETE',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ reason })
@@ -636,17 +787,19 @@ const AdminPanel = {
                 }
                 
                 this.dispatchEvent('sponsorRemoved', { userId, reason });
+                this.showNotification('✅ Sponsor removed from user', 'success');
                 return { success: true, message: 'Sponsor removed' };
             }
         } catch (error) {
             console.error('Error removing sponsor:', error);
+            this.showNotification('❌ Server error while removing sponsor', 'error');
             return { success: false, message: 'Server error' };
         }
     },
 
     bulkAssignSponsors: async function(userIds, sponsorId, reason = 'Bulk assignment') {
         try {
-            const response = await fetch(`http://localhost:3000/api/bulk-assign-sponsors`, {
+            const response = await fetch(this.endpoints.bulkAssignSponsors, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userIds, sponsorId, reason })
@@ -665,10 +818,12 @@ const AdminPanel = {
                 });
                 
                 this.dispatchEvent('bulkSponsorsAssigned', { userIds, sponsorId, reason });
+                this.showNotification(`✅ Sponsor assigned to ${userIds.length} users`, 'success');
                 return { success: true, message: `Sponsors assigned to ${userIds.length} users` };
             }
         } catch (error) {
             console.error('Error bulk assigning sponsors:', error);
+            this.showNotification('❌ Server error while bulk assigning sponsors', 'error');
             return { success: false, message: 'Server error' };
         }
     },
@@ -767,10 +922,12 @@ const AdminPanel = {
                     count: registeredUsers.length,
                     sponsorData: sponsorData
                 });
+                this.showNotification(`✅ Synced ${registeredUsers.length} users to server`, 'success');
                 return { success: true, count: registeredUsers.length };
             }
         } catch (error) {
             console.error('Error syncing to server:', error);
+            this.showNotification('❌ Error syncing to server', 'error');
             return { success: false, error: error.message };
         }
     },
@@ -805,7 +962,8 @@ const AdminPanel = {
                         username: u.username
                     })).filter(a => a.sponsorId),
                     commissionSettings: JSON.parse(localStorage.getItem('sponsorCommissionSettings') || '{}'),
-                    changeLog: JSON.parse(localStorage.getItem('sponsorChangeLog') || '[]')
+                    changeLog: JSON.parse(localStorage.getItem('sponsorChangeLog') || '[]'),
+                    exportDate: new Date().toISOString()
                 };
                 break;
             case 'all':
@@ -831,6 +989,7 @@ const AdminPanel = {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
+        this.showNotification(`✅ Data exported (${type})`, 'success');
         return { success: true, type, count: Array.isArray(data) ? data.length : 'multiple' };
     },
 
@@ -840,7 +999,7 @@ const AdminPanel = {
         notification.className = `admin-notification notification-${type}`;
         notification.innerHTML = `
             <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-            ${message}
+            <span>${message}</span>
         `;
         
         notification.style.cssText = `
@@ -860,12 +1019,38 @@ const AdminPanel = {
                  type === 'warning' ? '#f7971e, #ffd200' : 
                  '#2196F3, #21CBF3'}
             );
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 400px;
         `;
         
         document.body.appendChild(notification);
         
+        // Add CSS animation
+        if (!document.querySelector('#notificationStyles')) {
+            const style = document.createElement('style');
+            style.id = 'notificationStyles';
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOut {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
         setTimeout(() => {
-            notification.remove();
+            notification.style.animation = 'slideOut 0.3s ease-out forwards';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 300);
         }, 5000);
         
         this.dispatchEvent('notificationShown', { message, type });
@@ -880,10 +1065,34 @@ const AdminPanel = {
 
 // Initialize admin panel when DOM is loaded
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => AdminPanel.init());
+    document.addEventListener('DOMContentLoaded', () => {
+        console.log('📋 DOM loaded, initializing Admin Panel...');
+        AdminPanel.init();
+    });
 } else {
+    console.log('📋 DOM already loaded, initializing Admin Panel...');
     AdminPanel.init();
 }
 
 // Export for use in other files
 window.AdminPanel = AdminPanel;
+
+// Global helper functions for admin.html
+window.loadAllUsers = async function() {
+    await AdminPanel.loadInitialData();
+};
+
+window.syncAllUsers = async function() {
+    await AdminPanel.loadInitialData();
+};
+
+window.toggleAutoRefresh = function() {
+    return AdminPanel.toggleAutoRefresh();
+};
+
+window.exportData = function(type) {
+    return AdminPanel.exportData(type);
+};
+
+// Make AdminPanel globally available
+console.log('🌐 AdminPanel is now available globally');
