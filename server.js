@@ -10,7 +10,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// ✅ MongoDB Connection String
+// ✅ MongoDB Connection String (SAME AS RENDER)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
 
 // ✅ Enhanced CORS
@@ -569,7 +569,7 @@ app.post('/api/sync-user', async (req, res) => {
         referred_by: currentUser.referred_by || currentUser.sponsorId || null,
         points: currentUser.points || 0,
         total_earned: currentUser.total_earned || currentUser.totalEarned || 0,
-        tasks_completed: currentUser.tasks_completed || currentUser.tasksCompleted || 0, // FIXED: Changed = to :
+        tasks_completed: currentUser.tasks_completed || currentUser.tasksCompleted || 0,
         level: currentUser.level || 1,
         status: 'active'
       });
