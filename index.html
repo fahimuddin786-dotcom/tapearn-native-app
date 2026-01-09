@@ -3,16 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' 'unsafe-hashes';
-        script-src-attr 'unsafe-inline' 'unsafe-hashes';
-        style-src 'self' 'unsafe-inline' 'unsafe-hashes';
-        default-src 'self' https: wss:;
-        connect-src 'self' http://localhost:3000 https: wss:;
-        font-src 'self' data: https:;
-        img-src 'self' data: https: http:;
-        media-src 'self' https:;
-    ">
     <title>TapEarn - Mining & Earning</title>
     <style>
         /* =============================================
@@ -2628,6 +2618,10 @@
             background: #4CAF50;
             color: white;
             border-color: #4CAF50;
+        }
+
+        .category-btn:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
         }
 
         .rewards-grid {
@@ -5392,7 +5386,7 @@
         <!-- Header -->
         <div class="app-header">
             <div class="header-content">
-                <div class="wallet" id="walletButton" data-action="showWalletHistory">
+                <div class="wallet" onclick="showWalletHistory()">
                     <span class="wallet-icon">💰</span>
                     <span class="wallet-amount" id="walletPoints">0</span>
                     <span class="wallet-label">USDT</span>
@@ -5433,25 +5427,25 @@
                         <p>Click any platform to start earning points instantly</p>
                         
                         <div class="platforms-grid">
-                            <div class="platform-card" data-action="showVideoSection">
+                            <div class="platform-card" onclick="showVideoSection()">
                                 <span class="platform-icon">🎬</span>
                                 <span class="platform-name">YouTube Videos</span>
                                 <span class="platform-points">+10-20 points</span>
                                 <span class="platform-time">⏱️ 1 min watch</span>
                             </div>
-                            <div class="platform-card" data-action="showTelegramSection">
+                            <div class="platform-card" onclick="showTelegramSection()">
                                 <span class="platform-icon">📱</span>
                                 <span class="platform-name">Telegram Tasks</span>
                                 <span class="platform-points">+15-30 points</span>
                                 <span class="platform-time">⚡ Instant</span>
                             </div>
-                            <div class="platform-card" data-action="showInstagramSection">
+                            <div class="platform-card" onclick="showInstagramSection()">
                                 <span class="platform-icon">📷</span>
                                 <span class="platform-name">Instagram Reels</span>
                                 <span class="platform-points">+12-25 points</span>
                                 <span class="platform-time">⏱️ 1 min watch</span>
                             </div>
-                            <div class="platform-card" data-action="showTwitterSection">
+                            <div class="platform-card" onclick="showTwitterSection()">
                                 <span class="platform-icon">🐦</span>
                                 <span class="platform-name">Twitter Tasks</span>
                                 <span class="platform-points">+8-20 points</span>
@@ -5460,7 +5454,7 @@
                         </div>
 
                         <div class="earn-stats">
-                            <div class="earn-stat" data-action="showWalletHistory">
+                            <div class="earn-stat" onclick="showWalletHistory()">
                                 <div class="stat-number" id="totalEarnings">0</div>
                                 <div class="stat-label">Total Points</div>
                             </div>
@@ -5493,19 +5487,19 @@
                         <p>Complete different types of tasks to maximize your earnings</p>
                         
                         <div class="platforms-grid">
-                            <div class="platform-card" data-action="showFollowSection">
+                            <div class="platform-card" onclick="showFollowSection()">
                                 <span class="platform-icon">👥</span>
                                 <span class="platform-name">Follow & Earn</span>
                                 <span class="platform-points">+20-35 points</span>
                                 <span class="platform-time">⚡ Instant</span>
                             </div>
-                            <div class="platform-card" data-action="showDailyTasksSection">
+                            <div class="platform-card" onclick="showDailyTasksSection()">
                                 <span class="platform-icon">📅</span>
                                 <span class="platform-name">Daily Tasks</span>
                                 <span class="platform-points">+15-50 points</span>
                                 <span class="platform-time">📅 Daily</span>
                             </div>
-                            <div class="platform-card" data-action="showSocialTasksSection">
+                            <div class="platform-card" onclick="showSocialTasksSection()">
                                 <span class="platform-icon">🌐</span>
                                 <span class="platform-name">Social Tasks</span>
                                 <span class="platform-points">+20-50 points</span>
@@ -5514,7 +5508,7 @@
                         </div>
 
                         <div class="earn-stats">
-                            <div class="earn-stat" data-action="showWalletHistory">
+                            <div class="earn-stat" onclick="showWalletHistory()">
                                 <div class="stat-number" id="tasksTotalPoints">0</div>
                                 <div class="stat-label">Total Points</div>
                             </div>
@@ -5547,7 +5541,7 @@
                         <p>Manage your account, rewards, and settings</p>
                         
                         <!-- User Status Card - Will be dynamically updated by JavaScript -->
-<div id="userStatusCard" class="user-status-card" data-action="handleUserCardClick">
+<div id="userStatusCard" class="user-status-card" onclick="handleUserCardClick()">
     <div class="user-info-mini">
         <div class="user-avatar">👤</div>
         <div class="user-details">
@@ -5555,31 +5549,31 @@
             <div class="user-points" id="profileUserPoints">0 USDT</div>
         </div>
     </div>
-    <div class="btn-register" data-action="handleUserCardClick">
+    <div class="btn-register">
         📝 Register Now
     </div>
 </div>
                         
                         <div class="platforms-grid">
-                            <div class="platform-card" data-action="showCashier">
+                            <div class="platform-card" onclick="showCashier()">
                                 <span class="platform-icon">💰</span>
                                 <span class="platform-name">Rewards Center</span>
                                 <span class="platform-points">+Gift Cards</span>
                                 <span class="platform-time">🎁 Redeem</span>
                             </div>
-                            <div class="platform-card" data-action="showWalletHistory">
+                            <div class="platform-card" onclick="showWalletHistory()">
                                 <span class="platform-icon">📊</span>
                                 <span class="platform-name">Wallet History</span>
                                 <span class="platform-points">All Transactions</span>
                                 <span class="platform-time">📈 View</span>
                             </div>
-                            <div class="platform-card" data-action="showReferralSystem">
+                            <div class="platform-card" onclick="showReferralSystem()">
                                 <span class="platform-icon">👥</span>
                                 <span class="platform-name">Refer & Earn</span>
                                 <span class="platform-points">+50 points</span>
                                 <span class="platform-time">⚡ Per Referral</span>
                             </div>
-                            <div class="platform-card" data-action="showSupport">
+                            <div class="platform-card" onclick="showSupport()">
                                 <span class="platform-icon">💬</span>
                                 <span class="platform-name">Support</span>
                                 <span class="platform-points">Help Center</span>
@@ -5588,7 +5582,7 @@
                         </div>
 
                         <div class="earn-stats">
-                            <div class="earn-stat" data-action="showWalletHistory">
+                            <div class="earn-stat" onclick="showWalletHistory()">
                                 <div class="stat-number" id="profileTotalPoints">0</div>
                                 <div class="stat-label">Total USDT</div>
                             </div>
@@ -5606,7 +5600,7 @@
                         <div class="sponsor-dashboard">
                             <div class="sponsor-header">
                                 <h3>🎯 Sponsor Earnings</h3>
-                                <button class="btn-refresh" data-action="refreshSponsorData">🔄 Refresh</button>
+                                <button class="btn-refresh">🔄 Refresh</button>
                             </div>
                             
                             <div class="commission-stats-grid">
@@ -5684,7 +5678,7 @@
                                 </div>
                             </div>
 
-                            <button class="btn-view-full-history" data-action="viewFullCommissionHistory">View Full Commission History</button>
+                            <button class="btn-view-full-history">View Full Commission History</button>
                         </div>
                     </div>
                 </div>
@@ -5693,19 +5687,19 @@
 
         <!-- Bottom Navigation - FIXED -->
         <div class="bottom-nav">
-            <button class="nav-btn active" data-action="switchTab" data-tab="mining">
+            <button class="nav-btn active" onclick="switchTab('mining')">
                 <span class="nav-icon">⛏️</span>
                 <span class="nav-label">Mining</span>
             </button>
-            <button class="nav-btn" data-action="switchTab" data-tab="earn">
+            <button class="nav-btn" onclick="switchTab('earn')">
                 <span class="nav-icon">💰</span>
                 <span class="nav-label">Earn</span>
             </button>
-            <button class="nav-btn" data-action="switchTab" data-tab="tasks">
+            <button class="nav-btn" onclick="switchTab('tasks')">
                 <span class="nav-icon">📋</span>
                 <span class="nav-label">Tasks</span>
             </button>
-            <button class="nav-btn" data-action="switchTab" data-tab="profile">
+            <button class="nav-btn" onclick="switchTab('profile')">
                 <span class="nav-icon">👤</span>
                 <span class="nav-label">Profile</span>
             </button>
@@ -5717,7 +5711,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>📱 Telegram ID</h3>
-                <button class="modal-close" data-action="closeModal" data-modal="telegramIdModal">×</button>
+                <button class="modal-close" onclick="closeTelegramIdModal()">×</button>
             </div>
             <div class="modal-body">
                 <p style="padding: 20px; text-align: center;">Please enter your Telegram username to continue:</p>
@@ -5725,8 +5719,8 @@
                     <input type="text" id="telegramIdInput" placeholder="@username" style="width: 100%; padding: 12px; border-radius: 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white;">
                 </div>
                 <div class="modal-actions">
-                    <button class="btn-cancel" data-action="closeModal" data-modal="telegramIdModal">Skip</button>
-                    <button class="btn-success" data-action="saveTelegramId">Save</button>
+                    <button class="btn-cancel" onclick="closeTelegramIdModal()">Skip</button>
+                    <button class="btn-success" onclick="saveTelegramId()">Save</button>
                 </div>
             </div>
         </div>
@@ -5737,7 +5731,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🔐 Login</h3>
-                <button class="modal-close" data-action="closeModal" data-modal="loginModal">×</button>
+                <button class="modal-close" onclick="closeLoginModal()">×</button>
             </div>
             <div class="login-form">
                 <div class="form-group">
@@ -5749,11 +5743,11 @@
                     <input type="password" id="loginPassword" placeholder="Enter your password">
                 </div>
                 <div class="form-actions">
-                    <button class="btn-success" data-action="loginUser">Login</button>
+                    <button class="btn-success" onclick="loginUser()">Login</button>
                 </div>
                 <div class="login-footer">
-                    <p>Don't have an account? <a data-action="showRegistrationModal">Register here</a></p>
-                    <p><a data-action="showForgotPasswordModal">Forgot Password?</a></p>
+                    <p>Don't have an account? <a onclick="showRegistrationModal()">Register here</a></p>
+                    <p><a onclick="showForgotPasswordModal()">Forgot Password?</a></p>
                 </div>
             </div>
         </div>
@@ -5764,7 +5758,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>🔑 Forgot Password</h3>
-                <button class="modal-close" data-action="closeModal" data-modal="forgotPasswordModal">×</button>
+                <button class="modal-close" onclick="closeForgotPasswordModal()">×</button>
             </div>
             <div class="forgot-form">
                 <div class="form-group">
@@ -5773,10 +5767,10 @@
                     <div class="form-hint">We'll send password reset instructions to this email</div>
                 </div>
                 <div class="form-actions">
-                    <button class="btn-success" data-action="resetPassword">Send Reset Link</button>
+                    <button class="btn-success" onclick="resetPassword()">Send Reset Link</button>
                 </div>
                 <div class="login-footer">
-                    <p>Remember your password? <a data-action="showLoginModal">Back to Login</a></p>
+                    <p>Remember your password? <a onclick="showLoginModal()">Back to Login</a></p>
                 </div>
             </div>
         </div>
@@ -5787,7 +5781,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>📝 Registration</h3>
-                <button class="modal-close" data-action="closeModal" data-modal="registrationModal">×</button>
+                <button class="modal-close" onclick="closeRegistrationModal()">×</button>
             </div>
             <div class="registration-steps">
                 <!-- Registration content will be inserted here by JavaScript -->
@@ -5800,7 +5794,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>💰 Wallet History</h3>
-                <button class="modal-close" data-action="closeModal" data-modal="walletHistoryModal">×</button>
+                <button class="modal-close" onclick="closeWalletHistoryModal()">×</button>
             </div>
             <div class="wallet-history-content">
                 <!-- Wallet history will be inserted here by JavaScript -->
@@ -5808,9 +5802,136 @@
         </div>
     </div>
 
-    <!-- Load scripts in correct order -->
-    <script src="admin-panel-integration.js"></script>
+    <!-- ✅ BROADCAST FUNCTIONS FOR MAIN APP -->
+    <script>
+    // ✅ When user registers successfully in main app:
+    function onUserRegistered(userData) {
+        // Save user locally
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        registeredUsers.push(userData);
+        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+        
+        // Broadcast to other browsers
+        broadcastUserRegistration(userData.email, userData.username);
+        
+        // Also save to server
+        saveUserToServer(userData);
+    }
+
+    // ✅ When user logs in:
+    function onUserLogin(userData) {
+        // Update last login
+        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const userIndex = registeredUsers.findIndex(u => u.email === userData.email);
+        if (userIndex !== -1) {
+            registeredUsers[userIndex].lastLogin = new Date().toISOString();
+            localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+        }
+        
+        // Broadcast login
+        broadcastUserLogin(userData.email, userData.username);
+    }
+
+    // ✅ Broadcast function for main app
+    function broadcastUserRegistration(userEmail, username) {
+        try {
+            const broadcastData = {
+                type: 'user_registered',
+                userEmail: userEmail,
+                username: username,
+                timestamp: Date.now(),
+                source: 'main_app'
+            };
+            
+            // Save to localStorage (will trigger storage event in admin panel)
+            localStorage.setItem('userRegistrationEvent', JSON.stringify(broadcastData));
+            
+            // Also save to cross browser sync
+            localStorage.setItem('cross_browser_sync_message', JSON.stringify({
+                type: 'user_registered',
+                userEmail: userEmail,
+                username: username,
+                timestamp: Date.now()
+            }));
+            
+            console.log('📢 User registration broadcasted:', userEmail);
+            
+            // Remove after 5 seconds to prevent buildup
+            setTimeout(() => {
+                localStorage.removeItem('userRegistrationEvent');
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Error broadcasting registration:', error);
+        }
+    }
+
+    // ✅ Broadcast user login
+    function broadcastUserLogin(userEmail, username) {
+        try {
+            const broadcastData = {
+                type: 'user_login',
+                userEmail: userEmail,
+                username: username,
+                timestamp: Date.now(),
+                source: 'main_app'
+            };
+            
+            // Save to localStorage (will trigger storage event in admin panel)
+            localStorage.setItem('userLoginEvent', JSON.stringify(broadcastData));
+            
+            // Also save to cross browser sync
+            localStorage.setItem('cross_browser_sync_message', JSON.stringify({
+                type: 'user_login',
+                userEmail: userEmail,
+                username: username,
+                timestamp: Date.now()
+            }));
+            
+            console.log('📢 User login broadcasted:', userEmail);
+            
+            // Remove after 5 seconds to prevent buildup
+            setTimeout(() => {
+                localStorage.removeItem('userLoginEvent');
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Error broadcasting login:', error);
+        }
+    }
+
+    // ✅ Save user to server (placeholder function)
+    function saveUserToServer(userData) {
+        // TODO: Implement server save
+        console.log('Saving user to server:', userData);
+        // You can implement actual server API call here
+    }
+    </script>
+
     <script src="app.js"></script>
-    <script src="event-handlers.js"></script>
+    <script src="admin-panel-integration.js"></script>
+
+    <!-- Admin Test Button (Debugging) -->
+    <div style="position: fixed; bottom: 10px; right: 10px; z-index: 10000;">
+        <button onclick="testAdminSystem()" 
+                style="background: #000; color: white; padding: 5px 10px; border-radius: 5px; font-size: 10px;">
+            🔧 Test Admin
+        </button>
+    </div>
+
+    <script>
+    // Debug function
+    function testAdminSystem() {
+        console.log('=== ADMIN SYSTEM DEBUG ===');
+        console.log('Current User:', JSON.parse(localStorage.getItem('currentUser') || '{}'));
+        console.log('User Authorized:', isUserAuthorizedForAdmin());
+        console.log('Admin Button Exists:', document.querySelector('.admin-header-btn') !== null);
+        
+        // Force inject button
+        injectAdminButtonOptimized();
+        
+        alert('Admin system test complete. Check console for details.');
+    }
+    </script>
 </body>
 </html>
