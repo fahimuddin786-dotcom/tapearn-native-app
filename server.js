@@ -7,57 +7,10 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const https = require('https');
-const WebSocket = require('ws');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// ✅ WebSocket Setup
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
-
-// ✅ Connected admin panels tracking
-const connectedAdmins = new Set();
-
-// WebSocket connection handler
-wss.on('connection', (ws, req) => {
-    console.log('🟢 Admin panel connected via WebSocket');
-    connectedAdmins.add(ws);
-    
-    ws.on('message', (message) => {
-        console.log('📨 WebSocket message:', message.toString());
-    });
-    
-    ws.on('close', () => {
-        console.log('🔴 Admin panel disconnected');
-        connectedAdmins.delete(ws);
-    });
-    
-    // Send initial data
-    ws.send(JSON.stringify({
-        type: 'connected',
-        message: 'Connected to real-time admin panel',
-        timestamp: new Date().toISOString()
-    }));
-});
-
-// Function to broadcast to all connected admin panels
-function broadcastToAllAdmins(type, data) {
-    const message = JSON.stringify({
-        type: type,
-        data: data,
-        timestamp: new Date().toISOString()
-    });
-    
-    connectedAdmins.forEach(ws => {
-        if (ws.readyState === WebSocket.OPEN) {
-            ws.send(message);
-        }
-    });
-    
-    console.log(`📢 Broadcasted ${type} to ${connectedAdmins.size} admin panels`);
-}
 
 // ✅ MongoDB Connection String (SAME AS RENDER)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
@@ -513,23 +466,11 @@ app.post('/api/universal/user-registered', async (req, res) => {
         
         await newUser.save();
         
-        // ✅ BROADCAST TO ALL CONNECTED ADMIN PANELS
-        broadcastToAllAdmins('user_registered', {
-            user: {
-                id: newUser._id,
-                email: newUser.email,
-                username: newUser.username,
-                points: newUser.points,
-                registration_date: newUser.registration_date,
-                status: newUser.status
-            },
-            source: 'mobile',
-            timestamp: new Date()
-        });
+        console.log(`✅ Mobile user saved and ready for sync: ${userData.email}`);
         
         res.json({
             success: true,
-            message: 'User registered and broadcasted',
+            message: 'User registered successfully',
             userId: newUser._id
         });
         
@@ -672,20 +613,6 @@ app.post('/api/mobile/register', async (req, res) => {
             console.log(`✅ Created new mobile user: ${user.email} with ID: ${user._id}`);
         }
 
-        // ✅ BROADCAST IMMEDIATELY
-        broadcastToAllAdmins('mobile_user_registered', {
-            user: {
-                id: user._id,
-                email: user.email,
-                username: user.username,
-                points: user.points,
-                mobile: user.phone,
-                registration_date: user.registration_date
-            },
-            source: 'mobile_app',
-            device: mobileUser.device_type || 'mobile'
-        });
-
         res.json({
             success: true,
             message: 'Mobile user registered successfully',
@@ -750,17 +677,7 @@ app.post('/api/mobile/sync-to-admin', async (req, res) => {
                     await user.save();
                     syncedCount++;
                     
-                    // Broadcast new user
-                    broadcastToAllAdmins('mobile_sync_user', {
-                        user: {
-                            id: user._id,
-                            email: user.email,
-                            username: user.username,
-                            points: user.points,
-                            source: 'mobile_sync'
-                        },
-                        timestamp: new Date()
-                    });
+                    console.log(`✅ Synced mobile user: ${mobileUser.email}`);
                 } else {
                     // Update points if mobile has more
                     if (mobileUser.points > user.points) {
@@ -877,18 +794,6 @@ app.post('/api/universal-sync', async (req, res) => {
         
         await user.save();
         
-        // Broadcast
-        broadcastToAllAdmins('universal_sync_user', {
-          user: {
-            id: user._id,
-            email: user.email,
-            username: user.username,
-            points: user.points,
-            source: source
-          },
-          timestamp: new Date()
-        });
-        
         res.json({ 
           success: true, 
           message: 'User registered via universal sync',
@@ -983,18 +888,6 @@ app.post('/api/cross-origin-sync', async (req, res) => {
           
           await user.save();
           syncedCount++;
-          
-          // Broadcast new user
-          broadcastToAllAdmins('cross_origin_user', {
-            user: {
-              id: user._id,
-              email: user.email,
-              username: user.username,
-              points: user.points,
-              source: source
-            },
-            timestamp: new Date()
-          });
         } else {
           // Update existing user with highest values
           user.points = Math.max(user.points, userData.points || 0);
@@ -1134,13 +1027,6 @@ app.delete('/api/delete-user/:id', async (req, res) => {
     await SponsorCommission.deleteMany({ $or: [{ sponsor_id: userId }, { user_id: userId }] });
     await DailyActivity.deleteMany({ user_id: userId });
     
-    // Broadcast deletion
-    broadcastToAllAdmins('user_deleted', {
-      userId: userId,
-      email: user.email,
-      timestamp: new Date()
-    });
-    
     res.json({ 
       success: true, 
       message: 'User deleted successfully'
@@ -1211,18 +1097,6 @@ app.post('/api/sync-user', async (req, res) => {
       await user.save();
       
       console.log(`✅ New user created via sync: ${currentUser.email} with ID: ${user._id}`);
-      
-      // Broadcast new user
-      broadcastToAllAdmins('sync_user_added', {
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username,
-          points: user.points,
-          source: 'web_sync'
-        },
-        timestamp: new Date()
-      });
       
       if (user.referred_by) {
         const referrer = await User.findOne({ referral_code: user.referred_by });
@@ -1306,18 +1180,6 @@ app.post('/api/save-user', async (req, res) => {
       await user.save();
       
       console.log(`✅ New user created: ${userData.email} with ID: ${user._id}`);
-      
-      // Broadcast new user
-      broadcastToAllAdmins('new_user_added', {
-        user: {
-          id: user._id,
-          email: user.email,
-          username: user.username,
-          points: user.points,
-          source: 'web'
-        },
-        timestamp: new Date()
-      });
       
       if (user.referred_by) {
         const referrer = await User.findOne({ referral_code: user.referred_by });
@@ -2064,15 +1926,6 @@ app.get('/api/admin/get-all-users-enhanced', async (req, res) => {
       registration_date: { $gte: fiveMinutesAgo }
     }).select('email username registration_date source');
     
-    // Broadcast to WebSocket clients
-    if (recentUsers.length > 0) {
-      broadcastToAllAdmins('recent_users', {
-        users: recentUsers,
-        count: recentUsers.length,
-        timestamp: new Date()
-      });
-    }
-    
     res.json({
       success: true,
       users: users,
@@ -2162,17 +2015,6 @@ app.post('/api/admin/sync-all', async (req, res) => {
           
           await newUser.save();
           syncedCount++;
-          
-          // Broadcast
-          broadcastToAllAdmins('admin_sync_user', {
-            user: {
-              id: newUser._id,
-              email: newUser.email,
-              username: newUser.username,
-              points: newUser.points
-            },
-            timestamp: new Date()
-          });
         } else {
           existingUser.username = user.username || existingUser.username;
           existingUser.phone = user.mobile || user.phone || existingUser.phone;
@@ -2287,14 +2129,6 @@ app.post('/api/admin/update-user-status', async (req, res) => {
       return res.json({ success: false, message: 'User not found' });
     }
     
-    // Broadcast status change
-    broadcastToAllAdmins('user_status_changed', {
-      userId: userId,
-      email: user.email,
-      newStatus: status,
-      timestamp: new Date()
-    });
-    
     res.json({ 
       success: true, 
       message: `User ${status === 'active' ? 'activated' : 'deactivated'} successfully`
@@ -2344,16 +2178,6 @@ app.post('/api/admin/update-user-points', async (req, res) => {
     
     await walletTransaction.save();
     
-    // Broadcast points update
-    broadcastToAllAdmins('user_points_updated', {
-      userId: userId,
-      email: user.email,
-      newPoints: newPoints,
-      operation: operation,
-      amount: points,
-      timestamp: new Date()
-    });
-    
     res.json({ 
       success: true, 
       message: 'User points updated successfully',
@@ -2400,13 +2224,7 @@ app.post('/api/notify-admin', (req, res) => {
   const notification = req.body;
   console.log('📢 Admin notification:', notification);
   
-  // Broadcast notification to all admin panels
-  broadcastToAllAdmins('admin_notification', {
-    notification: notification,
-    timestamp: new Date()
-  });
-  
-  res.json({ success: true, message: 'Notification received and broadcasted' });
+  res.json({ success: true, message: 'Notification received' });
 });
 
 app.get('/api/admin/recent-activities', async (req, res) => {
@@ -2570,9 +2388,7 @@ app.get('/api/health', async (req, res) => {
       memory: process.memoryUsage(),
       database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       totalUsers: await User.countDocuments(),
-      totalTransactions: await WalletTransaction.countDocuments(),
-      connectedAdmins: connectedAdmins.size,
-      websocketStatus: 'active'
+      totalTransactions: await WalletTransaction.countDocuments()
     };
     
     res.json(health);
@@ -2663,12 +2479,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-server.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`
-  🚀 TapEarn Server v3.0 (with Universal Mobile Sync)
+  🚀 TapEarn Server v3.0 (with Universal Mobile Sync - Simplified)
   ==========================================
   ✅ Server running on: http://localhost:${PORT}
-  ✅ WebSocket Server: ws://localhost:${PORT}
   ✅ MongoDB: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...'}
   
   🔗 Important URLs:
@@ -2681,6 +2496,7 @@ server.listen(PORT, () => {
   🔄 Mobile Sync Endpoints:
   - Mobile Register: http://localhost:${PORT}/api/mobile/register
   - Universal Sync: http://localhost:${PORT}/api/universal/get-all-users
+  - Sync Status: http://localhost:${PORT}/api/universal/sync-status
   
   📊 Server started at: ${new Date().toLocaleString()}
   `);
@@ -2691,9 +2507,6 @@ process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
   server.close(() => {
     console.log('HTTP Server closed');
-    wss.close(() => {
-      console.log('WebSocket Server closed');
-    });
     mongoose.connection.close();
     process.exit(0);
   });
