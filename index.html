@@ -5802,20 +5802,69 @@
         </div>
     </div>
 
-    <!-- ✅ BROADCAST FUNCTIONS FOR MAIN APP -->
+    <!-- ✅ UPDATED BROADCAST FUNCTIONS FOR MAIN APP -->
     <script>
+    // ✅ Updated function to save user and broadcast universally
+    async function saveUserAndBroadcast(userData) {
+        try {
+            // Save to localStorage
+            const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            users.push(userData);
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
+            
+            // ✅ Broadcast universally
+            broadcastUserRegistrationUniversal(userData);
+            
+            // Save to server
+            await saveUserToServer(userData);
+            
+            console.log('✅ User saved and broadcasted universally');
+            return true;
+        } catch (error) {
+            console.error('Error saving user:', error);
+            return false;
+        }
+    }
+
+    // ✅ Universal broadcast function for user registration
+    function broadcastUserRegistrationUniversal(userData) {
+        try {
+            const broadcastData = {
+                type: 'user_registered',
+                userEmail: userData.email,
+                username: userData.username,
+                points: userData.points || 100,
+                usdtWallet: userData.usdtWallet || 0,
+                registration_date: userData.registration_date || new Date().toISOString(),
+                status: userData.status || 'active',
+                timestamp: Date.now(),
+                source: 'main_app'
+            };
+            
+            // Save to localStorage (will trigger storage event in admin panel)
+            localStorage.setItem('userRegistrationEvent', JSON.stringify(broadcastData));
+            
+            // Also save to cross browser sync
+            localStorage.setItem('cross_browser_sync_message', JSON.stringify({
+                type: 'user_registered',
+                ...broadcastData
+            }));
+            
+            console.log('📢 User registration broadcasted universally:', userData.email);
+            
+            // Remove after 5 seconds to prevent buildup
+            setTimeout(() => {
+                localStorage.removeItem('userRegistrationEvent');
+            }, 5000);
+            
+        } catch (error) {
+            console.error('Error broadcasting registration:', error);
+        }
+    }
+
     // ✅ When user registers successfully in main app:
-    function onUserRegistered(userData) {
-        // Save user locally
-        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-        registeredUsers.push(userData);
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-        
-        // Broadcast to other browsers
-        broadcastUserRegistration(userData.email, userData.username);
-        
-        // Also save to server
-        saveUserToServer(userData);
+    async function onUserRegistered(userData) {
+        return await saveUserAndBroadcast(userData);
     }
 
     // ✅ When user logs in:
@@ -5830,40 +5879,6 @@
         
         // Broadcast login
         broadcastUserLogin(userData.email, userData.username);
-    }
-
-    // ✅ Broadcast function for main app
-    function broadcastUserRegistration(userEmail, username) {
-        try {
-            const broadcastData = {
-                type: 'user_registered',
-                userEmail: userEmail,
-                username: username,
-                timestamp: Date.now(),
-                source: 'main_app'
-            };
-            
-            // Save to localStorage (will trigger storage event in admin panel)
-            localStorage.setItem('userRegistrationEvent', JSON.stringify(broadcastData));
-            
-            // Also save to cross browser sync
-            localStorage.setItem('cross_browser_sync_message', JSON.stringify({
-                type: 'user_registered',
-                userEmail: userEmail,
-                username: username,
-                timestamp: Date.now()
-            }));
-            
-            console.log('📢 User registration broadcasted:', userEmail);
-            
-            // Remove after 5 seconds to prevent buildup
-            setTimeout(() => {
-                localStorage.removeItem('userRegistrationEvent');
-            }, 5000);
-            
-        } catch (error) {
-            console.error('Error broadcasting registration:', error);
-        }
     }
 
     // ✅ Broadcast user login
@@ -5905,7 +5920,22 @@
         // TODO: Implement server save
         console.log('Saving user to server:', userData);
         // You can implement actual server API call here
+        return Promise.resolve();
     }
+    
+    // ✅ Example usage when user registers:
+    /*
+    const newUser = {
+        email: userEmail,
+        username: userName,
+        points: 100,
+        usdtWallet: 0,
+        registration_date: new Date().toISOString(),
+        status: 'active'
+    };
+    
+    await onUserRegistered(newUser);
+    */
     </script>
 
     <script src="app.js"></script>
