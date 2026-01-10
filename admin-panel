@@ -1,4 +1,4 @@
-// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH UNIVERSAL REAL-TIME SYNC + SPONSOR SYSTEM + MANUAL SYNC CONTROLS + MULTI-SERVER SYNC)
+// admin-panel.js - Admin Panel Helper Functions (OPTIMIZED VERSION WITH MOBILE SUPPORT)
 
 // Auto-detect current server and use universal endpoints
 const getServerBase = () => {
@@ -34,14 +34,20 @@ const AdminPanel = {
         removeSponsor: `${SERVER_BASE}/api/remove-sponsor`,
         bulkAssignSponsors: `${SERVER_BASE}/api/bulk-assign-sponsors`,
         updateUser: `${SERVER_BASE}/api/update-user/`,
-        addPoints: `${SERVER_BASE}/api/add-points`
+        addPoints: `${SERVER_BASE}/api/add-points`,
+        userSyncCheck: `${SERVER_BASE}/api/admin/user-sync-check`,
+        mobileUsers: `${SERVER_BASE}/api/admin/mobile-users`,
+        syncMobileUsers: `${SERVER_BASE}/api/admin/sync-mobile-users`
     },
 
-    // Real-time refresh settings
-    refreshInterval: 5000, // 5 seconds
+    // Real-time refresh settings (OPTIMIZED)
+    refreshInterval: 30000, // 30 seconds (optimized from 5s)
     autoRefreshEnabled: true,
     refreshTimer: null,
     syncStatusTimer: null,
+    lastRefreshTime: 0,
+    isRefreshing: false,
+    refreshQueue: [],
 
     // Multi-server configuration
     servers: [
@@ -49,9 +55,23 @@ const AdminPanel = {
         { name: 'Online', url: 'https://tapearn-native-app.onrender.com', active: true }
     ],
 
+    // Performance monitoring
+    perfMetrics: {
+        loadTimes: [],
+        refreshCount: 0,
+        notificationCount: 0
+    },
+
+    // Mobile users tracking
+    mobileUsersData: {
+        count: 0,
+        lastSync: null,
+        analytics: {}
+    },
+
     // Initialize admin panel
     init: async function() {
-        console.log('🔧 Initializing Universal Admin Panel with Real-Time Sync...');
+        console.log('🔧 Initializing OPTIMIZED Admin Panel with Mobile Support...');
         console.log(`📡 Server Base: ${SERVER_BASE}`);
         
         // Check authentication
@@ -63,8 +83,8 @@ const AdminPanel = {
         // Load initial data
         await this.loadInitialData();
         
-        // Setup real-time updates
-        this.setupRealTimeUpdates();
+        // Setup optimized real-time updates
+        this.setupOptimizedRealTimeUpdates();
         
         // Inject admin controls if on main app
         if (window.location.pathname.includes('index.html')) {
@@ -83,10 +103,15 @@ const AdminPanel = {
                 this.setupSyncStatusDisplay();
                 // Add sync controls to header
                 this.addSyncControlsToHeader();
+                // Add Mobile Users tab to navigation
+                this.addMobileUsersToNav();
             }, 1000);
         }
         
-        console.log('✅ Universal Admin Panel Initialized');
+        // Setup mobile user listener
+        this.setupMobileUserListener();
+        
+        console.log('✅ OPTIMIZED Admin Panel with Mobile Support Initialized');
     },
 
     // Check admin authentication
@@ -109,10 +134,32 @@ const AdminPanel = {
         return true;
     },
 
-    // Load initial data from server
-    loadInitialData: async function() {
+    // Load initial data from server (OPTIMIZED)
+    loadInitialData: async function(force = false) {
+        const now = Date.now();
+        const timeSinceLastRefresh = now - this.lastRefreshTime;
+        
+        // Rate limiting
+        if (!force && timeSinceLastRefresh < 10000) { // 10 seconds minimum
+            console.log('⏳ Skipping refresh (rate limited)');
+            return;
+        }
+        
+        // Check if already refreshing
+        if (this.isRefreshing) {
+            console.log('⏳ Already refreshing, queueing request');
+            if (!this.refreshQueue.includes('loadInitialData')) {
+                this.refreshQueue.push('loadInitialData');
+            }
+            return;
+        }
+        
+        this.isRefreshing = true;
+        this.lastRefreshTime = now;
+        const startTime = performance.now();
+        
         try {
-            console.log('📥 Loading data from server...');
+            console.log('📥 OPTIMIZED: Loading data from server...');
             
             // Check server health first
             const healthCheck = await this.testServerConnection();
@@ -122,33 +169,54 @@ const AdminPanel = {
                 return;
             }
             
-            // Load users
-            const usersResponse = await fetch(this.endpoints.getUsers);
-            if (usersResponse.ok) {
-                const data = await usersResponse.json();
+            // Parallel fetching with error handling
+            const [usersResponse, txResponse, statsResponse] = await Promise.allSettled([
+                fetch(this.endpoints.getUsers).catch(() => ({ ok: false })),
+                fetch(this.endpoints.getTransactions).catch(() => ({ ok: false })),
+                fetch(this.endpoints.getUserStats).catch(() => ({ ok: false }))
+            ]);
+            
+            // Process users
+            if (usersResponse.status === 'fulfilled' && usersResponse.value.ok) {
+                const data = await usersResponse.value.json();
                 if (data.success) {
                     window.adminData = window.adminData || {};
                     const filteredUsers = this.filterDeletedUsers(data.users || data.data || []);
+                    const userCountChanged = filteredUsers.length !== (window.adminData.users?.length || 0);
+                    
                     window.adminData.users = filteredUsers;
-                    console.log(`✅ Loaded ${filteredUsers.length} users from server`);
+                    
+                    // Update mobile users count
+                    this.updateMobileUserCount();
+                    
+                    // Show notification only if significant change
+                    if (userCountChanged && Math.abs(filteredUsers.length - (window.adminData.users?.length || 0)) > 5) {
+                        this.showNotification(`🔄 Users updated: ${filteredUsers.length} total`, 'info');
+                    }
                 }
             }
 
-            // Load transactions
-            const txResponse = await fetch(this.endpoints.getTransactions);
-            if (txResponse.ok) {
-                const data = await txResponse.json();
+            // Process transactions
+            if (txResponse.status === 'fulfilled' && txResponse.value.ok) {
+                const data = await txResponse.value.json();
                 if (data.success) {
                     window.adminData.transactions = data.transactions || data.data || [];
-                    console.log(`✅ Loaded ${window.adminData.transactions.length} transactions`);
+                }
+            }
+
+            // Process stats
+            if (statsResponse.status === 'fulfilled' && statsResponse.value.ok) {
+                const data = await statsResponse.value.json();
+                if (data.success) {
+                    window.adminData.serverStats = data.stats || data.data || {};
                 }
             }
 
             // Load sponsor statistics
             await this.loadSponsorStats();
-
-            // Load server stats
-            await this.loadServerStats();
+            
+            // Load mobile users data
+            await this.loadMobileUsersData();
 
             window.adminData.lastUpdated = new Date();
             window.adminData.serverConnected = true;
@@ -159,13 +227,146 @@ const AdminPanel = {
             // Dispatch event for UI updates
             this.dispatchEvent('adminDataLoaded', window.adminData);
             
-            // Show success notification
-            this.showNotification('✅ Data loaded successfully from server', 'success');
+            // Performance monitoring
+            const endTime = performance.now();
+            this.perfMetrics.loadTimes.push(endTime - startTime);
+            this.perfMetrics.refreshCount++;
+            
+            // Keep only last 10 measurements
+            if (this.perfMetrics.loadTimes.length > 10) {
+                this.perfMetrics.loadTimes.shift();
+            }
+            
+            // Log performance every 10 refreshes
+            if (this.perfMetrics.refreshCount % 10 === 0) {
+                const avgLoadTime = this.perfMetrics.loadTimes.reduce((a, b) => a + b, 0) / this.perfMetrics.loadTimes.length;
+                console.log(`📊 Performance: Avg load ${avgLoadTime.toFixed(2)}ms, ${this.perfMetrics.refreshCount} refreshes`);
+            }
+            
+            if (!force) {
+                this.showNotification('✅ Data refreshed', 'success');
+            }
             
         } catch (error) {
             console.error('❌ Error loading admin data:', error);
             this.showNotification('⚠️ Using local data (server offline)', 'warning');
             this.loadFromLocalStorage();
+        } finally {
+            this.isRefreshing = false;
+            
+            // Process queued refreshes
+            if (this.refreshQueue.length > 0) {
+                const nextRefresh = this.refreshQueue.shift();
+                setTimeout(() => this.loadInitialData(), 5000);
+            }
+        }
+    },
+
+    // Load mobile users data
+    loadMobileUsersData: async function() {
+        try {
+            const response = await fetch(this.endpoints.mobileUsers);
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    this.mobileUsersData = {
+                        count: data.count || 0,
+                        lastSync: data.lastSync || new Date().toISOString(),
+                        analytics: data.analytics || {},
+                        mobileUsers: data.mobileUsers || []
+                    };
+                    console.log(`📱 Loaded ${this.mobileUsersData.count} mobile users`);
+                }
+            }
+        } catch (error) {
+            console.error('Error loading mobile users data:', error);
+            this.calculateMobileUsersFromLocal();
+        }
+    },
+
+    // Calculate mobile users from local data
+    calculateMobileUsersFromLocal: function() {
+        const users = window.adminData.users || [];
+        const mobileUsers = users.filter(user => 
+            user.source === 'mobile_app' || 
+            user.source === 'mobile_server' ||
+            user.device_type === 'mobile' ||
+            user.platform === 'mobile'
+        );
+        
+        this.mobileUsersData = {
+            count: mobileUsers.length,
+            lastSync: new Date().toISOString(),
+            analytics: this.getMobileAnalytics(mobileUsers),
+            mobileUsers: mobileUsers
+        };
+    },
+
+    // Get mobile analytics
+    getMobileAnalytics: function(mobileUsers) {
+        const today = new Date();
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        const recentUsers = mobileUsers.filter(user => {
+            const regDate = new Date(user.registration_date || user.registeredAt);
+            return regDate >= weekAgo;
+        });
+        
+        const todayUsers = mobileUsers.filter(user => {
+            const regDate = new Date(user.registration_date || user.registeredAt);
+            return regDate.toDateString() === today.toDateString();
+        });
+        
+        const mobileOnlyUsers = mobileUsers.filter(u => !u.email && u.mobile);
+        
+        return {
+            total: mobileUsers.length,
+            recent: recentUsers.length,
+            today: todayUsers.length,
+            mobileOnly: mobileOnlyUsers.length,
+            avgPoints: mobileUsers.length > 0 ? 
+                Math.round(mobileUsers.reduce((sum, user) => sum + (user.points || 0), 0) / mobileUsers.length) : 0,
+            deviceTypes: this.getDeviceTypes(mobileUsers),
+            sources: this.getMobileSources(mobileUsers)
+        };
+    },
+
+    // Get device types
+    getDeviceTypes: function(mobileUsers) {
+        const types = {};
+        mobileUsers.forEach(user => {
+            const type = user.device_type || 'unknown';
+            types[type] = (types[type] || 0) + 1;
+        });
+        return types;
+    },
+
+    // Get mobile sources
+    getMobileSources: function(mobileUsers) {
+        const sources = {};
+        mobileUsers.forEach(user => {
+            const source = user.source || 'unknown';
+            sources[source] = (sources[source] || 0) + 1;
+        });
+        return sources;
+    },
+
+    // Update mobile user count
+    updateMobileUserCount: function() {
+        const mobileUsers = (window.adminData.users || []).filter(user => 
+            user.source === 'mobile_app' || 
+            user.source === 'mobile_server' ||
+            user.device_type === 'mobile' ||
+            user.platform === 'mobile'
+        );
+        
+        this.mobileUsersData.count = mobileUsers.length;
+        
+        // Update badge if exists
+        const badge = document.getElementById('mobileUserCountBadge');
+        if (badge) {
+            badge.textContent = mobileUsers.length;
         }
     },
 
@@ -247,6 +448,9 @@ const AdminPanel = {
             // Calculate sponsor stats from local data
             this.calculateLocalSponsorStats();
             
+            // Calculate mobile users from local data
+            this.calculateMobileUsersFromLocal();
+            
             this.dispatchEvent('adminDataLoaded', window.adminData);
         } catch (error) {
             console.error('❌ Failed to load any data:', error);
@@ -259,38 +463,39 @@ const AdminPanel = {
         }
     },
 
-    // Load server statistics
-    loadServerStats: async function() {
-        try {
-            const response = await fetch(this.endpoints.getUserStats);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    window.adminData.serverStats = data.stats || data.data || {};
-                }
-            }
-        } catch (error) {
-            console.error('Error loading server stats:', error);
-        }
-    },
-
-    // Setup real-time updates
-    setupRealTimeUpdates: function() {
-        // Auto-refresh every 5 seconds if enabled
+    // Setup optimized real-time updates
+    setupOptimizedRealTimeUpdates: function() {
+        // Auto-refresh every 30 seconds if enabled
         this.startAutoRefresh();
         
-        // Listen for storage changes (multi-browser sync)
+        // Optimized storage events with debouncing
+        let userChangeCount = 0;
         window.addEventListener('storage', (event) => {
-            if (event.key === 'registeredUsers' || event.key === 'allUsersTransactions') {
-                console.log('🔄 Storage changed from another browser:', event.key);
-                this.loadFromLocalStorage();
+            if (event.key === 'registeredUsers') {
+                userChangeCount++;
+                
+                // Only refresh if multiple changes occurred
+                if (userChangeCount >= 3) {
+                    this.loadInitialData();
+                    userChangeCount = 0;
+                }
             }
-            
-            // Sponsor data changes
-            if (event.key === 'sponsorData' || event.key === 'sponsorAssignments') {
-                console.log('🔄 Sponsor data updated from another browser');
-                this.calculateLocalSponsorStats();
-                this.dispatchEvent('sponsorDataUpdated', window.adminData.sponsorStats);
+        });
+
+        // Window focus with cooldown
+        let lastFocusTime = 0;
+        window.addEventListener('focus', () => {
+            const now = Date.now();
+            if (now - lastFocusTime > 10000) { // 10 seconds cooldown
+                lastFocusTime = now;
+                this.debouncedRefresh();
+            }
+        });
+
+        // Page visibility
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.debouncedRefresh();
             }
         });
 
@@ -318,6 +523,48 @@ const AdminPanel = {
         window.addEventListener('manualRefreshRequest', () => {
             this.loadInitialData();
         });
+        
+        // Listen for mobile user events
+        window.addEventListener('mobileUserRegistered', () => {
+            this.updateMobileUserCount();
+            this.loadMobileUsersData();
+        });
+    },
+    
+    // Setup mobile user listener
+    setupMobileUserListener: function() {
+        // Listen for mobile-specific events
+        window.addEventListener('mobileSyncComplete', (event) => {
+            console.log('📱 Mobile sync complete:', event.detail);
+            this.updateMobileUserCount();
+        });
+        
+        // Periodic mobile sync
+        setInterval(() => {
+            if (document.visibilityState === 'visible' && this.autoRefreshEnabled) {
+                this.updateMobileUserCount();
+            }
+        }, 30000);
+    },
+    
+    // Debounce helper
+    debouncedRefresh: this.debounce(function() {
+        if (document.visibilityState === 'visible') {
+            this.loadInitialData();
+        }
+    }, 2000),
+    
+    // Debounce function
+    debounce: function(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     },
     
     // Start auto-refresh
@@ -327,14 +574,14 @@ const AdminPanel = {
         }
         
         this.refreshTimer = setInterval(async () => {
-            if (this.autoRefreshEnabled) {
+            if (this.autoRefreshEnabled && document.visibilityState === 'visible') {
                 console.log('🔄 Auto-refresh triggered');
                 await this.loadInitialData();
                 this.dispatchEvent('adminDataUpdated', window.adminData);
             }
         }, this.refreshInterval);
         
-        console.log('✅ Auto-refresh started (5s interval)');
+        console.log('✅ Auto-refresh started (30s interval)');
     },
     
     // Stop auto-refresh
@@ -561,7 +808,7 @@ const AdminPanel = {
             manualRefreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
             manualRefreshBtn.disabled = true;
             
-            await this.loadInitialData();
+            await this.loadInitialData(true);
             
             setTimeout(() => {
                 manualRefreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Now';
@@ -604,10 +851,10 @@ const AdminPanel = {
         `;
         
         syncControls.innerHTML = `
-            <button class="btn btn-info btn-sm" onclick="syncFromAllServers()" title="Sync from all servers" style="display: flex; align-items: center; gap: 5px;">
+            <button class="btn btn-info btn-sm" onclick="AdminPanel.syncFromAllServers()" title="Sync from all servers" style="display: flex; align-items: center; gap: 5px;">
                 <i class="fas fa-sync-alt"></i> Multi-Server Sync
             </button>
-            <button class="btn btn-warning btn-sm" onclick="checkAllServerStatus()" title="Check server status" style="display: flex; align-items: center; gap: 5px;">
+            <button class="btn btn-warning btn-sm" onclick="AdminPanel.checkAllServerStatus()" title="Check server status" style="display: flex; align-items: center; gap: 5px;">
                 <i class="fas fa-server"></i> Server Status
             </button>
             <div id="serverStatus" style="display: inline-block; padding: 5px 10px; border-radius: 5px; background: #f8f9fa; font-size: 12px; display: flex; align-items: center; gap: 5px;">
@@ -744,38 +991,36 @@ const AdminPanel = {
             }
         }
         
+        // Filter deleted users
+        const filteredUsers = this.filterDeletedUsers(allUsers);
+        
         // Update window data
         window.adminData = window.adminData || {};
-        window.adminData.users = allUsers;
+        window.adminData.users = filteredUsers;
         window.adminData.transactions = allTransactions;
         window.adminData.lastUpdated = new Date();
         window.adminData.multiServerSync = true;
         
         // Update localStorage
-        localStorage.setItem('registeredUsers', JSON.stringify(allUsers));
+        localStorage.setItem('registeredUsers', JSON.stringify(filteredUsers));
         localStorage.setItem('allUsersTransactions', JSON.stringify(allTransactions));
         
         // Dispatch event
         this.dispatchEvent('multiServerSyncComplete', { 
             servers: successfulServers, 
-            userCount: allUsers.length,
+            userCount: filteredUsers.length,
             transactionCount: allTransactions.length 
         });
         
         this.showNotification(
-            `✅ Synced from ${successfulServers.length} server(s): ${allUsers.length} users, ${allTransactions.length} transactions`,
+            `✅ Synced from ${successfulServers.length} server(s): ${filteredUsers.length} users, ${allTransactions.length} transactions`,
             'success'
         );
-        
-        // Update UI
-        if (typeof refreshAdminDashboard === 'function') {
-            refreshAdminDashboard();
-        }
         
         return {
             success: true,
             servers: successfulServers,
-            userCount: allUsers.length,
+            userCount: filteredUsers.length,
             transactionCount: allTransactions.length
         };
     },
@@ -824,7 +1069,7 @@ const AdminPanel = {
         this.showNotification('🔄 Forcing sync across all browsers...', 'info');
         
         // 1. Load from server
-        await this.loadInitialData();
+        await this.loadInitialData(true);
         
         // 2. Update localStorage
         if (window.adminData && window.adminData.users) {
@@ -989,11 +1234,23 @@ const AdminPanel = {
 
     // Filter deleted users
     filterDeletedUsers: function(users) {
-        return users.filter(user => 
-            !user.isDeleted && 
-            user.status !== 'deleted' && 
-            !user.deletedAt
-        );
+        // Get deleted users from localStorage
+        const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers') || '[]');
+        const deletedUsersSet = new Set(deletedUsers.map(id => id?.toString()?.toLowerCase()));
+        
+        return users.filter(user => {
+            const userIdentifiers = [
+                user.email,
+                user.id?.toString(),
+                user.username,
+                user.email?.toLowerCase(),
+                user.username?.toLowerCase()
+            ].filter(Boolean);
+            
+            return !userIdentifiers.some(id => 
+                deletedUsersSet.has(id?.toString()?.toLowerCase())
+            );
+        });
     },
 
     // Get real-time statistics WITH SPONSOR STATS
@@ -1014,11 +1271,27 @@ const AdminPanel = {
         
         const topSponsors = this.getTopSponsors(users);
         
+        // Calculate mobile user stats
+        const mobileUsers = users.filter(user => 
+            user.source === 'mobile_app' || 
+            user.source === 'mobile_server' ||
+            user.device_type === 'mobile' ||
+            user.platform === 'mobile'
+        );
+        
         return {
             // User stats
             totalUsers: users.length,
             activeUsers: users.filter(u => u.status === 'active').length,
             verifiedUsers: users.filter(u => u.emailVerified).length,
+            
+            // Mobile stats
+            mobileUsers: mobileUsers.length,
+            mobileOnlyUsers: mobileUsers.filter(u => !u.email && u.mobile).length,
+            mobileRegistrationToday: mobileUsers.filter(user => {
+                const regDate = new Date(user.registration_date || user.registeredAt);
+                return regDate.toDateString() === new Date().toDateString();
+            }).length,
             
             // Points and wallet stats
             totalPoints: users.reduce((sum, user) => sum + (user.points || 0), 0),
@@ -1046,7 +1319,8 @@ const AdminPanel = {
             // Server status
             serverConnected: window.adminData.serverConnected || false,
             lastUpdated: window.adminData.lastUpdated,
-            sponsorStats: sponsorStats
+            sponsorStats: sponsorStats,
+            mobileStats: this.mobileUsersData.analytics || {}
         };
     },
 
@@ -1241,6 +1515,374 @@ const AdminPanel = {
         return getHierarchy(sponsorId);
     },
 
+    // Mobile Users Management Methods
+    showMobileUsers: function() {
+        // Set active nav
+        const navItems = document.querySelectorAll('.admin-nav .nav-item');
+        navItems.forEach(item => item.classList.remove('active'));
+        const mobileNav = document.querySelector('.admin-nav .nav-item-mobile');
+        if (mobileNav) mobileNav.classList.add('active');
+        
+        // Update header
+        const header = document.querySelector('.admin-header h2');
+        if (header) {
+            header.innerHTML = '<i class="fas fa-mobile-alt"></i> Mobile Users';
+        }
+        
+        // Get mobile users
+        const users = window.adminData.users || [];
+        const mobileUsers = users.filter(user => 
+            user.source === 'mobile_app' || 
+            user.source === 'mobile_server' ||
+            user.device_type === 'mobile' ||
+            user.platform === 'mobile'
+        );
+        
+        const totalMobileUsers = mobileUsers.length;
+        const todayMobileReg = mobileUsers.filter(user => {
+            const regDate = new Date(user.registration_date || user.registeredAt);
+            return regDate.toDateString() === new Date().toDateString();
+        }).length;
+        
+        const html = `
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-number">${totalMobileUsers}</div>
+                            <div class="stat-label">Mobile Users</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>${todayMobileReg} new today</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card success">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-number">${mobileUsers.reduce((sum, user) => sum + (user.points || 0), 0)}</div>
+                            <div class="stat-label">Total Points</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Mobile earnings</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card warning">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-number">${mobileUsers.filter(u => u.mobile).length}</div>
+                            <div class="stat-label">With Mobile</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-phone"></i>
+                        </div>
+                    </div>
+                    <div class="stat-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        <span>Phone verified</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card info">
+                    <div class="stat-header">
+                        <div>
+                            <div class="stat-number">${users.length > 0 ? Math.round((totalMobileUsers / users.length) * 100) : 0}%</div>
+                            <div class="stat-label">Of Total Users</div>
+                        </div>
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="admin-actions" style="margin-bottom: 20px;">
+                <button class="btn btn-primary btn-sm" onclick="AdminPanel.syncMobileUsers()">
+                    <i class="fas fa-sync-alt"></i> Sync Mobile Users
+                </button>
+                <button class="btn btn-success btn-sm" onclick="AdminPanel.exportMobileUsers()">
+                    <i class="fas fa-download"></i> Export Mobile Data
+                </button>
+                <button class="btn btn-warning btn-sm" onclick="AdminPanel.testMobileRegistration()">
+                    <i class="fas fa-mobile-alt"></i> Test Mobile Reg
+                </button>
+            </div>
+            
+            <div class="table-container">
+                <div class="table-header">
+                    <h3 style="color: white; margin: 0;">Mobile Users (${totalMobileUsers})</h3>
+                    <input type="text" class="search-input" id="mobileSearch" 
+                           placeholder="Search mobile users..." 
+                           style="width: 250px; padding: 8px 15px; border-radius: 5px; border: none;">
+                </div>
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>User</th>
+                            <th>Email/Phone</th>
+                            <th>Points</th>
+                            <th>Registered</th>
+                            <th>Device</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mobileUsersTable">
+                        ${mobileUsers.map((user, index) => `
+                            <tr>
+                                <td>${user.id || index + 1}</td>
+                                <td>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <div class="user-avatar" style="background: linear-gradient(45deg, #FF6B6B, #4ECDC4);">
+                                            <i class="fas fa-mobile-alt"></i>
+                                        </div>
+                                        <div>
+                                            <strong>${user.username || 'Mobile User'}</strong>
+                                            <div style="font-size: 12px; color: #666;">${user.source || 'mobile'}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div>${user.email || 'No email'}</div>
+                                    <div style="font-size: 12px; color: #666;">${user.mobile || 'No phone'}</div>
+                                </td>
+                                <td><strong>${user.points || 0}</strong></td>
+                                <td>${new Date(user.registration_date || user.registeredAt).toLocaleDateString()}</td>
+                                <td>
+                                    <span class="badge badge-info">
+                                        ${user.device_type || 'mobile'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">
+                                        ${user.status || 'active'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="actions">
+                                        <button class="action-btn action-view" onclick="AdminPanel.viewUser('${user.email || user.id}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="action-btn action-edit" onclick="AdminPanel.editUser('${user.email || user.id}')">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                        
+                        ${mobileUsers.length === 0 ? `
+                            <tr>
+                                <td colspan="8" class="empty-state">
+                                    <div class="empty-state-icon">
+                                        <i class="fas fa-mobile-alt"></i>
+                                    </div>
+                                    <h3>No Mobile Users</h3>
+                                    <p>No mobile users have registered yet.</p>
+                                </td>
+                            </tr>
+                        ` : ''}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="content-card">
+                <div class="card-header">
+                    <h3><i class="fas fa-chart-line"></i> Mobile User Analytics</h3>
+                </div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px;">
+                    <div>
+                        <h4>Registration Trend</h4>
+                        <p>Last 7 days: ${mobileUsers.filter(user => {
+                            const weekAgo = new Date();
+                            weekAgo.setDate(weekAgo.getDate() - 7);
+                            return new Date(user.registration_date) >= weekAgo;
+                        }).length} users</p>
+                    </div>
+                    <div>
+                        <h4>Points Distribution</h4>
+                        <p>Average points: ${Math.round(mobileUsers.reduce((sum, user) => sum + (user.points || 0), 0) / mobileUsers.length) || 0}</p>
+                    </div>
+                    <div>
+                        <h4>Device Info</h4>
+                        <p>Mobile only: ${mobileUsers.filter(u => !u.email && u.mobile).length}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        const contentDiv = document.getElementById('adminContent');
+        if (contentDiv) {
+            contentDiv.innerHTML = html;
+            
+            // Add search functionality
+            const mobileSearch = document.getElementById('mobileSearch');
+            if (mobileSearch) {
+                mobileSearch.addEventListener('input', function() {
+                    const search = this.value.toLowerCase();
+                    const rows = document.querySelectorAll('#mobileUsersTable tr');
+                    
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        row.style.display = text.includes(search) ? '' : 'none';
+                    });
+                });
+            }
+        }
+    },
+
+    // Add Mobile Users to navigation
+    addMobileUsersToNav: function() {
+        const adminNav = document.querySelector('.admin-nav');
+        
+        if (!adminNav || adminNav.querySelector('.nav-item-mobile')) return;
+        
+        const mobileNavItem = `
+            <a href="#" class="nav-item nav-item-mobile" onclick="AdminPanel.showMobileUsers()">
+                <i class="fas fa-mobile-alt"></i>
+                <span>Mobile Users</span>
+                <span class="nav-badge" id="mobileUserCountBadge">${this.mobileUsersData.count || 0}</span>
+            </a>
+        `;
+        
+        // Insert after Users tab
+        const usersTab = adminNav.querySelector('[onclick*="showUsers"]');
+        if (usersTab) {
+            usersTab.insertAdjacentHTML('afterend', mobileNavItem);
+        } else {
+            adminNav.insertAdjacentHTML('beforeend', mobileNavItem);
+        }
+        
+        console.log('✅ Mobile Users tab added to navigation');
+    },
+
+    // Sync mobile users
+    syncMobileUsers: async function() {
+        this.showNotification('📱 Syncing mobile users...', 'info');
+        
+        try {
+            const response = await fetch(this.endpoints.syncMobileUsers, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                this.mobileUsersData.lastSync = new Date().toISOString();
+                this.updateMobileUserCount();
+                this.showNotification(`✅ ${data.count || 0} mobile users synced`, 'success');
+                return { success: true, count: data.count };
+            }
+        } catch (error) {
+            console.error('Error syncing mobile users:', error);
+            this.showNotification('❌ Error syncing mobile users', 'error');
+            return { success: false, error: error.message };
+        }
+    },
+
+    // Export mobile users
+    exportMobileUsers: function() {
+        const mobileUsers = (window.adminData.users || []).filter(user => 
+            user.source === 'mobile_app' || 
+            user.source === 'mobile_server' ||
+            user.device_type === 'mobile' ||
+            user.platform === 'mobile'
+        );
+        
+        const exportData = {
+            mobileUsers: mobileUsers,
+            analytics: this.mobileUsersData.analytics,
+            exportDate: new Date().toISOString(),
+            total: mobileUsers.length
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `tapearn_mobile_users_export_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        this.showNotification(`✅ Exported ${mobileUsers.length} mobile users`, 'success');
+        return { success: true, count: mobileUsers.length };
+    },
+
+    // Test mobile registration
+    testMobileRegistration: function() {
+        this.showNotification('📱 Testing mobile registration...', 'info');
+        
+        // Simulate mobile registration
+        const testUser = {
+            id: 'test_mobile_' + Date.now(),
+            username: 'TestMobileUser',
+            email: 'test_mobile@example.com',
+            mobile: '+1234567890',
+            source: 'mobile_app',
+            device_type: 'mobile',
+            platform: 'android',
+            registration_date: new Date().toISOString(),
+            points: 100,
+            status: 'active'
+        };
+        
+        // Add to local data
+        window.adminData.users = window.adminData.users || [];
+        window.adminData.users.push(testUser);
+        
+        // Update mobile count
+        this.updateMobileUserCount();
+        
+        this.showNotification('✅ Mobile registration test completed', 'success');
+        
+        return { success: true, testUser };
+    },
+
+    // View user details
+    viewUser: function(userId) {
+        const user = (window.adminData.users || []).find(u => 
+            u.email === userId || u.id === userId
+        );
+        
+        if (user) {
+            alert(`User Details:\n\nID: ${user.id}\nUsername: ${user.username}\nEmail: ${user.email}\nMobile: ${user.mobile || 'N/A'}\nPoints: ${user.points || 0}\nStatus: ${user.status}\nSource: ${user.source || 'web'}`);
+        } else {
+            alert('User not found');
+        }
+    },
+
+    // Edit user
+    editUser: function(userId) {
+        const user = (window.adminData.users || []).find(u => 
+            u.email === userId || u.id === userId
+        );
+        
+        if (user) {
+            const newPoints = prompt(`Edit points for ${user.username}:`, user.points || 0);
+            if (newPoints !== null && !isNaN(newPoints)) {
+                user.points = parseInt(newPoints);
+                this.showNotification(`✅ Updated ${user.username}'s points to ${newPoints}`, 'success');
+                this.dispatchEvent('userUpdated', { userId, updates: { points: newPoints } });
+            }
+        } else {
+            alert('User not found');
+        }
+    },
+
     // Server management methods
     testServerConnection: async function() {
         try {
@@ -1343,6 +1985,8 @@ const AdminPanel = {
                     exportDate: new Date().toISOString()
                 };
                 break;
+            case 'mobile':
+                return this.exportMobileUsers();
             case 'all':
             default:
                 data = {
@@ -1350,6 +1994,8 @@ const AdminPanel = {
                     transactions: window.adminData.transactions,
                     serverStats: window.adminData.serverStats,
                     sponsorStats: window.adminData.sponsorStats,
+                    mobileUsers: this.mobileUsersData.mobileUsers || [],
+                    mobileAnalytics: this.mobileUsersData.analytics || {},
                     commissionSettings: JSON.parse(localStorage.getItem('sponsorCommissionSettings') || '{}'),
                     exportDate: new Date().toISOString()
                 };
@@ -1370,8 +2016,46 @@ const AdminPanel = {
         return { success: true, type, count: Array.isArray(data) ? data.length : 'multiple' };
     },
 
-    // Notification system
-    showNotification: function(message, type = 'info') {
+    // OPTIMIZED NOTIFICATION SYSTEM
+    showNotification: function(message, type = 'info', force = false) {
+        const now = Date.now();
+        const NOTIFICATION_COOLDOWN = 5000; // 5 seconds
+        const ERROR_NOTIFICATION_COOLDOWN = 10000; // 10 seconds
+        const SUCCESS_NOTIFICATION_COOLDOWN = 3000; // 3 seconds
+        const MAX_NOTIFICATIONS = 3;
+        
+        // Rate limiting
+        if (!force) {
+            if (type === 'info' && (now - this.lastNotificationTime < NOTIFICATION_COOLDOWN)) {
+                return;
+            }
+            
+            if (type === 'success' && (now - this.lastNotificationTime < SUCCESS_NOTIFICATION_COOLDOWN)) {
+                return;
+            }
+            
+            if (type === 'error' && (now - this.lastNotificationTime < ERROR_NOTIFICATION_COOLDOWN)) {
+                return;
+            }
+        }
+        
+        this.lastNotificationTime = now;
+        this.perfMetrics.notificationCount++;
+        
+        // Clear similar notifications
+        const existingNotifications = document.querySelectorAll('.admin-notification');
+        existingNotifications.forEach(notification => {
+            if (notification.textContent.includes(message.substring(0, 30))) {
+                notification.remove();
+            }
+        });
+        
+        // Limit total notifications
+        if (existingNotifications.length >= MAX_NOTIFICATIONS) {
+            existingNotifications[0].remove();
+        }
+        
+        // Create notification
         const notification = document.createElement('div');
         notification.className = `admin-notification notification-${type}`;
         notification.innerHTML = `
@@ -1404,7 +2088,7 @@ const AdminPanel = {
         
         document.body.appendChild(notification);
         
-        // Add CSS animation
+        // Add CSS animation if not already added
         if (!document.querySelector('#notificationStyles')) {
             const style = document.createElement('style');
             style.id = 'notificationStyles';
@@ -1421,14 +2105,18 @@ const AdminPanel = {
             document.head.appendChild(style);
         }
         
+        // Auto-remove after appropriate time
+        const removeTime = type === 'error' ? 8000 : type === 'info' ? 5000 : 4000;
         setTimeout(() => {
-            notification.style.animation = 'slideOut 0.3s ease-out forwards';
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.remove();
-                }
-            }, 300);
-        }, 5000);
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOut 0.3s ease-out forwards';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 300);
+            }
+        }, removeTime);
         
         this.dispatchEvent('notificationShown', { message, type });
     },
@@ -1443,11 +2131,11 @@ const AdminPanel = {
 // Initialize admin panel when DOM is loaded
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('📋 DOM loaded, initializing Admin Panel...');
+        console.log('📋 DOM loaded, initializing Admin Panel with Mobile Support...');
         AdminPanel.init();
     });
 } else {
-    console.log('📋 DOM already loaded, initializing Admin Panel...');
+    console.log('📋 DOM already loaded, initializing Admin Panel with Mobile Support...');
     AdminPanel.init();
 }
 
@@ -1456,11 +2144,11 @@ window.AdminPanel = AdminPanel;
 
 // Global helper functions for admin.html
 window.loadAllUsers = async function() {
-    await AdminPanel.loadInitialData();
+    await AdminPanel.loadInitialData(true);
 };
 
 window.syncAllUsers = async function() {
-    await AdminPanel.loadInitialData();
+    await AdminPanel.loadInitialData(true);
 };
 
 window.toggleAutoRefresh = function() {
@@ -1488,5 +2176,31 @@ window.checkAllServerStatus = async function() {
     return await AdminPanel.checkAllServerStatus();
 };
 
+// Mobile users functions
+window.showMobileUsers = function() {
+    return AdminPanel.showMobileUsers();
+};
+
+window.syncMobileUsers = async function() {
+    return await AdminPanel.syncMobileUsers();
+};
+
+window.exportMobileUsers = function() {
+    return AdminPanel.exportMobileUsers();
+};
+
+window.testMobileRegistration = function() {
+    return AdminPanel.testMobileRegistration();
+};
+
+// User management functions
+window.viewUser = function(userId) {
+    return AdminPanel.viewUser(userId);
+};
+
+window.editUser = function(userId) {
+    return AdminPanel.editUser(userId);
+};
+
 // Make AdminPanel globally available
-console.log('🌐 AdminPanel is now available globally');
+console.log('🌐 AdminPanel with Mobile Support is now available globally');
