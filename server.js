@@ -5,6 +5,8 @@ const cors = require('cors');
 const path = require('path');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const http = require('http');
+const https = require('https');
 require('dotenv').config();
 
 const app = express();
@@ -13,13 +15,45 @@ const PORT = process.env.PORT || 3000;
 // ✅ MongoDB Connection String (SAME AS RENDER)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
 
-// ✅ Enhanced CORS
+// ✅ ENHANCED CORS CONFIGURATION
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'https://tapearn-native-app.onrender.com',
+  'https://*.render.com',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'http://localhost:8080',
+  'http://127.0.0.1:8080',
+  'https://tapearn-admin.onrender.com',
+  'https://admin-tapearn.onrender.com'
+];
+
 app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  credentials: true
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      // Allow any origin in development
+      if (process.env.NODE_ENV !== 'production') {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  exposedHeaders: ['Content-Length', 'X-Request-Id'],
+  credentials: true,
+  maxAge: 86400 // 24 hours
 }));
+
+// Handle preflight requests
+app.options('*', cors());
 
 // ✅ Security Middleware - Simplified
 app.use(helmet({
@@ -397,6 +431,216 @@ app.get('/api/health-fast', (req, res) => {
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
+});
+
+// ==========================================
+// ✅ PROXY & SYNC ENDPOINTS (CORS FIX)
+// ==========================================
+
+// ✅ PROXY ENDPOINT for cross-origin requests
+app.get('/api/proxy/users', async (req, res) => {
+  try {
+    const targetServer = req.query.server || 'http://localhost:3000';
+    
+    // Don't allow arbitrary servers for security
+    const allowedServers = [
+      'http://localhost:3000',
+      'https://tapearn-native-app.onrender.com'
+    ];
+    
+    if (!allowedServers.includes(targetServer)) {
+      return res.status(400).json({ success: false, message: 'Invalid server' });
+    }
+    
+    // Use http or https module based on protocol
+    const protocol = targetServer.startsWith('https') ? https : http;
+    
+    const url = new URL(`${targetServer}/api/get-all-users`);
+    
+    const options = {
+      hostname: url.hostname,
+      port: url.port || (protocol === https ? 443 : 80),
+      path: url.pathname + url.search,
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    };
+    
+    const request = protocol.request(options, (response) => {
+      let data = '';
+      
+      response.on('data', (chunk) => {
+        data += chunk;
+      });
+      
+      response.on('end', () => {
+        try {
+          const jsonData = JSON.parse(data);
+          res.json({
+            success: true,
+            data: jsonData,
+            source: targetServer
+          });
+        } catch (error) {
+          res.status(500).json({ success: false, error: 'Failed to parse response' });
+        }
+      });
+    });
+    
+    request.on('error', (error) => {
+      console.error('Proxy request error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    });
+    
+    request.end();
+    
+  } catch (error) {
+    console.error('Proxy error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ UNIVERSAL SYNC ENDPOINT
+app.post('/api/universal-sync', async (req, res) => {
+  try {
+    const { action, data, source } = req.body;
+    
+    console.log(`🔄 Universal sync: ${action} from ${source}`);
+    
+    switch(action) {
+      case 'user_registered':
+        // Save user to database
+        const user = new User({
+          email: data.email,
+          username: data.username,
+          password: data.password || 'default123',
+          points: data.points || 100,
+          status: 'active',
+          registration_date: new Date()
+        });
+        
+        await user.save();
+        
+        res.json({ 
+          success: true, 
+          message: 'User registered via universal sync',
+          userId: user._id 
+        });
+        return;
+        
+      case 'sync_users':
+        // Return all users
+        const users = await User.find().select('-password').limit(100);
+        res.json({ success: true, users: users });
+        return;
+        
+      default:
+        res.json({ success: false, message: 'Unknown action' });
+    }
+    
+  } catch (error) {
+    console.error('Universal sync error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ GET USERS FROM ALL SERVERS
+app.get('/api/get-all-servers-users', async (req, res) => {
+  try {
+    const servers = [
+      'http://localhost:3000',
+      'https://tapearn-native-app.onrender.com'
+    ];
+    
+    const allUsers = [];
+    
+    // Get users from local database first
+    const localUsers = await User.find().select('-password').limit(100);
+    allUsers.push(...localUsers.map(user => ({
+      ...user.toObject(),
+      source: 'local_database'
+    })));
+    
+    res.json({
+      success: true,
+      users: allUsers,
+      count: allUsers.length,
+      sources: ['local_database'],
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Error getting all servers users:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ CROSS-ORIGIN USER SYNC ENDPOINT
+app.post('/api/cross-origin-sync', async (req, res) => {
+  try {
+    const { users, source } = req.body;
+    
+    console.log(`🔄 Cross-origin sync from ${source}, users: ${users.length}`);
+    
+    if (!Array.isArray(users)) {
+      return res.status(400).json({ success: false, message: 'Users must be an array' });
+    }
+    
+    let syncedCount = 0;
+    let errors = [];
+    
+    for (const userData of users) {
+      try {
+        // Check if user already exists
+        let user = await User.findOne({ email: userData.email });
+        
+        if (!user) {
+          // Create new user
+          user = new User({
+            email: userData.email,
+            username: userData.username || `user_${Date.now().toString().slice(-8)}`,
+            password: userData.password || `pwd_${Math.random().toString(36).slice(-8)}`,
+            phone: userData.phone || userData.mobile || '',
+            full_name: userData.full_name || userData.username || '',
+            referral_code: userData.referralCode || generateReferralCode(),
+            referred_by: userData.sponsorId || userData.referred_by || '',
+            points: userData.points || 0,
+            total_earned: userData.totalEarned || 0,
+            tasks_completed: userData.tasksCompleted || 0,
+            level: userData.level || 1,
+            status: userData.status || 'active',
+            registration_date: userData.registeredAt || new Date()
+          });
+          
+          await user.save();
+          syncedCount++;
+        } else {
+          // Update existing user with highest values
+          user.points = Math.max(user.points, userData.points || 0);
+          user.total_earned = Math.max(user.total_earned, userData.totalEarned || 0);
+          user.tasks_completed = Math.max(user.tasks_completed, userData.tasksCompleted || 0);
+          user.level = Math.max(user.level, userData.level || 1);
+          
+          await user.save();
+          syncedCount++;
+        }
+      } catch (error) {
+        errors.push(`Error syncing user ${userData.email}: ${error.message}`);
+      }
+    }
+    
+    res.json({ 
+      success: true, 
+      message: `Synced ${syncedCount} users from ${source}`,
+      count: syncedCount,
+      errors: errors.length > 0 ? errors : undefined
+    });
+    
+  } catch (error) {
+    console.error('Error in cross-origin sync:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // ==========================================
@@ -1893,8 +2137,6 @@ const selfPing = () => {
   if (idleTime > 5 * 60 * 1000) {
     console.log('🔄 Auto-pinging server to prevent sleep...');
     try {
-      // This will trigger a request to keep server awake
-      const http = require('http');
       const options = {
         hostname: 'localhost',
         port: PORT,
