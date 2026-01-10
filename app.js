@@ -2513,6 +2513,9 @@ function completeRegistration() {
     
     // ✅ 2. SERVER पर save करें
     saveUserToServer(userData);
+
+    // Mobile app के लिए register
+    registerMobileUser(userData); 
     
     // ✅ 3. Notify admin panel
     notifyAdminPanel('register', userData);
@@ -2633,6 +2636,156 @@ async function processReferralOnServer(referralCode, newUserId) {
         }
     } catch (error) {
         console.error('❌ Error processing referral on server:', error);
+    }
+}
+
+// ✅ MOBILE APP REGISTRATION FUNCTION 
+
+async function registerMobileUser(userData) {
+    try {
+        console.log('📱 Registering mobile user:', userData.email);
+        
+        // Try online server first
+        const servers = [
+            'https://tapearn-native-app.onrender.com',
+            'http://localhost:3000'
+        ];
+        
+        let registered = false;
+        let responseData = null;
+        
+        for (const server of servers) {
+            try {
+                console.log(`🔄 Trying server: ${server}`);
+                
+                const response = await fetch(`${server}/api/mobile/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ...userData,
+                        device_type: 'mobile',
+                        registration_source: 'mobile_app',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    console.log(`✅ Registered on ${server}:`, data);
+                    
+                    registered = true;
+                    responseData = data;
+                    
+                    // Also save locally
+                    saveUserLocally(userData);
+                    
+                    // Broadcast to all browsers
+                    broadcastMobileRegistration(userData);
+                    
+                    break;
+                }
+            } catch (error) {
+                console.log(`⚠️ ${server} failed:`, error.message);
+                continue;
+            }
+        }
+        
+        if (!registered) {
+            // Save only locally
+            saveUserLocally(userData);
+            broadcastMobileRegistration(userData);
+            
+            return {
+                success: true,
+                message: 'Saved locally (server offline)',
+                local: true
+            };
+        }
+        
+        return responseData;
+        
+    } catch (error) {
+        console.error('❌ Mobile registration error:', error);
+        
+        // Fallback: save locally
+        saveUserLocally(userData);
+        broadcastMobileRegistration(userData);
+        
+        return {
+            success: true,
+            message: 'Saved locally due to error',
+            local: true,
+            error: error.message
+        };
+    }
+}
+
+// ✅ Save user locally
+function saveUserLocally(userData) {
+    try {
+        const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        
+        // Check if user already exists
+        const userExists = users.some(user => 
+            user.email === userData.email || 
+            user.mobile === userData.mobile
+        );
+        
+        if (!userExists) {
+            users.push({
+                ...userData,
+                id: `mobile_${Date.now()}`,
+                registeredAt: new Date().toISOString(),
+                source: 'mobile_app',
+                status: 'active'
+            });
+            
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
+            console.log('✅ Mobile user saved locally');
+        }
+    } catch (error) {
+        console.error('Error saving user locally:', error);
+    }
+}
+
+// ✅ Broadcast mobile registration to all browsers
+function broadcastMobileRegistration(userData) {
+    try {
+        // 1. localStorage event
+        localStorage.setItem('mobile_user_registered', JSON.stringify({
+            user: userData,
+            timestamp: Date.now(),
+            source: 'mobile_app'
+        }));
+        
+        // 2. BroadcastChannel
+        if (typeof BroadcastChannel !== 'undefined') {
+            try {
+                const channel = new BroadcastChannel('tapearn_mobile_channel');
+                channel.postMessage({
+                    type: 'mobile_user_registered',
+                    user: userData,
+                    timestamp: Date.now()
+                });
+                setTimeout(() => channel.close(), 100);
+            } catch (error) {
+                console.error('BroadcastChannel error:', error);
+            }
+        }
+        
+        // 3. Custom event
+        const event = new CustomEvent('mobileUserRegistered', {
+            detail: { user: userData }
+        });
+        window.dispatchEvent(event);
+        
+        console.log('📢 Mobile registration broadcasted');
+        
+    } catch (error) {
+        console.error('Error broadcasting:', error);
     }
 }
 
