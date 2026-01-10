@@ -1,4 +1,4 @@
-// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH UNIVERSAL REAL-TIME SYNC + SPONSOR SYSTEM)
+// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH UNIVERSAL REAL-TIME SYNC + SPONSOR SYSTEM + MANUAL SYNC CONTROLS)
 
 // Auto-detect current server and use universal endpoints
 const getServerBase = () => {
@@ -41,6 +41,7 @@ const AdminPanel = {
     refreshInterval: 5000, // 5 seconds
     autoRefreshEnabled: true,
     refreshTimer: null,
+    syncStatusTimer: null,
 
     // Initialize admin panel
     init: async function() {
@@ -71,7 +72,9 @@ const AdminPanel = {
         if (window.location.pathname.includes('admin.html')) {
             setTimeout(() => {
                 this.addRealTimeControls();
+                this.addSyncControls();
                 this.addServerStatusDisplay();
+                this.setupSyncStatusDisplay();
             }, 1000);
         }
         
@@ -572,6 +575,177 @@ const AdminPanel = {
         this.updateServerStatusDisplay();
         
         console.log('✅ Real-time controls added');
+    },
+    
+    // Add sync controls to admin panel
+    addSyncControls: function() {
+        // Check if sync controls already exist
+        if (document.getElementById('syncControls')) return;
+
+        const syncControlsHTML = `
+            <div id="syncControls" style="position: fixed; bottom: 150px; right: 20px; z-index: 9998;">
+                <div style="background: white; padding: 15px; border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-width: 300px;">
+                    <h4 style="margin: 0 0 10px 0; color: #333;">🔗 Multi-Browser Sync</h4>
+                    <button id="forceSyncBtn" class="btn btn-primary btn-sm" style="margin-bottom: 8px; width: 100%; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fas fa-sync-alt"></i> Force Sync All Browsers
+                    </button>
+                    <button id="checkCrossBrowserBtn" class="btn btn-success btn-sm" style="margin-bottom: 8px; width: 100%; padding: 10px; background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; border: none; border-radius: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <i class="fas fa-search"></i> Check Other Browsers
+                    </button>
+                    <div id="syncStatus" style="font-size: 12px; color: #666; margin-top: 10px; padding: 8px; background: #f9f9f9; border-radius: 4px;">
+                        <i class="fas fa-history"></i> Last sync: Never
+                    </div>
+                    <div id="realTimeSyncStatus" style="font-size: 12px; margin-top: 10px;">
+                        <!-- Real-time sync status will be updated here -->
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', syncControlsHTML);
+        
+        // Add event listeners
+        document.getElementById('forceSyncBtn').addEventListener('click', () => {
+            this.forceSyncAllBrowsers();
+        });
+        
+        document.getElementById('checkCrossBrowserBtn').addEventListener('click', () => {
+            this.checkCrossBrowserData();
+        });
+        
+        console.log('✅ Sync controls added');
+    },
+    
+    // Force sync across all browsers
+    forceSyncAllBrowsers: async function() {
+        this.showNotification('🔄 Forcing sync across all browsers...', 'info');
+        
+        // 1. Load from server
+        await this.loadInitialData();
+        
+        // 2. Update localStorage
+        if (window.adminData && window.adminData.users) {
+            localStorage.setItem('registeredUsers', JSON.stringify(window.adminData.users));
+        }
+        
+        // 3. Broadcast via BroadcastChannel
+        if (typeof BroadcastChannel !== 'undefined') {
+            try {
+                const channel = new BroadcastChannel('tapearn_admin_channel');
+                channel.postMessage({
+                    type: 'force_sync',
+                    timestamp: Date.now(),
+                    userCount: window.adminData.users.length
+                });
+                channel.close();
+            } catch (error) {
+                console.error('BroadcastChannel error:', error);
+            }
+        }
+        
+        // 4. Update UI
+        const syncStatusElement = document.getElementById('syncStatus');
+        if (syncStatusElement) {
+            syncStatusElement.innerHTML = `<i class="fas fa-history"></i> Last sync: ${new Date().toLocaleTimeString()}`;
+        }
+        
+        this.showNotification(`✅ Synced ${window.adminData.users.length} users across all browsers`, 'success');
+    },
+    
+    // Check cross-browser data
+    checkCrossBrowserData: function() {
+        const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const serverUsers = window.adminData.users || [];
+        
+        this.showNotification(`📊 Local: ${localUsers.length} users | Server: ${serverUsers.length} users`, 'info');
+        
+        // Show detailed comparison
+        const comparisonDiv = document.createElement('div');
+        comparisonDiv.style.cssText = `
+            position: fixed;
+            bottom: 350px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 9997;
+            max-width: 300px;
+            max-height: 300px;
+            overflow-y: auto;
+        `;
+        
+        comparisonDiv.innerHTML = `
+            <h5 style="margin: 0 0 10px 0;">📊 Data Comparison</h5>
+            <div style="margin-bottom: 8px;">
+                <strong>Local Storage:</strong> ${localUsers.length} users
+            </div>
+            <div style="margin-bottom: 8px;">
+                <strong>Server Data:</strong> ${serverUsers.length} users
+            </div>
+            <div style="margin-bottom: 8px; color: ${localUsers.length === serverUsers.length ? '#4CAF50' : '#F44336'}">
+                <strong>Status:</strong> ${localUsers.length === serverUsers.length ? '✅ In Sync' : '⚠️ Out of Sync'}
+            </div>
+            <button onclick="this.parentNode.remove()" style="width: 100%; padding: 5px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Close
+            </button>
+        `;
+        
+        document.body.appendChild(comparisonDiv);
+    },
+    
+    // Setup real-time sync status display
+    setupSyncStatusDisplay: function() {
+        if (this.syncStatusTimer) {
+            clearInterval(this.syncStatusTimer);
+        }
+        
+        this.syncStatusTimer = setInterval(() => {
+            const now = new Date();
+            const lastUpdate = window.adminData?.lastUpdated;
+            
+            if (lastUpdate) {
+                const diff = Math.floor((now - new Date(lastUpdate)) / 1000);
+                
+                let status = '';
+                let statusColor = '';
+                let statusIcon = '';
+                
+                if (diff < 10) {
+                    status = `🟢 Live (${diff}s ago)`;
+                    statusColor = '#4CAF50';
+                    statusIcon = 'fa-circle';
+                } else if (diff < 30) {
+                    status = `🟡 Recent (${diff}s ago)`;
+                    statusColor = '#FF9800';
+                    statusIcon = 'fa-circle';
+                } else {
+                    status = `🔴 Stale (${diff}s ago)`;
+                    statusColor = '#F44336';
+                    statusIcon = 'fa-circle';
+                }
+                
+                const statusElement = document.getElementById('realTimeSyncStatus');
+                if (statusElement) {
+                    statusElement.innerHTML = `
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-top: 10px;">
+                            <strong>📡 Real-time Sync Status</strong>
+                            <div style="margin-top: 5px;">
+                                <i class="fas ${statusIcon}" style="color: ${statusColor};"></i>
+                                <span style="margin-left: 5px;">${status}</span>
+                            </div>
+                            <div style="font-size: 11px; margin-top: 5px;">
+                                Users: ${window.adminData?.users?.length || 0} | 
+                                Transactions: ${window.adminData?.transactions?.length || 0}
+                            </div>
+                            <div style="font-size: 10px; color: #666; margin-top: 3px;">
+                                Auto-refresh: ${this.autoRefreshEnabled ? 'ON' : 'OFF'}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }, 2000);
     },
     
     // Update server status display
@@ -1092,6 +1266,14 @@ window.toggleAutoRefresh = function() {
 
 window.exportData = function(type) {
     return AdminPanel.exportData(type);
+};
+
+window.forceSyncAllBrowsers = async function() {
+    await AdminPanel.forceSyncAllBrowsers();
+};
+
+window.checkCrossBrowserData = function() {
+    return AdminPanel.checkCrossBrowserData();
 };
 
 // Make AdminPanel globally available
