@@ -7,10 +7,57 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const http = require('http');
 const https = require('https');
+const WebSocket = require('ws');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ✅ WebSocket Setup
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+
+// ✅ Connected admin panels tracking
+const connectedAdmins = new Set();
+
+// WebSocket connection handler
+wss.on('connection', (ws, req) => {
+    console.log('🟢 Admin panel connected via WebSocket');
+    connectedAdmins.add(ws);
+    
+    ws.on('message', (message) => {
+        console.log('📨 WebSocket message:', message.toString());
+    });
+    
+    ws.on('close', () => {
+        console.log('🔴 Admin panel disconnected');
+        connectedAdmins.delete(ws);
+    });
+    
+    // Send initial data
+    ws.send(JSON.stringify({
+        type: 'connected',
+        message: 'Connected to real-time admin panel',
+        timestamp: new Date().toISOString()
+    }));
+});
+
+// Function to broadcast to all connected admin panels
+function broadcastToAllAdmins(type, data) {
+    const message = JSON.stringify({
+        type: type,
+        data: data,
+        timestamp: new Date().toISOString()
+    });
+    
+    connectedAdmins.forEach(ws => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send(message);
+        }
+    });
+    
+    console.log(`📢 Broadcasted ${type} to ${connectedAdmins.size} admin panels`);
+}
 
 // ✅ MongoDB Connection String (SAME AS RENDER)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
@@ -26,7 +73,10 @@ const allowedOrigins = [
   'http://localhost:8080',
   'http://127.0.0.1:8080',
   'https://tapearn-admin.onrender.com',
-  'https://admin-tapearn.onrender.com'
+  'https://admin-tapearn.onrender.com',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
+  'https://tapearn-mobile.onrender.com'
 ];
 
 app.use(cors({
@@ -191,10 +241,13 @@ const userSchema = new mongoose.Schema({
   is_admin: { type: Boolean, default: false },
   admin_level: { type: Number, default: 0 },
   
+  // Source tracking for mobile sync
+  source: { type: String, default: 'web' },
+  device_type: String,
+  
   // Metadata
   ip_address: String,
-  user_agent: String,
-  device_type: String
+  user_agent: String
 }, {
   timestamps: true
 });
@@ -434,6 +487,307 @@ app.get('/api/health-fast', (req, res) => {
 });
 
 // ==========================================
+// ✅ UNIVERSAL SYNC ENDPOINTS (MOBILE FIX)
+// ==========================================
+
+// ✅ 1. REAL-TIME USER REGISTRATION BROADCAST
+app.post('/api/universal/user-registered', async (req, res) => {
+    try {
+        const userData = req.body;
+        console.log('📱 Mobile user registered:', userData.email);
+        
+        // Save user to database
+        const newUser = new User({
+            email: userData.email,
+            username: userData.username || `user_${Date.now().toString().slice(-8)}`,
+            password: userData.password || 'mobile_default_123',
+            phone: userData.mobile || userData.phone,
+            full_name: userData.full_name || userData.username,
+            referral_code: userData.referral_code || generateReferralCode(),
+            referred_by: userData.sponsorId || null,
+            points: userData.points || 100,
+            status: 'active',
+            registration_date: new Date(),
+            source: 'mobile_app'
+        });
+        
+        await newUser.save();
+        
+        // ✅ BROADCAST TO ALL CONNECTED ADMIN PANELS
+        broadcastToAllAdmins('user_registered', {
+            user: {
+                id: newUser._id,
+                email: newUser.email,
+                username: newUser.username,
+                points: newUser.points,
+                registration_date: newUser.registration_date,
+                status: newUser.status
+            },
+            source: 'mobile',
+            timestamp: new Date()
+        });
+        
+        res.json({
+            success: true,
+            message: 'User registered and broadcasted',
+            userId: newUser._id
+        });
+        
+    } catch (error) {
+        console.error('Error in universal user registration:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ✅ 2. GET USERS FROM ALL SOURCES
+app.get('/api/universal/get-all-users', async (req, res) => {
+    try {
+        // Get users from database
+        const dbUsers = await User.find()
+            .select('-password -__v')
+            .sort({ registration_date: -1 })
+            .limit(500);
+        
+        // Get users from localStorage sync (for offline panels)
+        const localUsers = JSON.parse(req.query.localUsers || '[]');
+        
+        // Merge all users (remove duplicates by email)
+        const allUsers = [...dbUsers];
+        
+        localUsers.forEach(localUser => {
+            const exists = allUsers.some(dbUser => 
+                dbUser.email === localUser.email || 
+                dbUser.username === localUser.username
+            );
+            if (!exists) {
+                allUsers.push({
+                    ...localUser,
+                    source: 'local_storage'
+                });
+            }
+        });
+        
+        // Format response
+        const formattedUsers = allUsers.map(user => ({
+            id: user._id || user.id,
+            email: user.email,
+            username: user.username,
+            mobile: user.phone || user.mobile,
+            points: user.points || 0,
+            usdtWallet: user.usdt_wallet || user.usdtWallet || 0,
+            inrWallet: user.inr_wallet || user.inrWallet || 0,
+            status: user.status || 'active',
+            registration_date: user.registration_date || user.registeredAt,
+            source: user.source || 'database',
+            sponsorId: user.referred_by || user.sponsorId
+        }));
+        
+        res.json({
+            success: true,
+            users: formattedUsers,
+            count: formattedUsers.length,
+            sources: {
+                database: dbUsers.length,
+                local_storage: localUsers.length,
+                merged: formattedUsers.length
+            },
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Error in universal get-all-users:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ✅ 3. REAL-TIME SYNC STATUS
+app.get('/api/universal/sync-status', async (req, res) => {
+    try {
+        const lastSync = req.query.lastSync || 0;
+        const lastSyncDate = new Date(parseInt(lastSync));
+        
+        // Get new users since last sync
+        const newUsers = await User.find({
+            registration_date: { $gt: lastSyncDate }
+        }).select('email username registration_date').limit(50);
+        
+        // Get recent transactions
+        const newTransactions = await WalletTransaction.find({
+            transaction_date: { $gt: lastSyncDate }
+        }).limit(50);
+        
+        res.json({
+            success: true,
+            newUsers: newUsers.length,
+            newTransactions: newTransactions.length,
+            lastSync: Date.now(),
+            timestamp: new Date().toISOString()
+        });
+        
+    } catch (error) {
+        console.error('Error in sync-status:', error);
+        res.json({ success: false, newUsers: 0, newTransactions: 0 });
+    }
+});
+
+// ✅ 4. MOBILE REGISTRATION WEBHOOK
+app.post('/api/mobile/register', async (req, res) => {
+    try {
+        const mobileUser = req.body;
+        console.log('📱 Mobile registration received:', mobileUser.email);
+
+        // Check if user already exists
+        let user = await User.findOne({ 
+            $or: [
+                { email: mobileUser.email },
+                { phone: mobileUser.phone }
+            ]
+        });
+
+        if (user) {
+            // Update existing user
+            user.points = Math.max(user.points, mobileUser.points || 0);
+            user.last_login = new Date();
+            await user.save();
+
+            console.log(`✅ Updated existing mobile user: ${user.email}`);
+        } else {
+            // Create new user
+            user = new User({
+                email: mobileUser.email,
+                username: mobileUser.username || `mobile_${Date.now().toString().slice(-8)}`,
+                password: mobileUser.password || `mobile_${Math.random().toString(36).slice(-8)}`,
+                phone: mobileUser.phone || mobileUser.mobile,
+                full_name: mobileUser.full_name || mobileUser.username,
+                referral_code: mobileUser.referral_code || generateReferralCode(),
+                referred_by: mobileUser.sponsorId || mobileUser.referred_by,
+                points: mobileUser.points || 100,
+                status: 'active',
+                registration_date: new Date(),
+                source: 'mobile_app',
+                device_type: mobileUser.device_type || 'mobile'
+            });
+
+            await user.save();
+            console.log(`✅ Created new mobile user: ${user.email} with ID: ${user._id}`);
+        }
+
+        // ✅ BROADCAST IMMEDIATELY
+        broadcastToAllAdmins('mobile_user_registered', {
+            user: {
+                id: user._id,
+                email: user.email,
+                username: user.username,
+                points: user.points,
+                mobile: user.phone,
+                registration_date: user.registration_date
+            },
+            source: 'mobile_app',
+            device: mobileUser.device_type || 'mobile'
+        });
+
+        res.json({
+            success: true,
+            message: 'Mobile user registered successfully',
+            userId: user._id,
+            username: user.username,
+            points: user.points
+        });
+        
+    } catch (error) {
+        console.error('❌ Mobile registration error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ✅ 5. SYNC ALL MOBILE USERS
+app.get('/api/mobile/get-all-users', async (req, res) => {
+    try {
+        const mobileUsers = await User.find({
+            source: 'mobile_app'
+        }).select('-password -__v').sort({ registration_date: -1 });
+        
+        res.json({
+            success: true,
+            users: mobileUsers,
+            count: mobileUsers.length,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        console.error('Error fetching mobile users:', error);
+        res.json({ success: false, users: [] });
+    }
+});
+
+// ✅ 6. MOBILE TO ADMIN SYNC
+app.post('/api/mobile/sync-to-admin', async (req, res) => {
+    try {
+        const { users, source } = req.body;
+        console.log(`📱 Mobile sync from ${source}: ${users.length} users`);
+        
+        let syncedCount = 0;
+        let errors = [];
+        
+        for (const mobileUser of users) {
+            try {
+                let user = await User.findOne({ email: mobileUser.email });
+                
+                if (!user) {
+                    user = new User({
+                        email: mobileUser.email,
+                        username: mobileUser.username || `mobile_${Date.now().toString().slice(-8)}`,
+                        password: mobileUser.password || 'mobile_sync_password',
+                        phone: mobileUser.phone || mobileUser.mobile,
+                        full_name: mobileUser.full_name || mobileUser.username,
+                        referral_code: mobileUser.referralCode || generateReferralCode(),
+                        referred_by: mobileUser.sponsorId || null,
+                        points: mobileUser.points || 0,
+                        status: 'active',
+                        registration_date: new Date(),
+                        source: 'mobile_sync'
+                    });
+                    
+                    await user.save();
+                    syncedCount++;
+                    
+                    // Broadcast new user
+                    broadcastToAllAdmins('mobile_sync_user', {
+                        user: {
+                            id: user._id,
+                            email: user.email,
+                            username: user.username,
+                            points: user.points,
+                            source: 'mobile_sync'
+                        },
+                        timestamp: new Date()
+                    });
+                } else {
+                    // Update points if mobile has more
+                    if (mobileUser.points > user.points) {
+                        user.points = mobileUser.points;
+                        await user.save();
+                    }
+                    syncedCount++;
+                }
+            } catch (err) {
+                errors.push(`User ${mobileUser.email}: ${err.message}`);
+            }
+        }
+        
+        res.json({
+            success: true,
+            message: `Synced ${syncedCount} users from mobile`,
+            syncedCount: syncedCount,
+            errors: errors
+        });
+        
+    } catch (error) {
+        console.error('Mobile sync error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ==========================================
 // ✅ PROXY & SYNC ENDPOINTS (CORS FIX)
 // ==========================================
 
@@ -517,10 +871,23 @@ app.post('/api/universal-sync', async (req, res) => {
           password: data.password || 'default123',
           points: data.points || 100,
           status: 'active',
-          registration_date: new Date()
+          registration_date: new Date(),
+          source: source || 'universal_sync'
         });
         
         await user.save();
+        
+        // Broadcast
+        broadcastToAllAdmins('universal_sync_user', {
+          user: {
+            id: user._id,
+            email: user.email,
+            username: user.username,
+            points: user.points,
+            source: source
+          },
+          timestamp: new Date()
+        });
         
         res.json({ 
           success: true, 
@@ -610,11 +977,24 @@ app.post('/api/cross-origin-sync', async (req, res) => {
             tasks_completed: userData.tasksCompleted || 0,
             level: userData.level || 1,
             status: userData.status || 'active',
-            registration_date: userData.registeredAt || new Date()
+            registration_date: userData.registeredAt || new Date(),
+            source: source || 'cross_origin_sync'
           });
           
           await user.save();
           syncedCount++;
+          
+          // Broadcast new user
+          broadcastToAllAdmins('cross_origin_user', {
+            user: {
+              id: user._id,
+              email: user.email,
+              username: user.username,
+              points: user.points,
+              source: source
+            },
+            timestamp: new Date()
+          });
         } else {
           // Update existing user with highest values
           user.points = Math.max(user.points, userData.points || 0);
@@ -693,7 +1073,8 @@ app.get('/api/get-user', async (req, res) => {
         email_verified: user.email_verified,
         mobile_verified: user.mobile_verified,
         free_pool_completed: user.free_pool_completed,
-        is_admin: user.is_admin
+        is_admin: user.is_admin,
+        source: user.source
       }
     });
   } catch (error) {
@@ -726,7 +1107,8 @@ app.get('/api/get-all-users', async (req, res) => {
         level: user.level,
         tasks_completed: user.tasks_completed,
         referral_code: user.referral_code,
-        is_admin: user.is_admin
+        is_admin: user.is_admin,
+        source: user.source
       }))
     });
   } catch (error) {
@@ -751,6 +1133,13 @@ app.delete('/api/delete-user/:id', async (req, res) => {
     await Referral.deleteMany({ $or: [{ referrer_id: userId }, { referred_id: userId }] });
     await SponsorCommission.deleteMany({ $or: [{ sponsor_id: userId }, { user_id: userId }] });
     await DailyActivity.deleteMany({ user_id: userId });
+    
+    // Broadcast deletion
+    broadcastToAllAdmins('user_deleted', {
+      userId: userId,
+      email: user.email,
+      timestamp: new Date()
+    });
     
     res.json({ 
       success: true, 
@@ -815,12 +1204,25 @@ app.post('/api/sync-user', async (req, res) => {
         total_earned: currentUser.total_earned || currentUser.totalEarned || 0,
         tasks_completed: currentUser.tasks_completed || currentUser.tasksCompleted || 0,
         level: currentUser.level || 1,
-        status: 'active'
+        status: 'active',
+        source: 'web_sync'
       });
       
       await user.save();
       
       console.log(`✅ New user created via sync: ${currentUser.email} with ID: ${user._id}`);
+      
+      // Broadcast new user
+      broadcastToAllAdmins('sync_user_added', {
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username,
+          points: user.points,
+          source: 'web_sync'
+        },
+        timestamp: new Date()
+      });
       
       if (user.referred_by) {
         const referrer = await User.findOne({ referral_code: user.referred_by });
@@ -897,12 +1299,25 @@ app.post('/api/save-user', async (req, res) => {
         total_earned: userData.total_earned || userData.totalEarned || 100,
         tasks_completed: userData.tasks_completed || 0,
         level: userData.level || 1,
-        status: 'active'
+        status: 'active',
+        source: 'web'
       });
       
       await user.save();
       
       console.log(`✅ New user created: ${userData.email} with ID: ${user._id}`);
+      
+      // Broadcast new user
+      broadcastToAllAdmins('new_user_added', {
+        user: {
+          id: user._id,
+          email: user.email,
+          username: user.username,
+          points: user.points,
+          source: 'web'
+        },
+        timestamp: new Date()
+      });
       
       if (user.referred_by) {
         const referrer = await User.findOne({ referral_code: user.referred_by });
@@ -971,7 +1386,8 @@ app.post('/api/login', async (req, res) => {
           points: user.points,
           level: user.level,
           referral_code: user.referral_code,
-          is_admin: user.is_admin
+          is_admin: user.is_admin,
+          source: user.source
         }
       });
     } else {
@@ -1646,7 +2062,16 @@ app.get('/api/admin/get-all-users-enhanced', async (req, res) => {
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const recentUsers = await User.find({
       registration_date: { $gte: fiveMinutesAgo }
-    }).select('email username registration_date');
+    }).select('email username registration_date source');
+    
+    // Broadcast to WebSocket clients
+    if (recentUsers.length > 0) {
+      broadcastToAllAdmins('recent_users', {
+        users: recentUsers,
+        count: recentUsers.length,
+        timestamp: new Date()
+      });
+    }
     
     res.json({
       success: true,
@@ -1681,11 +2106,17 @@ app.get('/api/admin/user-stats', async (req, res) => {
       last_login: { $gte: today }
     });
     
+    // Count by source
+    const sourceStats = await User.aggregate([
+      { $group: { _id: "$source", count: { $sum: 1 } } }
+    ]);
+    
     const stats = {
       userCount: totalUsers,
       totalPoints: totalPoints,
       todayRegistrations: todayRegistrations,
       activeToday: activeToday,
+      sourceStats: sourceStats,
       timestamp: new Date().toISOString()
     };
     
@@ -1725,11 +2156,23 @@ app.post('/api/admin/sync-all', async (req, res) => {
             tasks_completed: user.tasksCompleted || 0,
             level: user.level || 1,
             status: user.status || 'active',
-            registration_date: user.registeredAt || new Date()
+            registration_date: user.registeredAt || new Date(),
+            source: 'admin_sync'
           });
           
           await newUser.save();
           syncedCount++;
+          
+          // Broadcast
+          broadcastToAllAdmins('admin_sync_user', {
+            user: {
+              id: newUser._id,
+              email: newUser.email,
+              username: newUser.username,
+              points: newUser.points
+            },
+            timestamp: new Date()
+          });
         } else {
           existingUser.username = user.username || existingUser.username;
           existingUser.phone = user.mobile || user.phone || existingUser.phone;
@@ -1844,6 +2287,14 @@ app.post('/api/admin/update-user-status', async (req, res) => {
       return res.json({ success: false, message: 'User not found' });
     }
     
+    // Broadcast status change
+    broadcastToAllAdmins('user_status_changed', {
+      userId: userId,
+      email: user.email,
+      newStatus: status,
+      timestamp: new Date()
+    });
+    
     res.json({ 
       success: true, 
       message: `User ${status === 'active' ? 'activated' : 'deactivated'} successfully`
@@ -1893,6 +2344,16 @@ app.post('/api/admin/update-user-points', async (req, res) => {
     
     await walletTransaction.save();
     
+    // Broadcast points update
+    broadcastToAllAdmins('user_points_updated', {
+      userId: userId,
+      email: user.email,
+      newPoints: newPoints,
+      operation: operation,
+      amount: points,
+      timestamp: new Date()
+    });
+    
     res.json({ 
       success: true, 
       message: 'User points updated successfully',
@@ -1920,7 +2381,7 @@ app.get('/api/admin/search-users', async (req, res) => {
         { full_name: { $regex: searchTerm, $options: 'i' } }
       ]
     })
-    .select('_id email username points registration_date last_login status')
+    .select('_id email username points registration_date last_login status source')
     .sort({ registration_date: -1 })
     .limit(50);
     
@@ -1939,7 +2400,13 @@ app.post('/api/notify-admin', (req, res) => {
   const notification = req.body;
   console.log('📢 Admin notification:', notification);
   
-  res.json({ success: true, message: 'Notification received' });
+  // Broadcast notification to all admin panels
+  broadcastToAllAdmins('admin_notification', {
+    notification: notification,
+    timestamp: new Date()
+  });
+  
+  res.json({ success: true, message: 'Notification received and broadcasted' });
 });
 
 app.get('/api/admin/recent-activities', async (req, res) => {
@@ -1950,14 +2417,14 @@ app.get('/api/admin/recent-activities', async (req, res) => {
     const recentUsers = await User.find({
       registration_date: { $gte: today }
     })
-    .select('_id username email registration_date')
+    .select('_id username email registration_date source')
     .sort({ registration_date: -1 })
     .limit(50);
     
     const recentLogins = await User.find({
       last_login: { $gte: today }
     })
-    .select('_id username email last_login')
+    .select('_id username email last_login source')
     .sort({ last_login: -1 })
     .limit(50);
     
@@ -1983,7 +2450,7 @@ app.get('/api/admin/realtime-sync', async (req, res) => {
         $gte: new Date(now - 5 * 60 * 1000)
       }
     })
-    .select('_id username email registration_date')
+    .select('_id username email registration_date source')
     .sort({ registration_date: -1 });
     
     const recentLogins = await User.find({
@@ -1991,7 +2458,7 @@ app.get('/api/admin/realtime-sync', async (req, res) => {
         $gte: new Date(now - 5 * 60 * 1000)
       }
     })
-    .select('_id username email last_login')
+    .select('_id username email last_login source')
     .sort({ last_login: -1 });
     
     res.json({
@@ -2103,7 +2570,9 @@ app.get('/api/health', async (req, res) => {
       memory: process.memoryUsage(),
       database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
       totalUsers: await User.countDocuments(),
-      totalTransactions: await WalletTransaction.countDocuments()
+      totalTransactions: await WalletTransaction.countDocuments(),
+      connectedAdmins: connectedAdmins.size,
+      websocketStatus: 'active'
     };
     
     res.json(health);
@@ -2194,11 +2663,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`
-  🚀 TapEarn Server v3.0
+  🚀 TapEarn Server v3.0 (with Universal Mobile Sync)
   ==========================================
   ✅ Server running on: http://localhost:${PORT}
+  ✅ WebSocket Server: ws://localhost:${PORT}
   ✅ MongoDB: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...'}
   
   🔗 Important URLs:
@@ -2208,6 +2678,10 @@ const server = app.listen(PORT, () => {
   - Keep-alive: http://localhost:${PORT}/api/keep-alive
   - Ping: http://localhost:${PORT}/ping
   
+  🔄 Mobile Sync Endpoints:
+  - Mobile Register: http://localhost:${PORT}/api/mobile/register
+  - Universal Sync: http://localhost:${PORT}/api/universal/get-all-users
+  
   📊 Server started at: ${new Date().toLocaleString()}
   `);
 });
@@ -2216,7 +2690,10 @@ const server = app.listen(PORT, () => {
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
   server.close(() => {
-    console.log('Server closed');
+    console.log('HTTP Server closed');
+    wss.close(() => {
+      console.log('WebSocket Server closed');
+    });
     mongoose.connection.close();
     process.exit(0);
   });
