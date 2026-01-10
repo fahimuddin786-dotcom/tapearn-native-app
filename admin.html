@@ -1077,6 +1077,9 @@
                     <button class="btn btn-danger" onclick="clearCache()">
                         <i class="fas fa-trash"></i> Clear Cache
                     </button>
+                    <button class="btn btn-info" onclick="syncFromAllServers()">
+                        <i class="fas fa-server"></i> Multi-Server Sync
+                    </button>
                 </div>
             </div>
 
@@ -1131,7 +1134,36 @@
         let notificationTimer = null;
         const NOTIFICATION_COOLDOWN = 3000; // 3 seconds between similar notifications
 
-        // ✅ UPDATED: Enhanced cross-browser communication
+        // ✅ FIXED: Dynamic server base detection
+        function getServerBase() {
+            const currentHost = window.location.hostname;
+            const currentPort = window.location.port;
+            const currentProtocol = window.location.protocol;
+            
+            console.log('🌍 Current location:', window.location.href);
+            
+            // If we're on render.com, use render.com server
+            if (currentHost.includes('render.com') || currentHost.includes('tapearn-native-app')) {
+                console.log('🟢 Using online server (Render.com)');
+                return 'https://tapearn-native-app.onrender.com';
+            }
+            
+            // If we're on localhost, use local server
+            if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+                console.log('🔵 Using local server (localhost)');
+                return `http://${currentHost}:${currentPort || '3000'}`;
+            }
+            
+            // Fallback
+            console.log('⚠️ Using fallback server');
+            return window.location.origin || 'http://localhost:3000';
+        }
+
+        // Initialize with current server
+        const CURRENT_SERVER_BASE = getServerBase();
+        console.log('🚀 Current Server Base:', CURRENT_SERVER_BASE);
+
+        // ✅ FIXED: Enhanced cross-browser communication
         function setupUniversalCrossBrowserSync() {
             console.log('🌐 Setting up UNIVERSAL cross-browser sync...');
             
@@ -1203,7 +1235,8 @@
             
             setInterval(async () => {
                 try {
-                    const response = await fetch(`${getServerBase()}/api/admin/user-sync-check?since=${lastSyncTime}`);
+                    const serverBase = getServerBase();
+                    const response = await fetch(`${serverBase}/api/admin/user-sync-check?since=${lastSyncTime}`);
                     if (response.ok) {
                         const data = await response.json();
                         if (data.success && data.newUsers > 0) {
@@ -1228,18 +1261,6 @@
                 console.log('🔄 Periodic full sync...');
                 loadAdminData();
             }, 30000); // Every 30 seconds
-        }
-
-        // ✅ Get current server base dynamically
-        function getServerBase() {
-            const currentHost = window.location.hostname;
-            const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
-            
-            if (isLocalhost) {
-                return 'http://localhost:3000';
-            } else {
-                return window.location.origin || 'https://tapearn-native-app.onrender.com';
-            }
         }
 
         // ✅ Enhanced user registration broadcast
@@ -1283,8 +1304,14 @@
 
         // ✅ UPDATED: Initialize admin panel - Data source ko fix kiya
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Admin Panel Initializing...');
+            console.log('🌍 Current URL:', window.location.href);
+            console.log('🔧 Server Base:', getServerBase());
+            
             checkAdminAuth();
-            loadAdminData(); // ✅ Yahi se data load hoga
+            
+            // Load data
+            loadAdminData();
             
             // ✅ Delete kiye gaye users ka tracking
             initializeDeletedUsersTracker();
@@ -1382,6 +1409,18 @@
             setTimeout(() => {
                 setupEnhancedRealTimeSync();
             }, 2000);
+            
+            // Check server status every 30 seconds
+            setInterval(checkServerStatus, 30000);
+            
+            // Auto-sync every 60 seconds
+            setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    syncFromAllServers();
+                }
+            }, 60000);
+            
+            console.log('✅ Admin Panel Initialized');
         });
 
         // ✅ FIXED: Deleted users ko track karne ke liye
@@ -1597,7 +1636,8 @@
                 isPolling = true;
                 
                 try {
-                    const response = await fetch('http://localhost:3000/api/get-all-users');
+                    const serverBase = getServerBase();
+                    const response = await fetch(`${serverBase}/api/get-all-users`);
                     if (response.ok) {
                         const data = await response.json();
                         if (data.success) {
@@ -1672,8 +1712,11 @@
             showLoading();
             
             try {
+                const serverBase = getServerBase();
+                console.log('📥 Loading from server:', serverBase);
+                
                 // ✅ STEP 1: Load users from server (ALL USERS)
-                const usersResponse = await fetch('http://localhost:3000/api/get-all-users');
+                const usersResponse = await fetch(`${serverBase}/api/get-all-users`);
                 if (usersResponse.ok) {
                     const usersData = await usersResponse.json();
                     if (usersData.success) {
@@ -1696,7 +1739,7 @@
                 }
 
                 // ✅ STEP 2: Load transactions from server (ALL TRANSACTIONS)
-                const txResponse = await fetch('http://localhost:3000/api/get-all-transactions');
+                const txResponse = await fetch(`${serverBase}/api/get-all-transactions`);
                 if (txResponse.ok) {
                     const txData = await txResponse.json();
                     if (txData.success) {
@@ -1741,7 +1784,8 @@
         // Load server stats
         async function loadServerStats() {
             try {
-                const response = await fetch('http://localhost:3000/api/admin/user-stats');
+                const serverBase = getServerBase();
+                const response = await fetch(`${serverBase}/api/admin/user-stats`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data.success) {
@@ -1750,6 +1794,110 @@
                 }
             } catch (error) {
                 console.error('Error loading server stats:', error);
+            }
+        }
+
+        // ✅ MULTI-SERVER SYNC FUNCTION
+        async function syncFromAllServers() {
+            showNotification('🔄 Syncing from all servers...', 'info');
+            
+            try {
+                const serverBase = getServerBase();
+                
+                // Try to get users from all servers
+                const response = await fetch(`${serverBase}/api/get-all-servers-users`, {
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        const filteredUsers = filterDeletedUsers(data.users);
+                        
+                        // Merge with existing users
+                        const existingEmails = new Set(adminData.users.map(u => u.email));
+                        const newUsers = filteredUsers.filter(user => !existingEmails.has(user.email));
+                        
+                        if (newUsers.length > 0) {
+                            adminData.users = [...adminData.users, ...newUsers];
+                            document.getElementById('userCountBadge').textContent = adminData.users.length;
+                            
+                            // Update localStorage
+                            localStorage.setItem('registeredUsers', JSON.stringify(adminData.users));
+                            
+                            showNotification(`✅ Found ${newUsers.length} new users from ${data.sources.length} servers`, 'success');
+                        } else {
+                            showNotification('✅ All servers in sync', 'info');
+                        }
+                        
+                        refreshCurrentView();
+                    }
+                } else {
+                    // Fallback: try individual servers
+                    await syncFromIndividualServers();
+                }
+                
+            } catch (error) {
+                console.error('Multi-server sync error:', error);
+                showNotification('⚠️ Multi-server sync failed, trying fallback', 'warning');
+                await syncFromIndividualServers();
+            }
+        }
+
+        // ✅ FALLBACK: Sync from individual servers
+        async function syncFromIndividualServers() {
+            const servers = [
+                { name: 'Local', url: 'http://localhost:3000' },
+                { name: 'Online', url: 'https://tapearn-native-app.onrender.com' }
+            ];
+            
+            let totalNewUsers = 0;
+            
+            for (const server of servers) {
+                try {
+                    console.log(`🔄 Trying server: ${server.name} (${server.url})`);
+                    
+                    const response = await fetch(`${server.url}/api/get-all-users`, {
+                        mode: 'no-cors' // Use no-cors for cross-origin
+                    }).catch(err => {
+                        console.log(`❌ Server ${server.name} not accessible:`, err.message);
+                        return null;
+                    });
+                    
+                    if (response && response.ok) {
+                        const data = await response.json();
+                        
+                        if (data && data.success && data.users) {
+                            const newUsers = data.users.filter(newUser => 
+                                !adminData.users.some(existingUser => 
+                                    existingUser.email === newUser.email
+                                )
+                            );
+                            
+                            if (newUsers.length > 0) {
+                                adminData.users = [...adminData.users, ...newUsers];
+                                totalNewUsers += newUsers.length;
+                                
+                                console.log(`✅ Added ${newUsers.length} users from ${server.name}`);
+                            }
+                        }
+                    }
+                    
+                } catch (error) {
+                    console.log(`⚠️ Error syncing from ${server.name}:`, error.message);
+                }
+            }
+            
+            if (totalNewUsers > 0) {
+                document.getElementById('userCountBadge').textContent = adminData.users.length;
+                localStorage.setItem('registeredUsers', JSON.stringify(adminData.users));
+                showNotification(`✅ Added ${totalNewUsers} new users from multiple servers`, 'success');
+                refreshCurrentView();
             }
         }
 
@@ -3797,7 +3945,8 @@
         // Server status functions
         async function loadServerStatus() {
             try {
-                const response = await fetch('http://localhost:3000/api/health');
+                const serverBase = getServerBase();
+                const response = await fetch(`${serverBase}/api/health`);
                 const data = await response.json();
                 
                 const statusContent = document.getElementById('serverStatusContent');
@@ -3843,7 +3992,8 @@
 
         async function loadDatabaseInfo() {
             try {
-                const response = await fetch('http://localhost:3000/api/admin/database-info');
+                const serverBase = getServerBase();
+                const response = await fetch(`${serverBase}/api/admin/database-info`);
                 const data = await response.json();
                 
                 const dbInfo = document.getElementById('databaseInfo');
@@ -3888,7 +4038,8 @@
             if (confirm('Fix database issues? This may take a few moments.')) {
                 showNotification('Fixing database issues...', 'info');
                 try {
-                    const response = await fetch('http://localhost:3000/api/admin/fix-database');
+                    const serverBase = getServerBase();
+                    const response = await fetch(`${serverBase}/api/admin/fix-database`);
                     const data = await response.json();
                     if (data.success) {
                         showNotification('✅ Database issues fixed!', 'success');
@@ -3905,7 +4056,8 @@
             try {
                 // Sync users
                 const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                const response = await fetch('http://localhost:3000/api/admin/sync-all', {
+                const serverBase = getServerBase();
+                const response = await fetch(`${serverBase}/api/admin/sync-all`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ users: registeredUsers })
@@ -4156,7 +4308,8 @@
             
             // ✅ STEP 1: Try to delete from server (if available)
             try {
-                const deleteResponse = await fetch(`http://localhost:3000/api/delete-user/${userToDelete.id || userId}`, {
+                const serverBase = getServerBase();
+                const deleteResponse = await fetch(`${serverBase}/api/delete-user/${userToDelete.id || userId}`, {
                     method: 'DELETE'
                 });
                 
@@ -4257,7 +4410,8 @@
             
             // ✅ STEP 1: Try to delete from server
             try {
-                const deleteResponse = await fetch(`http://localhost:3000/api/delete-user/${userToDelete?.id || userId}`, {
+                const serverBase = getServerBase();
+                const deleteResponse = await fetch(`${serverBase}/api/delete-user/${userToDelete?.id || userId}`, {
                     method: 'DELETE'
                 });
                 
@@ -5035,6 +5189,21 @@
                 navigator.clipboard.writeText(newPassword).then(() => {
                     console.log('Password copied to clipboard');
                 });
+            }
+        }
+        
+        // ✅ Server status check function
+        async function checkServerStatus() {
+            try {
+                const serverBase = getServerBase();
+                const response = await fetch(`${serverBase}/api/health`);
+                if (response.ok) {
+                    console.log('Server status: OK');
+                } else {
+                    console.log('Server status: ERROR');
+                }
+            } catch (error) {
+                console.log('Server status: OFFLINE');
             }
         }
     </script>
