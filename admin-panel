@@ -1,4 +1,4 @@
-// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH UNIVERSAL REAL-TIME SYNC + SPONSOR SYSTEM + MANUAL SYNC CONTROLS)
+// admin-panel.js - Admin Panel Helper Functions (UPDATED WITH UNIVERSAL REAL-TIME SYNC + SPONSOR SYSTEM + MANUAL SYNC CONTROLS + MULTI-SERVER SYNC)
 
 // Auto-detect current server and use universal endpoints
 const getServerBase = () => {
@@ -43,6 +43,12 @@ const AdminPanel = {
     refreshTimer: null,
     syncStatusTimer: null,
 
+    // Multi-server configuration
+    servers: [
+        { name: 'Local', url: 'http://localhost:3000', active: true },
+        { name: 'Online', url: 'https://tapearn-native-app.onrender.com', active: true }
+    ],
+
     // Initialize admin panel
     init: async function() {
         console.log('🔧 Initializing Universal Admin Panel with Real-Time Sync...');
@@ -75,6 +81,8 @@ const AdminPanel = {
                 this.addSyncControls();
                 this.addServerStatusDisplay();
                 this.setupSyncStatusDisplay();
+                // Add sync controls to header
+                this.addSyncControlsToHeader();
             }, 1000);
         }
         
@@ -575,6 +583,201 @@ const AdminPanel = {
         this.updateServerStatusDisplay();
         
         console.log('✅ Real-time controls added');
+    },
+
+    // ✅ Add sync controls to admin header
+    addSyncControlsToHeader: function() {
+        const adminHeader = document.querySelector('.admin-header');
+        
+        if (!adminHeader) return;
+        
+        // Check if sync controls already exist
+        if (document.querySelector('.sync-controls')) return;
+        
+        const syncControls = document.createElement('div');
+        syncControls.className = 'sync-controls';
+        syncControls.style.cssText = `
+            display: flex;
+            gap: 10px;
+            margin-left: 20px;
+            align-items: center;
+        `;
+        
+        syncControls.innerHTML = `
+            <button class="btn btn-info btn-sm" onclick="syncFromAllServers()" title="Sync from all servers" style="display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-sync-alt"></i> Multi-Server Sync
+            </button>
+            <button class="btn btn-warning btn-sm" onclick="checkAllServerStatus()" title="Check server status" style="display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-server"></i> Server Status
+            </button>
+            <div id="serverStatus" style="display: inline-block; padding: 5px 10px; border-radius: 5px; background: #f8f9fa; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                <i class="fas fa-spinner fa-spin"></i> Checking...
+            </div>
+        `;
+        
+        // Add to header
+        const headerActions = adminHeader.querySelector('.admin-actions');
+        if (headerActions) {
+            headerActions.insertAdjacentElement('afterend', syncControls);
+        } else {
+            adminHeader.appendChild(syncControls);
+        }
+        
+        // Check server status initially
+        setTimeout(() => this.checkAllServerStatus(), 1000);
+    },
+
+    // ✅ Check server status for all servers
+    checkAllServerStatus: async function() {
+        const statusElement = document.getElementById('serverStatus');
+        if (!statusElement) return;
+        
+        let statusHTML = '';
+        
+        for (const server of this.servers) {
+            try {
+                const startTime = Date.now();
+                
+                // Use fetch with timeout
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                
+                const response = await fetch(`${server.url}/api/health`, {
+                    signal: controller.signal,
+                    mode: 'cors',
+                    cache: 'no-cache'
+                }).catch(() => null);
+                
+                clearTimeout(timeoutId);
+                
+                const responseTime = Date.now() - startTime;
+                
+                if (response && response.ok) {
+                    statusHTML += `<span style="color: green; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
+                        <i class="fas fa-check-circle"></i> ${server.name}: ${responseTime}ms
+                    </span>`;
+                } else {
+                    statusHTML += `<span style="color: red; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
+                        <i class="fas fa-times-circle"></i> ${server.name}: Offline
+                    </span>`;
+                }
+            } catch (error) {
+                statusHTML += `<span style="color: orange; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
+                    <i class="fas fa-exclamation-triangle"></i> ${server.name}: Error
+                </span>`;
+            }
+        }
+        
+        statusElement.innerHTML = statusHTML;
+    },
+
+    // ✅ Sync from all servers
+    syncFromAllServers: async function() {
+        this.showNotification('🔄 Syncing from all servers...', 'info');
+        
+        const allUsers = [];
+        const allTransactions = [];
+        const successfulServers = [];
+        
+        for (const server of this.servers) {
+            try {
+                console.log(`🔄 Attempting to sync from ${server.name}: ${server.url}`);
+                
+                // Try to get users from this server
+                const usersResponse = await fetch(`${server.url}/api/get-all-users`, {
+                    mode: 'cors',
+                    cache: 'no-cache'
+                }).catch(() => null);
+                
+                if (usersResponse && usersResponse.ok) {
+                    const data = await usersResponse.json();
+                    if (data.success) {
+                        const users = data.users || data.data || [];
+                        console.log(`✅ Got ${users.length} users from ${server.name}`);
+                        
+                        // Merge users (avoid duplicates by email or id)
+                        users.forEach(user => {
+                            const existingIndex = allUsers.findIndex(u => 
+                                u.email === user.email || u.id === user.id
+                            );
+                            
+                            if (existingIndex === -1) {
+                                allUsers.push(user);
+                            } else {
+                                // Update existing user with newer data
+                                const existingUser = allUsers[existingIndex];
+                                if (user.updatedAt > existingUser.updatedAt) {
+                                    allUsers[existingIndex] = user;
+                                }
+                            }
+                        });
+                        
+                        // Try to get transactions
+                        const txResponse = await fetch(`${server.url}/api/get-all-transactions`, {
+                            mode: 'cors',
+                            cache: 'no-cache'
+                        }).catch(() => null);
+                        
+                        if (txResponse && txResponse.ok) {
+                            const txData = await txResponse.json();
+                            if (txData.success) {
+                                const transactions = txData.transactions || txData.data || [];
+                                
+                                // Merge transactions (avoid duplicates by transactionId)
+                                transactions.forEach(transaction => {
+                                    const existingIndex = allTransactions.findIndex(t => 
+                                        t.transactionId === transaction.transactionId
+                                    );
+                                    
+                                    if (existingIndex === -1) {
+                                        allTransactions.push(transaction);
+                                    }
+                                });
+                            }
+                        }
+                        
+                        successfulServers.push(server.name);
+                    }
+                }
+            } catch (error) {
+                console.error(`❌ Error syncing from ${server.name}:`, error);
+            }
+        }
+        
+        // Update window data
+        window.adminData = window.adminData || {};
+        window.adminData.users = allUsers;
+        window.adminData.transactions = allTransactions;
+        window.adminData.lastUpdated = new Date();
+        window.adminData.multiServerSync = true;
+        
+        // Update localStorage
+        localStorage.setItem('registeredUsers', JSON.stringify(allUsers));
+        localStorage.setItem('allUsersTransactions', JSON.stringify(allTransactions));
+        
+        // Dispatch event
+        this.dispatchEvent('multiServerSyncComplete', { 
+            servers: successfulServers, 
+            userCount: allUsers.length,
+            transactionCount: allTransactions.length 
+        });
+        
+        this.showNotification(
+            `✅ Synced from ${successfulServers.length} server(s): ${allUsers.length} users, ${allTransactions.length} transactions`,
+            'success'
+        );
+        
+        // Update UI
+        if (typeof refreshAdminDashboard === 'function') {
+            refreshAdminDashboard();
+        }
+        
+        return {
+            success: true,
+            servers: successfulServers,
+            userCount: allUsers.length,
+            transactionCount: allTransactions.length
+        };
     },
     
     // Add sync controls to admin panel
@@ -1274,6 +1477,15 @@ window.forceSyncAllBrowsers = async function() {
 
 window.checkCrossBrowserData = function() {
     return AdminPanel.checkCrossBrowserData();
+};
+
+// Multi-server sync functions
+window.syncFromAllServers = async function() {
+    return await AdminPanel.syncFromAllServers();
+};
+
+window.checkAllServerStatus = async function() {
+    return await AdminPanel.checkAllServerStatus();
 };
 
 // Make AdminPanel globally available
