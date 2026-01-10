@@ -5187,6 +5187,398 @@
             opacity: 0.7;
         }
 
+        /* ✅ UNIQUE ID DISPLAY STYLES */
+        .unique-id-display, .referral-code-display, .sponsor-info-display {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .unique-id-label, .referral-code-label, .sponsor-info-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .unique-id-value, .referral-code-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #FFD700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .sponsor-info-content {
+            flex: 1;
+            margin-left: 15px;
+        }
+
+        .sponsor-name {
+            font-size: 14px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .sponsor-id {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .unique-id-copy, .referral-code-copy {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid #4CAF50;
+            color: #4CAF50;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .unique-id-copy:hover, .referral-code-copy:hover {
+            background: rgba(76, 175, 80, 0.3);
+        }
+
+        /* ✅ SPONSOR AUTO-FILL NOTICE */
+        .sponsor-auto-fill-notice {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .notice-icon {
+            font-size: 24px;
+        }
+
+        .notice-content {
+            flex: 1;
+        }
+
+        .notice-title {
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 5px;
+        }
+
+        .notice-desc {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .sponsor-info {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        /* ✅ REFERRAL SHARING SECTION STYLES */
+        .referral-sharing-section {
+            margin: 20px 0;
+        }
+
+        .referral-link-container {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .sharing-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .share-btn {
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .share-btn.whatsapp-btn {
+            background: #25D366;
+            color: white;
+        }
+
+        .share-btn.telegram-btn {
+            background: #0088cc;
+            color: white;
+        }
+
+        .share-btn.copy-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .share-btn.more-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .message-preview {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+
+        .earnings-preview {
+            background: rgba(76, 175, 80, 0.1);
+            border: 1px solid #4CAF50;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        /* ✅ GENERATED REFERRAL CODE SECTION */
+        .generated-referral-code {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .code-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 8px;
+        }
+
+        .code-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-note {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        /* ✅ REFERRED USERS LIST */
+        .referred-users-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+
+        .referred-user-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .user-number {
+            font-weight: bold;
+            color: #FFD700;
+            margin-right: 15px;
+            min-width: 25px;
+        }
+
+        .user-info {
+            flex: 1;
+        }
+
+        .user-name {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .user-details {
+            display: flex;
+            gap: 15px;
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .user-commission {
+            text-align: right;
+            min-width: 60px;
+        }
+
+        .commission-amount {
+            color: #4CAF50;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .commission-label {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        /* ✅ NO REFERRED USERS STATE */
+        .no-referred-users {
+            text-align: center;
+            padding: 40px 20px;
+            opacity: 0.7;
+        }
+
+        .no-users-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .no-users-text {
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .no-users-desc {
+            font-size: 12px;
+        }
+
+        /* ✅ QR CODE SECTION */
+        .referral-qr-code {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .qr-code-placeholder {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+
+        .qr-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .btn-generate-qr {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .btn-generate-qr:hover {
+            background: linear-gradient(135deg, #764ba2, #667eea);
+        }
+
+        /* ✅ ADMIN SPONSOR TABLE */
+        .sponsor-table-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .sponsor-table {
+            width: 100%;
+            border-collapse: collapse;
+            color: white;
+        }
+
+        .sponsor-table th {
+            background: rgba(255, 0, 0, 0.3);
+            padding: 15px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        .sponsor-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sponsor-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .btn-view-sponsor {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* ✅ PROFILE OPTION STYLES */
+        .profile-option {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 10px;
+        }
+
+        .profile-option:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+
+        .option-icon {
+            font-size: 24px;
+        }
+
+        .option-name {
+            font-size: 14px;
+            font-weight: bold;
+            flex: 1;
+        }
+
+        .option-desc {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        .option-arrow {
+            font-size: 20px;
+            color: #4CAF50;
+        }
+
         /* Animations */
         @keyframes slideIn {
             from {
@@ -5377,6 +5769,11 @@
             .conversion-choice {
                 grid-template-columns: 1fr;
             }
+            
+            /* Referral sharing responsive */
+            .sharing-buttons-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -5552,6 +5949,14 @@
     <div class="btn-register">
         📝 Register Now
     </div>
+</div>
+
+<!-- New Sponsor Dashboard Button -->
+<div class="profile-option" onclick="showSponsorDashboard()">
+    <div class="option-icon">🎯</div>
+    <div class="option-name">Sponsor Dashboard</div>
+    <div class="option-desc">Track your referral earnings</div>
+    <div class="option-arrow">→</div>
 </div>
                         
                         <div class="platforms-grid">
@@ -5921,6 +6326,52 @@
         console.log('Saving user to server:', userData);
         // You can implement actual server API call here
         return Promise.resolve();
+    }
+
+    // ✅ Show Sponsor Dashboard
+    function showSponsorDashboard() {
+        // Scroll to the sponsor dashboard section
+        const sponsorSection = document.querySelector('.sponsor-dashboard');
+        if (sponsorSection) {
+            sponsorSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    
+    // ✅ Generate full referral link function
+    function generateFullReferralLink() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const referralCode = currentUser.referralCode || 'GET-CODE';
+        return `https://tapearn.com/ref/${referralCode}`;
+    }
+    
+    // ✅ Share on WhatsApp function
+    function shareOnWhatsApp() {
+        const referralLink = generateFullReferralLink();
+        const message = `🚀 Join TapEarn and start earning! Use my referral link: ${referralLink}`;
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+    
+    // ✅ Share on Telegram function
+    function shareOnTelegram() {
+        const referralLink = generateFullReferralLink();
+        const message = `🚀 Join TapEarn and start earning! Use my referral link: ${referralLink}`;
+        const telegramUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`;
+        window.open(telegramUrl, '_blank');
+    }
+    
+    // ✅ Copy referral link function
+    function copyReferralLink() {
+        const referralLink = generateFullReferralLink();
+        navigator.clipboard.writeText(referralLink).then(() => {
+            alert('Referral link copied to clipboard!');
+        });
+    }
+    
+    // ✅ Show more sharing options function
+    function showMoreSharingOptions() {
+        // Implement more sharing options as needed
+        alert('More sharing options coming soon!');
     }
     
     // ✅ Example usage when user registers:
