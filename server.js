@@ -1369,6 +1369,55 @@ app.get('/api/admin/users-full', async (req, res) => {
   }
 });
 
+// ✅ NEW ENDPOINT: User sync check
+app.get('/api/admin/user-sync-check', async (req, res) => {
+  try {
+    const since = parseInt(req.query.since) || 0;
+    const sinceDate = new Date(since);
+    
+    const newUsers = await User.find({
+      registration_date: { $gt: sinceDate }
+    }).countDocuments();
+    
+    res.json({
+      success: true,
+      newUsers: newUsers,
+      totalUsers: await User.countDocuments(),
+      timestamp: Date.now()
+    });
+  } catch (error) {
+    console.error('Error in user-sync-check:', error);
+    res.json({ success: false, newUsers: 0 });
+  }
+});
+
+// ✅ NEW ENDPOINT: Get all users with filtering
+app.get('/api/admin/get-all-users-enhanced', async (req, res) => {
+  try {
+    const users = await User.find()
+      .sort({ registration_date: -1 })
+      .select('-password -__v');
+    
+    // Get recent registrations (last 5 minutes)
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const recentUsers = await User.find({
+      registration_date: { $gte: fiveMinutesAgo }
+    }).select('email username registration_date');
+    
+    res.json({
+      success: true,
+      users: users,
+      recentRegistrations: recentUsers,
+      total: users.length,
+      timestamp: new Date().toISOString(),
+      server: req.hostname
+    });
+  } catch (error) {
+    console.error('Error in enhanced users endpoint:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 app.get('/api/admin/user-stats', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
