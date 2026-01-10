@@ -1131,13 +1131,192 @@
         let notificationTimer = null;
         const NOTIFICATION_COOLDOWN = 3000; // 3 seconds between similar notifications
 
-        // ✅ FIXED: Initialize admin panel - Data source ko fix kiya
+        // ✅ UPDATED: Enhanced cross-browser communication
+        function setupUniversalCrossBrowserSync() {
+            console.log('🌐 Setting up UNIVERSAL cross-browser sync...');
+            
+            // ✅ Method 1: localStorage events (same browser, different tabs)
+            window.addEventListener('storage', function(event) {
+                console.log('📡 Storage event from another tab:', event.key);
+                
+                if (event.key === 'registeredUsers') {
+                    try {
+                        const newUsers = JSON.parse(event.newValue || '[]');
+                        console.log(`🔄 Users updated from another tab: ${newUsers.length} users`);
+                        
+                        const filteredUsers = filterDeletedUsers(newUsers);
+                        adminData.users = filteredUsers;
+                        document.getElementById('userCountBadge').textContent = filteredUsers.length;
+                        
+                        refreshCurrentView();
+                        showNotification(`🔄 ${newUsers.length} users synced from another tab`, 'info');
+                    } catch (error) {
+                        console.error('Error processing storage event:', error);
+                    }
+                }
+            });
+
+            // ✅ Method 2: BroadcastChannel API (modern browsers)
+            if (typeof BroadcastChannel !== 'undefined') {
+                try {
+                    const userChannel = new BroadcastChannel('tapearn_users_channel');
+                    const adminChannel = new BroadcastChannel('tapearn_admin_channel');
+                    
+                    // Listen for messages
+                    userChannel.onmessage = function(event) {
+                        console.log('📡 BroadcastChannel message:', event.data);
+                        
+                        if (event.data.type === 'user_registered') {
+                            const newUser = event.data.user;
+                            console.log('🆕 New user from BroadcastChannel:', newUser.email);
+                            
+                            // Add to adminData if not exists
+                            const userExists = adminData.users.some(u => 
+                                u.email === newUser.email || 
+                                u.username === newUser.username
+                            );
+                            
+                            if (!userExists) {
+                                adminData.users.push(newUser);
+                                document.getElementById('userCountBadge').textContent = adminData.users.length;
+                                refreshCurrentView();
+                                showNotification(`🆕 ${newUser.email} registered via BroadcastChannel`, 'success');
+                            }
+                        }
+                    };
+                    
+                    adminChannel.onmessage = function(event) {
+                        if (event.data.type === 'refresh_request') {
+                            console.log('🔄 Refresh request from another admin');
+                            loadAdminData();
+                        }
+                    };
+                    
+                    console.log('✅ BroadcastChannel setup complete');
+                } catch (error) {
+                    console.error('BroadcastChannel error:', error);
+                }
+            }
+
+            // ✅ Method 3: Server polling with timestamp comparison
+            let lastSyncTime = localStorage.getItem('lastUserSyncTime') || 0;
+            
+            setInterval(async () => {
+                try {
+                    const response = await fetch(`${getServerBase()}/api/admin/user-sync-check?since=${lastSyncTime}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.success && data.newUsers > 0) {
+                            console.log(`🔄 Server reports ${data.newUsers} new users since last sync`);
+                            await loadAdminData();
+                            localStorage.setItem('lastUserSyncTime', Date.now());
+                        }
+                    }
+                } catch (error) {
+                    console.log('Server sync check failed:', error.message);
+                }
+            }, 10000); // Every 10 seconds
+
+            // ✅ Method 4: Window focus detection
+            window.addEventListener('focus', function() {
+                console.log('🎯 Window focused, checking for updates...');
+                loadAdminData();
+            });
+            
+            // ✅ Method 5: Periodic full sync
+            setInterval(() => {
+                console.log('🔄 Periodic full sync...');
+                loadAdminData();
+            }, 30000); // Every 30 seconds
+        }
+
+        // ✅ Get current server base dynamically
+        function getServerBase() {
+            const currentHost = window.location.hostname;
+            const isLocalhost = currentHost === 'localhost' || currentHost === '127.0.0.1';
+            
+            if (isLocalhost) {
+                return 'http://localhost:3000';
+            } else {
+                return window.location.origin || 'https://tapearn-native-app.onrender.com';
+            }
+        }
+
+        // ✅ Enhanced user registration broadcast
+        function broadcastUserRegistrationUniversal(userData) {
+            try {
+                // Method 1: localStorage event
+                localStorage.setItem('userRegistrationEvent', JSON.stringify({
+                    type: 'user_registered',
+                    user: userData,
+                    timestamp: Date.now(),
+                    source: window.location.hostname
+                }));
+                
+                // Method 2: BroadcastChannel
+                if (typeof BroadcastChannel !== 'undefined') {
+                    try {
+                        const channel = new BroadcastChannel('tapearn_users_channel');
+                        channel.postMessage({
+                            type: 'user_registered',
+                            user: userData,
+                            timestamp: Date.now()
+                        });
+                        channel.close();
+                    } catch (error) {
+                        console.error('BroadcastChannel post error:', error);
+                    }
+                }
+                
+                // Method 3: Trigger custom event
+                const event = new CustomEvent('userRegisteredUniversal', {
+                    detail: { user: userData }
+                });
+                window.dispatchEvent(event);
+                
+                console.log('📢 Universal user registration broadcast complete');
+                
+            } catch (error) {
+                console.error('Error in universal broadcast:', error);
+            }
+        }
+
+        // ✅ UPDATED: Initialize admin panel - Data source ko fix kiya
         document.addEventListener('DOMContentLoaded', function() {
             checkAdminAuth();
             loadAdminData(); // ✅ Yahi se data load hoga
             
             // ✅ Delete kiye gaye users ka tracking
             initializeDeletedUsersTracker();
+
+            // ✅ Setup universal cross-browser sync
+            setupUniversalCrossBrowserSync();
+
+            // ✅ Listen for universal user registration events
+            window.addEventListener('userRegisteredUniversal', function(event) {
+                console.log('🎯 Universal user registration event:', event.detail);
+                
+                const newUser = event.detail.user;
+                const userExists = adminData.users.some(u => 
+                    u.email === newUser.email || 
+                    u.username === newUser.username
+                );
+                
+                if (!userExists) {
+                    adminData.users.push(newUser);
+                    document.getElementById('userCountBadge').textContent = adminData.users.length;
+                    refreshCurrentView();
+                    showNotification(`🆕 ${newUser.email} registered (Universal Sync)`, 'success');
+                }
+            });
+            
+            // ✅ Setup focus/blur detection
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) {
+                    console.log('👁️ Page visible, syncing data...');
+                    loadAdminData();
+                }
+            });
 
             // ✅ STEP 1: Enhanced storage event listener for ALL browsers
             window.addEventListener('storage', function(event) {
@@ -4203,7 +4382,7 @@
                 
                 // Broadcast the new user to other tabs
                 broadcastToOtherTabs('user_added', newUser);
-                broadcastUserRegistration(email, username);
+                broadcastUserRegistrationUniversal(newUser);
                 
                 showNotification('✅ User created successfully!', 'success');
                 closeModal();
