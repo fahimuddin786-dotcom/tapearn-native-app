@@ -1357,6 +1357,7 @@
             padding: 15px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 10px;
+            margin-bottom: 10px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
         }
@@ -5187,6 +5188,71 @@
             opacity: 0.7;
         }
 
+        /* ✅ SPONSOR AUTO-FILL NOTICE STYLES */
+        .sponsor-auto-fill-notice {
+            background: rgba(255, 215, 0, 0.15);
+            border: 2px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .notice-icon {
+            font-size: 32px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .notice-title {
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+
+        .notice-desc {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .sponsor-info {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .sponsor-info strong {
+            color: #4CAF50;
+        }
+
+        /* ✅ LOCKED FIELD STYLES */
+        .locked-field {
+            background: rgba(76, 175, 80, 0.1) !important;
+            border: 1px solid #4CAF50 !important;
+            color: #4CAF50 !important;
+            font-weight: bold !important;
+            cursor: not-allowed !important;
+        }
+
+        .locked-field::placeholder {
+            color: rgba(76, 175, 80, 0.7) !important;
+        }
+
+        /* ✅ FORM VALIDATION STYLES */
+        .form-group.invalid input {
+            border-color: #FF6B6B !important;
+            background: rgba(255, 107, 107, 0.1) !important;
+        }
+
+        .form-group.valid input {
+            border-color: #4CAF50 !important;
+            background: rgba(76, 175, 80, 0.1) !important;
+        }
+
         /* ✅ UNIQUE ID DISPLAY STYLES */
         .unique-id-display, .referral-code-display, .sponsor-info-display {
             background: rgba(255, 255, 255, 0.05);
@@ -5242,45 +5308,6 @@
 
         .unique-id-copy:hover, .referral-code-copy:hover {
             background: rgba(76, 175, 80, 0.3);
-        }
-
-        /* ✅ SPONSOR AUTO-FILL NOTICE */
-        .sponsor-auto-fill-notice {
-            background: rgba(255, 215, 0, 0.1);
-            border: 1px solid rgba(255, 215, 0, 0.3);
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .notice-icon {
-            font-size: 24px;
-        }
-
-        .notice-content {
-            flex: 1;
-        }
-
-        .notice-title {
-            font-weight: bold;
-            color: #FFD700;
-            margin-bottom: 5px;
-        }
-
-        .notice-desc {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 8px;
-        }
-
-        .sponsor-info {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 13px;
         }
 
         /* ✅ REFERRAL SHARING SECTION STYLES */
@@ -5579,6 +5606,18 @@
             color: #4CAF50;
         }
 
+        /* =============================================
+           ✅ NEW ANIMATION ADDED: highlight
+           ============================================= */
+        @keyframes highlight {
+            0% { background-color: rgba(76, 175, 80, 0.2); }
+            100% { background-color: transparent; }
+        }
+
+        .highlight-animation {
+            animation: highlight 1.5s ease-out;
+        }
+
         /* Animations */
         @keyframes slideIn {
             from {
@@ -5775,6 +5814,84 @@
                 grid-template-columns: 1fr;
             }
         }
+        
+        /* 🎯 CSS FOR BETTER BUTTONS */
+        .sharing-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .share-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 15px 10px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .share-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .share-btn span:first-child {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+
+        .share-btn span:nth-child(2) {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 3px;
+        }
+
+        .share-btn small {
+            font-size: 10px;
+            opacity: 0.7;
+        }
+
+        /* Button Colors */
+        .copy-btn { background: linear-gradient(135deg, #4CAF50, #45a049); }
+        .whatsapp-btn { background: linear-gradient(135deg, #25D366, #128C7E); }
+        .telegram-btn { background: linear-gradient(135deg, #0088cc, #006699); }
+        .universal-btn { background: linear-gradient(135deg, #667eea, #764ba2); }
+
+        /* Link Preview */
+        .link-preview {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 15px;
+        }
+
+        .preview-label {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .preview-link {
+            font-size: 12px;
+            word-break: break-all;
+            color: #4CAF50;
+            font-family: monospace;
+            margin-bottom: 5px;
+        }
+
+        .preview-note {
+            font-size: 11px;
+            color: #FFD700;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -5958,6 +6075,31 @@
     <div class="option-desc">Track your referral earnings</div>
     <div class="option-arrow">→</div>
 </div>
+
+<!-- प्रोफाइल में नया Unique ID Display -->
+<div id="profileInfoSection" class="profile-info-section" style="margin-bottom: 20px;">
+    <!-- यूजर का यूनिक ID -->
+    <div class="unique-id-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1);">
+        <div class="card-icon">🆔</div>
+        <div class="card-content" style="flex: 1;">
+            <div class="card-label" style="font-size: 12px; opacity: 0.8;">Your Unique ID</div>
+            <div class="card-value" id="uniqueIdDisplay" style="font-size: 16px; font-weight: bold; color: #FFD700;">--</div>
+            <div class="card-sub" id="referralCodeDisplay" style="font-size: 11px; opacity: 0.7;">Referral: --</div>
+        </div>
+        <div class="card-action" onclick="copyUniqueId()" style="font-size: 20px; cursor: pointer;">📋</div>
+    </div>
+    
+    <!-- स्पॉन्सर का ID -->
+    <div class="sponsor-id-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1);">
+        <div class="card-icon">👥</div>
+        <div class="card-content" style="flex: 1;">
+            <div class="card-label" style="font-size: 12px; opacity: 0.8;">Your Sponsor</div>
+            <div class="card-value" id="sponsorNameDisplay" style="font-size: 14px; font-weight: bold; color: #4CAF50;">No Sponsor</div>
+            <div class="card-sub" id="sponsorIdDisplay" style="font-size: 11px; opacity: 0.7;">ID: --</div>
+        </div>
+        <div class="card-action" onclick="copySponsorId()" style="font-size: 20px; cursor: pointer;">📋</div>
+    </div>
+</div>
                         
                         <div class="platforms-grid">
                             <div class="platform-card" onclick="showCashier()">
@@ -6084,6 +6226,81 @@
                             </div>
 
                             <button class="btn-view-full-history">View Full Commission History</button>
+                        </div>
+
+                        <!-- रेफरल शेयरिंग सेक्शन -->
+                        <div id="referralSharingSection" class="referral-sharing-section" style="display: none;">
+                            <h4 style="color: #FFD700; text-align: center; margin-bottom: 20px;">🔗 Share Referral Link</h4>
+                            
+                            <!-- Link Display -->
+                            <div class="link-display-box" style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 12px; margin-bottom: 20px; border: 1px solid #4CAF50;">
+                                <div style="text-align: center; margin-bottom: 10px;">
+                                    <div style="font-size: 12px; opacity: 0.8; margin-bottom: 5px;">Your Referral Link:</div>
+                                    <div style="font-size: 13px; color: #4CAF50; word-break: break-all; font-family: monospace; padding: 10px; background: rgba(76,175,80,0.1); border-radius: 8px; margin-bottom: 8px;" id="referralLinkDisplay">
+                                        Loading...
+                                    </div>
+                                    <div style="font-size: 11px; color: #FFD700;">
+                                        ✅ This link will open registration form automatically
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Sharing Options -->
+                            <div class="sharing-options">
+                                <h5 style="text-align: center; margin-bottom: 15px; color: #FFA726;">Choose Sharing Method:</h5>
+                                
+                                <!-- Option 1: Direct Link (Best for Clickability) -->
+                                <div class="sharing-option" onclick="shareOneClickJoin()" style="background: linear-gradient(135deg, #4CAF50, #45a049); border-radius: 12px; padding: 15px; margin-bottom: 12px; cursor: pointer; border: 2px solid #4CAF50;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="font-size: 24px;">🚀</div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: bold; font-size: 14px;">One-Click Join Link</div>
+                                            <div style="font-size: 11px; opacity: 0.9;">Link comes first - Most clickable</div>
+                                        </div>
+                                        <div style="font-size: 20px;">→</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Option 2: WhatsApp Share -->
+                                <div class="sharing-option" onclick="shareOnWhatsAppBetter()" style="background: linear-gradient(135deg, #25D366, #128C7E); border-radius: 12px; padding: 15px; margin-bottom: 12px; cursor: pointer;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="font-size: 24px;">📱</div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: bold; font-size: 14px;">WhatsApp Share</div>
+                                            <div style="font-size: 11px; opacity: 0.9;">Clickable link in message</div>
+                                        </div>
+                                        <div style="font-size: 20px;">→</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Option 3: Copy Message -->
+                                <div class="sharing-option" onclick="copyReferralLink()" style="background: rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-bottom: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div style="font-size: 24px;">📋</div>
+                                        <div style="flex: 1;">
+                                            <div style="font-weight: bold; font-size: 14px;">Copy Message</div>
+                                            <div style="font-size: 11px; opacity: 0.9;">Paste anywhere manually</div>
+                                        </div>
+                                        <div style="font-size: 20px;">→</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Test Button -->
+                                <button onclick="previewShareMessage()" style="width: 100%; padding: 10px; background: rgba(255,215,0,0.1); border: 1px solid rgba(255,215,0,0.3); color: #FFD700; border-radius: 8px; font-size: 12px; margin-top: 10px;">
+                                    👁️ Preview Message
+                                </button>
+                            </div>
+                            
+                            <!-- Instructions -->
+                            <div style="background: rgba(255,215,0,0.1); padding: 12px; border-radius: 10px; margin-top: 15px; border: 1px solid rgba(255,215,0,0.3);">
+                                <div style="color: #FFD700; font-weight: bold; margin-bottom: 5px;">💡 Pro Tip:</div>
+                                <div style="font-size: 11px; opacity: 0.9;">
+                                    • <strong>Link at start</strong> = Most clickable in WhatsApp<br>
+                                    • <strong>Alone link</strong> = 100% clickable everywhere<br>
+                                    • User clicks link → Registration opens automatically<br>
+                                    • Sponsor details auto-filled, can't be changed
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -6374,6 +6591,68 @@
         alert('More sharing options coming soon!');
     }
     
+    // ✅ New sharing functions
+    function shareOneClickJoin() {
+        const referralLink = generateFullReferralLink();
+        navigator.clipboard.writeText(referralLink).then(() => {
+            alert('One-click join link copied! Share it anywhere.');
+        });
+    }
+    
+    function shareOnWhatsAppBetter() {
+        const referralLink = generateFullReferralLink();
+        const message = `${referralLink}\n\n🚀 Join TapEarn using my link above!`;
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+    
+    function previewShareMessage() {
+        const referralLink = generateFullReferralLink();
+        const message = `🚀 Join TapEarn using my referral link:\n${referralLink}\n\nClick the link above to register instantly!`;
+        alert('Preview:\n\n' + message);
+    }
+    
+    // ✅ Profile info functions
+    function copyUniqueId() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const uniqueId = currentUser.uniqueId || 'N/A';
+        navigator.clipboard.writeText(uniqueId).then(() => {
+            alert('Unique ID copied!');
+        });
+    }
+    
+    function copySponsorId() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const sponsorId = currentUser.sponsorUniqueId || 'N/A';
+        navigator.clipboard.writeText(sponsorId).then(() => {
+            alert('Sponsor ID copied!');
+        });
+    }
+    
+    // ✅ Update profile info display
+    function updateProfileInfoDisplay() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        
+        if (currentUser.email) {
+            // Update unique ID display
+            document.getElementById('uniqueIdDisplay').textContent = currentUser.uniqueId || 'TAP-' + Math.floor(Math.random() * 10000);
+            document.getElementById('referralCodeDisplay').textContent = 'Referral: ' + (currentUser.referralCode || '--');
+            
+            // Update sponsor info
+            document.getElementById('sponsorNameDisplay').textContent = currentUser.sponsorName || 'No Sponsor';
+            document.getElementById('sponsorIdDisplay').textContent = 'ID: ' + (currentUser.sponsorUniqueId || '--');
+            
+            // Update referral link
+            const referralLink = generateFullReferralLink();
+            document.getElementById('referralLinkDisplay').textContent = referralLink;
+            
+            // Show referral sharing section
+            document.getElementById('referralSharingSection').style.display = 'block';
+        } else {
+            document.getElementById('referralSharingSection').style.display = 'none';
+        }
+    }
+    
     // ✅ Example usage when user registers:
     /*
     const newUser = {
@@ -6413,6 +6692,11 @@
         
         alert('Admin system test complete. Check console for details.');
     }
+    
+    // Initialize profile info display
+    document.addEventListener('DOMContentLoaded', function() {
+        updateProfileInfoDisplay();
+    });
     </script>
 </body>
 </html>
