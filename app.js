@@ -75,7 +75,7 @@ let todayActivityPoints = 0;
 let totalActivityPoints = 0;
 
 let referralData = {
-    referralCode: generateReferralCode(),
+    referralCode: '',
     referredUsers: [],
     totalEarned: 0,
     telegramUsername: ''
@@ -766,13 +766,11 @@ function safeNumber(value, defaultValue = 0) {
 // ✅ UPDATED saveToStorage FUNCTION
 function saveToStorage(key, value) {
     try {
-        // Handle undefined values
         if (value === undefined) {
             console.warn(`⚠️ Attempted to save undefined value for key: ${key}`);
             return false;
         }
         
-        // Handle NaN values in numbers
         if (typeof value === 'number' && isNaN(value)) {
             console.warn(`⚠️ Attempted to save NaN for key: ${key}`);
             value = 0;
@@ -796,14 +794,12 @@ function getFromStorage(key, defaultValue = null) {
             return defaultValue;
         }
         
-        // Handle empty strings
         if (item.trim() === '') {
             return defaultValue;
         }
         
         const parsed = JSON.parse(item);
         
-        // Handle null after parsing
         if (parsed === null || parsed === undefined) {
             return defaultValue;
         }
@@ -846,16 +842,13 @@ function generateUniqueId() {
     const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
     const randomNum = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
     
-    // Combine: TAP + timestamp + random letters + random numbers
     const uniqueId = `TAP${timestamp}${randomPart}${randomNum}`.substring(0, 15);
     
-    // Check if ID already exists in storage
     const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     const existingIds = registeredUsers.map(user => user.uniqueId);
     
-    // If duplicate, generate again (should be rare)
     if (existingIds.includes(uniqueId)) {
-        return generateUniqueId(); // Recursive call
+        return generateUniqueId();
     }
     
     return uniqueId;
@@ -867,68 +860,164 @@ function generateReferralCode() {
     const prefix = 'TAPEARN-';
     let code = '';
     
-    // Generate 8 random characters
     for (let i = 0; i < 8; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     
     const referralCode = prefix + code;
     
-    // Check if code already exists
     const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     const existingCodes = registeredUsers.map(user => user.referralCode);
     
-    // If duplicate, generate again
     if (existingCodes.includes(referralCode)) {
-        return generateReferralCode(); // Recursive call
+        return generateReferralCode();
     }
     
     return referralCode;
 }
 
 // ==============================================
-// ✅ URL PARAMETER CHECKING FUNCTION
+// ✅ IMPROVED URL PARAMETER PARSING FUNCTION - FIXED FOR CORRECT SPONSOR DISPLAY
 // ==============================================
 
-function checkURLParameters() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const referralCode = urlParams.get('ref');
-    const sponsorId = urlParams.get('sponsor');
+function parseAndValidateSponsorFromURL() {
+    console.log('🔗 Parsing URL parameters for sponsor...');
     
-    if (referralCode || sponsorId) {
-        // Save to sessionStorage (better than localStorage for temporary data)
-        sessionStorage.setItem('pendingReferralCode', referralCode || '');
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    const sponsorId = urlParams.get('sponsor');
+    const sponsorName = urlParams.get('sponsorname');
+    const sponsorUsername = urlParams.get('sponsorusername');
+    const sponsorEmail = urlParams.get('sponsoremail');
+    const joinType = urlParams.get('join');
+    
+    console.log('📋 Raw URL Parameters:', {
+        refCode,
+        sponsorId,
+        sponsorName,
+        sponsorUsername,
+        sponsorEmail,
+        joinType
+    });
+    
+    if (refCode || sponsorId || sponsorName || sponsorUsername) {
+        console.log('🎯 Sponsor found in URL parameters');
+        
+        // ✅ CORRECT PRIORITY: Use sponsorName and sponsorUsername if available
+        // If sponsorName is not provided, use sponsorId as fallback
+        const displaySponsorName = sponsorName || sponsorUsername || sponsorId || 'Sponsor';
+        const displaySponsorUsername = sponsorUsername || sponsorName || sponsorId || 'Sponsor';
+        const displaySponsorFullName = sponsorName || sponsorUsername || sponsorId || 'Sponsor';
+        
+        // ✅ पहले LocalStorage में सेक करें
+        localStorage.setItem('pendingReferralCode', refCode || '');
+        localStorage.setItem('pendingSponsorId', sponsorId || '');
+        localStorage.setItem('pendingSponsorName', displaySponsorUsername); // Changed to username
+        localStorage.setItem('pendingSponsorFullName', displaySponsorFullName); // Changed to full name
+        localStorage.setItem('pendingSponsorUsername', sponsorUsername || '');
+        localStorage.setItem('pendingSponsorEmail', sponsorEmail || '');
+        localStorage.setItem('pendingJoinType', joinType || 'referral');
+        
+        // ✅ SessionStorage में भी सेक करें
+        sessionStorage.setItem('pendingReferralCode', refCode || '');
         sessionStorage.setItem('pendingSponsorId', sponsorId || '');
+        sessionStorage.setItem('pendingSponsorName', displaySponsorUsername);
+        sessionStorage.setItem('pendingSponsorFullName', displaySponsorFullName);
+        sessionStorage.setItem('pendingSponsorUsername', sponsorUsername || '');
+        sessionStorage.setItem('pendingSponsorEmail', sponsorEmail || '');
+        sessionStorage.setItem('pendingJoinType', joinType || 'referral');
         
-        // Get sponsor details from registered users
-        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-        const sponsorUser = registeredUsers.find(user => 
-            (referralCode && user.referralCode === referralCode) || 
-            (sponsorId && user.uniqueId === sponsorId)
-        );
+        // ✅ वेरिएबल्स में भी सेव करें
+        window.pendingReferralCode = refCode || '';
+        window.pendingSponsorId = sponsorId || '';
+        window.pendingSponsorName = displaySponsorUsername;
+        window.pendingSponsorFullName = displaySponsorFullName;
+        window.pendingSponsorUsername = sponsorUsername || '';
+        window.pendingSponsorEmail = sponsorEmail || '';
+        window.pendingJoinType = joinType || 'referral';
         
-        let sponsorName = 'Unknown Sponsor';
-        let sponsorFullName = 'Unknown Sponsor';
+        console.log('✅ Sponsor details saved:', {
+            referralCode: window.pendingReferralCode,
+            sponsorId: window.pendingSponsorId,
+            sponsorName: window.pendingSponsorName,
+            sponsorFullName: window.pendingSponsorFullName,
+            sponsorUsername: window.pendingSponsorUsername
+        });
+        
+        // ✅ यूज़र को नोटिफिकेशन दें
+        const displayName = displaySponsorFullName;
+        showNotification(`🎯 Joining through referral of: ${displayName}`, 'success');
+        
+        return {
+            referralCode: refCode,
+            sponsorId: sponsorId,
+            sponsorName: displaySponsorName,
+            sponsorFullName: displaySponsorFullName,
+            sponsorUsername: displaySponsorUsername,
+            sponsorEmail: sponsorEmail,
+            joinType: joinType
+        };
+    }
+    
+    console.log('❌ No sponsor parameters found in URL');
+    return null;
+}
+
+// ✅ Referral code से sponsor info fetch करने का function
+function getSponsorInfoFromReferralCode(referralCode) {
+    console.log('🔍 Looking up sponsor info for code:', referralCode);
+    
+    if (!referralCode) return null;
+    
+    try {
+        // 1. पहले pre-loaded codes में चेक करें
+        const preLoadedRef = PRE_LOADED_REFERRAL_CODES.find(ref => ref.code === referralCode);
+        if (preLoadedRef) {
+            console.log('✅ Found in pre-loaded codes:', preLoadedRef);
+            return {
+                username: preLoadedRef.username,
+                fullName: preLoadedRef.fullName || preLoadedRef.name,
+                email: '',
+                uniqueId: `SYS_${preLoadedRef.code}`
+            };
+        }
+        
+        // 2. registered users में चेक करें
+        const registeredUsers = getFromStorage('registeredUsers', []);
+        const sponsorUser = registeredUsers.find(user => user.referralCode === referralCode);
         if (sponsorUser) {
-            sponsorName = sponsorUser.username;
-            sponsorFullName = sponsorUser.fullName || sponsorUser.username;
-            sessionStorage.setItem('pendingSponsorName', sponsorName);
-            sessionStorage.setItem('pendingSponsorFullName', sponsorFullName);
+            console.log('✅ Found in registered users:', sponsorUser);
+            return {
+                username: sponsorUser.username,
+                fullName: sponsorUser.fullName || sponsorUser.username,
+                email: sponsorUser.email,
+                uniqueId: sponsorUser.uniqueId
+            };
         }
         
-        // If user is not logged in, show registration modal
-        const currentUser = localStorage.getItem('currentUser');
-        if (!currentUser) {
-            setTimeout(() => {
-                showRegistrationModalWithSponsor(referralCode, sponsorId, sponsorName, sponsorFullName);
-            }, 1500);
-            
-            showNotification(`🎯 Referral detected! Joining under sponsor: ${sponsorFullName}`, 'success');
+        // 3. allReferrals में चेक करें
+        const allReferrals = getFromStorage('allReferrals', []);
+        const referralData = allReferrals.find(ref => ref.code === referralCode);
+        if (referralData) {
+            console.log('✅ Found in referral database:', referralData);
+            return {
+                username: referralData.username,
+                fullName: referralData.fullName || referralData.name,
+                email: '',
+                uniqueId: referralData.uniqueId || `REF_${referralData.code}`
+            };
         }
+        
+        console.log('❌ Sponsor not found for referral code:', referralCode);
+        return null;
+        
+    } catch (error) {
+        console.error('Error fetching sponsor info:', error);
+        return null;
     }
 }
 
-// ✅ NEW: Registration Modal with Sponsor Pre-filled
+// ✅ Registration Modal with Sponsor Pre-filled
 function showRegistrationModalWithSponsor(referralCode, sponsorId, sponsorName, sponsorFullName) {
     const modal = document.getElementById('registrationModal');
     if (!modal) {
@@ -950,7 +1039,6 @@ function fillSponsorDataInModal(referralCode, sponsorId, sponsorName, sponsorFul
     const modal = document.getElementById('registrationModal');
     if (!modal) return;
     
-    // Add sponsor info display
     const stepContent = modal.querySelector('.registration-step[data-step="1"]');
     if (stepContent) {
         if (!stepContent.querySelector('.sponsor-info-display')) {
@@ -973,7 +1061,6 @@ function fillSponsorDataInModal(referralCode, sponsorId, sponsorName, sponsorFul
         }
     }
     
-    // Set hidden sponsor fields
     let sponsorCodeInput = document.getElementById('regSponsorCode');
     let sponsorIdInput = document.getElementById('regSponsorId');
     let sponsorNameInput = document.getElementById('regSponsorName');
@@ -1027,24 +1114,16 @@ function checkAndProcessReferralURL() {
     if (refCode || sponsorId) {
         console.log('🎯 Referral URL detected:', { refCode, sponsorId });
         
-        // URL में से डेटा निकालें
         if (refCode) {
-            // रेफरल कोड को स्टोरेज में सेव करें
             localStorage.setItem('pendingReferralCode', refCode);
-            
-            // रेफरल कोड से स्पॉन्सर का डेटा fetch करें
             fetchSponsorDetailsByReferralCode(refCode);
         }
         
         if (sponsorId) {
-            // स्पॉन्सर ID को सेव करें
             localStorage.setItem('pendingSponsorId', sponsorId);
-            
-            // स्पॉन्सर ID से डेटा fetch करें
             fetchSponsorDetailsById(sponsorId);
         }
         
-        // रजिस्ट्रेशन मोडल दिखाएं
         setTimeout(() => {
             showRegistrationModal();
         }, 1500);
@@ -1056,23 +1135,19 @@ function fetchSponsorDetailsByReferralCode(refCode) {
     console.log('🔍 Fetching sponsor details for referral code:', refCode);
     
     try {
-        // 1. लोकल स्टोरेज में खोजें
         const registeredUsers = getFromStorage('registeredUsers', []);
         const allReferrals = getFromStorage('allReferrals', []);
         
-        // 2. सबसे पहले allReferrals में खोजें
         const referralData = allReferrals.find(ref => ref.code === refCode);
         
         if (referralData) {
             console.log('✅ Found sponsor in referrals:', referralData);
             
-            // स्पॉन्सर डेटा सेट करें
             sponsorReferralCode = refCode;
             sponsorUniqueId = referralData.userUniqueId || '';
             sponsorName = referralData.username;
             sponsorFullName = referralData.fullName || referralData.name;
             
-            // स्टोरेज में सेव करें
             saveToStorage('pendingSponsorData', {
                 referralCode: refCode,
                 uniqueId: sponsorUniqueId,
@@ -1084,7 +1159,6 @@ function fetchSponsorDetailsByReferralCode(refCode) {
             return true;
         }
         
-        // 3. registeredUsers में खोजें
         const sponsorUser = registeredUsers.find(user => 
             user.referralCode === refCode || 
             user.uniqueId === refCode
@@ -1109,7 +1183,6 @@ function fetchSponsorDetailsByReferralCode(refCode) {
             return true;
         }
         
-        // 4. Pre-loaded referral codes में खोजें
         const preLoadedRef = PRE_LOADED_REFERRAL_CODES.find(ref => ref.code === refCode);
         if (preLoadedRef) {
             console.log('✅ Found pre-loaded sponsor:', preLoadedRef);
@@ -1148,7 +1221,6 @@ function fetchSponsorDetailsById(sponsorId) {
     try {
         const registeredUsers = getFromStorage('registeredUsers', []);
         
-        // Unique ID या username से खोजें
         const sponsorUser = registeredUsers.find(user => 
             user.uniqueId === sponsorId || 
             user.username === sponsorId ||
@@ -1183,10 +1255,104 @@ function fetchSponsorDetailsById(sponsorId) {
     }
 }
 
-// ✅ ADMIN SYNC OPTIMIZATION - FIX DUPLICATION
-// ==============================================
+// ✅ UPDATED: Registration modal में स्पॉन्सर डिटेल्स दिखाएं
+function showRegistrationModalWithCompleteSponsorDetails() {
+    console.log('🔄 Opening registration with complete sponsor details...');
+    
+    // ✅ पहले URL से डेटा पढ़ें
+    const sponsorData = parseAndValidateSponsorFromURL();
+    
+    // ✅ अगर URL में नहीं है, तो localStorage/sessionStorage से लें
+    const pendingReferralCode = sponsorData?.referralCode || 
+                               localStorage.getItem('pendingReferralCode') || 
+                               sessionStorage.getItem('pendingReferralCode') || '';
+    
+    const pendingSponsorId = sponsorData?.sponsorId || 
+                            localStorage.getItem('pendingSponsorId') || 
+                            sessionStorage.getItem('pendingSponsorId') || '';
+    
+    const pendingSponsorName = sponsorData?.sponsorUsername || 
+                              sponsorData?.sponsorName || 
+                              localStorage.getItem('pendingSponsorName') || 
+                              sessionStorage.getItem('pendingSponsorName') || '';
+    
+    const pendingSponsorFullName = sponsorData?.sponsorFullName || 
+                                  sponsorData?.sponsorName || 
+                                  localStorage.getItem('pendingSponsorFullName') || 
+                                  sessionStorage.getItem('pendingSponsorFullName') || '';
+    
+    const pendingSponsorUsername = sponsorData?.sponsorUsername || 
+                                  localStorage.getItem('pendingSponsorUsername') || 
+                                  sessionStorage.getItem('pendingSponsorUsername') || '';
+    
+    console.log('📋 Final sponsor details for registration:', {
+        pendingReferralCode,
+        pendingSponsorId,
+        pendingSponsorName,
+        pendingSponsorFullName,
+        pendingSponsorUsername
+    });
+    
+    // ✅ Sponsor details को global variable में सेव करें
+    window.pendingSponsorDetails = {
+        referralCode: pendingReferralCode,
+        uniqueId: pendingSponsorId,
+        name: pendingSponsorName,
+        fullName: pendingSponsorFullName,
+        username: pendingSponsorUsername,
+        email: sponsorData?.sponsorEmail || '',
+        joinType: sponsorData?.joinType || 'referral'
+    };
+    
+    // ✅ Registration modal दिखाएं
+    showRegistrationModal();
+}
 
-// Track sync state
+// ✅ Emergency fix - डायरेक्ट URL से पढ़ें और force show करें
+function forceShowSponsorFromURL() {
+    const url = window.location.href;
+    console.log('🔗 Current URL:', url);
+    
+    // URL से सीधे पैरामीटर्स निकालें
+    const urlObj = new URL(url);
+    const refCode = urlObj.searchParams.get('ref');
+    const sponsorId = urlObj.searchParams.get('sponsor');
+    const sponsorName = urlObj.searchParams.get('sponsorname');
+    const sponsorUsername = urlObj.searchParams.get('sponsorusername');
+    
+    if (refCode) {
+        console.log('🎯 Force showing sponsor from URL:', { refCode, sponsorId, sponsorName, sponsorUsername });
+        
+        // Registration modal में डायरेक्ट inject करें
+        setTimeout(() => {
+            const modal = document.querySelector('.registration-modal');
+            if (modal) {
+                const displayName = sponsorName || sponsorUsername || sponsorId || 'Sponsor';
+                const displayUsername = sponsorUsername || sponsorName || sponsorId || 'Sponsor';
+                
+                const sponsorHtml = `
+                    <div class="sponsor-info-display" style="background: rgba(76,175,80,0.1); border: 2px solid #4CAF50; border-radius: 12px; padding: 15px; margin-bottom: 20px; text-align: center;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">👥</div>
+                        <div style="font-weight: bold; color: #4CAF50; font-size: 16px;">Joining Through Referral</div>
+                        <div style="margin-top: 10px;">
+                            <div><strong>Sponsor Name:</strong> ${displayName}</div>
+                            <div><strong>Sponsor Username:</strong> ${displayUsername}</div>
+                            <div><strong>Referral Code:</strong> ${refCode}</div>
+                            ${sponsorId ? `<div><strong>Sponsor ID:</strong> ${sponsorId}</div>` : ''}
+                        </div>
+                    </div>
+                `;
+                
+                const step1 = modal.querySelector('[data-step="1"]');
+                if (step1) {
+                    step1.insertAdjacentHTML('afterbegin', sponsorHtml);
+                }
+            }
+        }, 1000);
+    }
+}
+
+// ✅ ADMIN SYNC OPTIMIZATION - FIX DUPLICATION
 let syncState = {
     isSyncing: false,
     lastSyncTime: 0,
@@ -1194,9 +1360,7 @@ let syncState = {
     maxSyncsPerMinute: 6
 };
 
-// ✅ Optimized admin sync function
 async function performOptimizedAdminSync() {
-    // Check if we should sync
     if (syncState.isSyncing) {
         return;
     }
@@ -1204,12 +1368,10 @@ async function performOptimizedAdminSync() {
     const now = Date.now();
     const timeSinceLastSync = now - syncState.lastSyncTime;
     
-    // Limit sync frequency (minimum 10 seconds between syncs)
     if (timeSinceLastSync < 10000) {
         return;
     }
     
-    // Limit syncs per minute
     if (syncState.syncCount >= syncState.maxSyncsPerMinute) {
         console.log('⚠️ Sync limit reached, waiting...');
         return;
@@ -1221,10 +1383,8 @@ async function performOptimizedAdminSync() {
     try {
         console.log('🔄 Performing optimized admin sync...');
         
-        // Your existing sync logic here...
         const currentUser = getFromStorage('currentUser', {});
         if (currentUser && currentUser.email) {
-            // Only log once instead of multiple times
             console.log('✅ User synced to server:', currentUser.username);
         }
         
@@ -1234,17 +1394,14 @@ async function performOptimizedAdminSync() {
         syncState.isSyncing = false;
         syncState.lastSyncTime = Date.now();
         
-        // Reset counter every minute
         setTimeout(() => {
             syncState.syncCount = Math.max(0, syncState.syncCount - 1);
         }, 60000);
     }
 }
 
-// ✅ Optimized admin button check
 let adminButtonCheckCount = 0;
 function checkAndInjectOptimizedAdminButton() {
-    // Limit checks to prevent spam
     adminButtonCheckCount++;
     if (adminButtonCheckCount > 5) {
         console.log('✅ Admin button checks completed');
@@ -1257,7 +1414,6 @@ function checkAndInjectOptimizedAdminButton() {
     
     if (isAdmin) {
         console.log('✅ User authorized for admin, injecting button...');
-        // Call the injection function from admin-panel-integration.js
         if (typeof window.injectAdminButton === 'function') {
             window.injectAdminButton();
         }
@@ -1268,16 +1424,13 @@ function checkAndInjectOptimizedAdminButton() {
 // ✅ ADMIN BUTTON INJECTION SYSTEM
 // ==============================================
 
-// Admin panel button injection
 function checkAndInjectAdminButton() {
     console.log('🔍 Checking for admin button injection...');
     
-    // Check if admin integration is loaded
     if (typeof window.isUserAuthorizedForAdmin === 'function') {
         if (window.isUserAuthorizedForAdmin()) {
             console.log('✅ User authorized for admin, injecting button...');
             
-            // Inject admin button
             if (typeof window.injectAdminButton === 'function') {
                 window.injectAdminButton();
             }
@@ -1289,7 +1442,6 @@ function checkAndInjectAdminButton() {
     }
 }
 
-// Call this function periodically in your app initialization
 setInterval(checkAndInjectAdminButton, 5000);
 
 // ==============================================
@@ -1306,29 +1458,22 @@ function convertPointsToINR(pointsToConvert) {
         return;
     }
     
-    // न्यूनतम कन्वर्जन चेक
     if (pointsToConvert < MIN_CONVERSION_POINTS) {
         showNotification(`❌ न्यूनतम ${MIN_CONVERSION_POINTS} पॉइंट्स कन्वर्ट कर सकते हैं!`, 'warning');
         return;
     }
     
-    // पर्याप्त पॉइंट्स चेक
     if (userPoints < pointsToConvert) {
         showNotification(`❌ आपके पास केवल ${userPoints} पॉइंट्स हैं!`, 'warning');
         return;
     }
     
-    // INR कैलकुलेशन: 10000 पॉइंट्स = 100 INR
     const inrAmount = Math.floor((pointsToConvert / POINT_TO_INR_RATE) * 100);
     
-    // पॉइंट्स डेडक्ट करें
     userPoints -= pointsToConvert;
     totalConverted += pointsToConvert;
-    
-    // INR वॉलेट में जोड़ें
     inrWallet += inrAmount;
     
-    // ट्रांजेक्शन हिस्ट्री में जोड़ें
     addTransaction(
         `पॉइंट्स टू INR: ${pointsToConvert} पॉइंट्स → ${inrAmount} INR`,
         pointsToConvert,
@@ -1337,7 +1482,6 @@ function convertPointsToINR(pointsToConvert) {
         'points_to_inr'
     );
     
-    // INR ट्रांजेक्शन
     addTransaction(
         `INR प्राप्त: ${inrAmount} INR`,
         inrAmount,
@@ -1346,19 +1490,14 @@ function convertPointsToINR(pointsToConvert) {
         'inr_credit'
     );
     
-    // सेव स्टेट
     saveMiningState();
     
-    // सक्सेस नोटिफिकेशन
     showNotification(
         `✅ ${pointsToConvert} पॉइंट्स सफलतापूर्वक ${inrAmount} INR में कन्वर्ट!`,
         'success'
     );
     
-    // UI अपडेट करें
     updateUI();
-    
-    // वॉलेट सेक्शन दिखाएं
     showWalletSection();
     
     return inrAmount;
@@ -1373,28 +1512,21 @@ function convertINRtoUSDT(inrToConvert) {
         return;
     }
     
-    // न्यूनतम कन्वर्जन चेक
     if (inrToConvert < 85) {
         showNotification('❌ न्यूनतम 85 INR (1 USDT) कन्वर्ट कर सकते हैं!', 'warning');
         return;
     }
     
-    // पर्याप्त INR चेक
     if (inrWallet < inrToConvert) {
         showNotification(`❌ आपके पास केवल ${inrWallet} INR हैं!`, 'warning');
         return;
     }
     
-    // USDT कैलकुलेशन: 85 INR = 1 USDT
     const usdtAmount = parseFloat((inrToConvert / INR_TO_USDT_RATE).toFixed(2));
     
-    // INR डेडक्ट करें
     inrWallet -= inrToConvert;
-    
-    // USDT वॉलेट में जोड़ें
     usdtWallet += usdtAmount;
     
-    // ट्रांजेक्शन हिस्ट्री में जोड़ें
     addTransaction(
         `INR टू USDT: ${inrToConvert} INR → ${usdtAmount} USDT`,
         inrToConvert,
@@ -1403,7 +1535,6 @@ function convertINRtoUSDT(inrToConvert) {
         'inr_to_usdt'
     );
     
-    // USDT ट्रांजेक्शन
     addTransaction(
         `USDT प्राप्त: ${usdtAmount} USDT`,
         usdtAmount,
@@ -1412,16 +1543,13 @@ function convertINRtoUSDT(inrToConvert) {
         'usdt_credit'
     );
     
-    // सेव स्टेट
     saveMiningState();
     
-    // सक्सेस नोटिफिकेशन
     showNotification(
         `✅ ${inrToConvert} INR सफलतापूर्वक ${usdtAmount} USDT में कन्वर्ट!`,
         'success'
     );
     
-    // UI अपडेट करें
     updateUI();
     
     return usdtAmount;
@@ -1437,33 +1565,23 @@ function convertPointsToUSDT(pointsToConvert) {
         return;
     }
     
-    // न्यूनतम कन्वर्जन चेक
     if (pointsToConvert < MIN_CONVERSION_POINTS) {
         showNotification(`❌ न्यूनतम ${MIN_CONVERSION_POINTS} पॉइंट्स कन्वर्ट कर सकते हैं!`, 'warning');
         return;
     }
     
-    // पर्याप्त पॉइंट्स चेक
     if (userPoints < pointsToConvert) {
         showNotification(`❌ आपके पास केवल ${userPoints} पॉइंट्स हैं!`, 'warning');
         return;
     }
     
-    // USDT कैलकुलेशन: 
-    // 10000 पॉइंट्स = 100 INR
-    // 85 INR = 1 USDT
-    // तो 10000 पॉइंट्स = 100/85 = 1.1765 USDT
     const inrAmount = Math.floor((pointsToConvert / POINT_TO_INR_RATE) * 100);
     const usdtAmount = parseFloat((inrAmount / INR_TO_USDT_RATE).toFixed(2));
     
-    // पॉइंट्स डेडक्ट करें
     userPoints -= pointsToConvert;
     totalConverted += pointsToConvert;
-    
-    // USDT वॉलेट में जोड़ें
     usdtWallet += usdtAmount;
     
-    // ट्रांजेक्शन हिस्ट्री में जोड़ें
     addTransaction(
         `डायरेक्ट पॉइंट्स टू USDT: ${pointsToConvert} पॉइंट्स → ${usdtAmount} USDT`,
         pointsToConvert,
@@ -1472,7 +1590,6 @@ function convertPointsToUSDT(pointsToConvert) {
         'points_to_usdt'
     );
     
-    // USDT ट्रांजेक्शन
     addTransaction(
         `USDT प्राप्त: ${usdtAmount} USDT`,
         usdtAmount,
@@ -1481,19 +1598,14 @@ function convertPointsToUSDT(pointsToConvert) {
         'usdt_credit'
     );
     
-    // सेव स्टेट
     saveMiningState();
     
-    // सक्सेस नोटिफिकेशन
     showNotification(
-        `✅ ${pointsToConvert} पॉइंट्स सफलतापूर्वक ${usdtAmount} USDT में कन्वर्ट!`,
+        `✅ ${pointsToConvert} पॉइंट्स सफलतापूर्वक ${usdtAmount} USDT में कन्वर्जन!`,
         'success'
     );
     
-    // UI अपडेट करें
     updateUI();
-    
-    // वॉलेट सेक्शन दिखाएं
     showWalletSection();
     
     return usdtAmount;
@@ -1518,14 +1630,12 @@ function showWalletSection() {
                 <h3>💰 डिजिटल वॉलेट</h3>
             </div>
             
-            <!-- यूनिक ID डिस्प्ले -->
             <div class="unique-id-display">
                 <div class="unique-id-label">Your Unique ID:</div>
                 <div class="unique-id-value">${userUniqueId || 'Not assigned'}</div>
                 <div class="unique-id-copy" onclick="copyUniqueId()">📋 Copy</div>
             </div>
             
-            <!-- वॉलेट स्टेट्स -->
             <div class="wallet-stats-grid">
                 <div class="wallet-stat-card points-wallet">
                     <div class="wallet-icon">🎯</div>
@@ -1564,7 +1674,6 @@ function showWalletSection() {
                 </div>
             </div>
             
-            <!-- कन्वर्जन रेट्स कार्ड -->
             <div class="conversion-rates-card">
                 <h4>📊 कन्वर्जन रेट्स</h4>
                 <div class="rates-grid">
@@ -1589,7 +1698,6 @@ function showWalletSection() {
                 </div>
             </div>
             
-            <!-- क्विक एक्शन बटन -->
             <div class="wallet-quick-actions">
                 <button class="wallet-action-btn" onclick="showConvertPointsModal()">
                     <span class="action-icon">🔄</span>
@@ -1605,7 +1713,6 @@ function showWalletSection() {
                 </button>
             </div>
             
-            <!-- रिकेंट कन्वर्जन हिस्ट्री -->
             <div class="conversion-history-section">
                 <h4>📈 रिकेंट कन्वर्जन</h4>
                 <div id="conversionHistoryList">
@@ -1616,7 +1723,6 @@ function showWalletSection() {
                 </button>
             </div>
             
-            <!-- इंस्ट्रक्शन -->
             <div class="wallet-instructions">
                 <h5>💡 कैसे इस्तेमाल करें:</h5>
                 <ol>
@@ -1640,7 +1746,6 @@ function copyUniqueId() {
     navigator.clipboard.writeText(userUniqueId)
         .then(() => showNotification('✅ Unique ID copied to clipboard!', 'success'))
         .catch(() => {
-            // Fallback method
             const textArea = document.createElement('textarea');
             textArea.value = userUniqueId;
             document.body.appendChild(textArea);
@@ -1669,13 +1774,11 @@ function showConvertPointsModal() {
             </div>
             
             <div class="wallet-modal-body">
-                <!-- करंट बैलेंस -->
                 <div class="balance-display">
                     <div class="balance-label">आपके पॉइंट्स:</div>
                     <div class="balance-amount">${formatNumber(userPoints)}</div>
                 </div>
                 
-                <!-- न्यूनतम रिक्वायरमेंट -->
                 <div class="min-requirement">
                     <div class="requirement-icon">📊</div>
                     <div class="requirement-text">
@@ -1683,7 +1786,6 @@ function showConvertPointsModal() {
                     </div>
                 </div>
                 
-                <!-- एमाउंट इनपुट -->
                 <div class="amount-input-section">
                     <label for="pointsToConvert">कन्वर्ट करने के पॉइंट्स:</label>
                     <div class="amount-input-group">
@@ -1713,7 +1815,6 @@ function showConvertPointsModal() {
                     </div>
                 </div>
                 
-                <!-- क्विक अमाउंट बटन -->
                 <div class="quick-amounts">
                     <button class="quick-amount-btn" onclick="setConvertAmount(${MIN_CONVERSION_POINTS})">
                         10K पॉइंट्स
@@ -1729,7 +1830,6 @@ function showConvertPointsModal() {
                     </button>
                 </div>
                 
-                <!-- कन्वर्जन प्रिव्यू -->
                 <div class="conversion-preview" id="conversionPreview">
                     <div class="preview-title">आप प्राप्त करेंगे:</div>
                     <div class="preview-amounts">
@@ -1745,7 +1845,6 @@ function showConvertPointsModal() {
                     </div>
                 </div>
                 
-                <!-- कन्वर्जन ऑप्शन -->
                 <div class="conversion-options">
                     <div class="option-title">कन्वर्जन ऑप्शन:</div>
                     <div class="options-grid">
@@ -1848,7 +1947,6 @@ function processPointsConversion() {
         return;
     }
     
-    // यूजर को ऑप्शन दें
     showConversionOptionsModal(points);
 }
 
@@ -1964,18 +2062,15 @@ function showConvertINRModal() {
             </div>
             
             <div class="inr-convert-body">
-                <!-- INR बैलेंस -->
                 <div class="inr-balance-display">
                     <div class="balance-label">आपके INR:</div>
                     <div class="balance-amount">${inrWallet.toFixed(2)}</div>
                 </div>
                 
-                <!-- रेट डिस्प्ले -->
                 <div class="rate-display">
                     <div class="rate-text">रेट: 85 INR = 1 USDT</div>
                 </div>
                 
-                <!-- अमाउंट इनपुट -->
                 <div class="amount-input-section">
                     <label for="inrToConvert">कन्वर्ट करने के INR:</label>
                     <div class="amount-input-group">
@@ -1992,7 +2087,6 @@ function showConvertINRModal() {
                     </div>
                 </div>
                 
-                <!-- क्विक अमाउंट -->
                 <div class="quick-inr-amounts">
                     <button class="quick-inr-btn" onclick="setINRConvertAmount(85)">
                         85 INR (1 USDT)
@@ -2008,7 +2102,6 @@ function showConvertINRModal() {
                     </button>
                 </div>
                 
-                <!-- प्रिव्यू -->
                 <div class="inr-conversion-preview" id="inrConversionPreview">
                     <div class="preview-title">आप प्राप्त करेंगे:</div>
                     <div class="preview-amount">
@@ -2071,7 +2164,6 @@ function processINRConversion() {
         return;
     }
     
-    // मल्टीपल ऑफ 85 चेक
     if (inrAmount % 85 !== 0) {
         showNotification('❌ कृपया 85 के मल्टीपल में INR दर्ज करें!', 'warning');
         return;
@@ -2094,16 +2186,13 @@ function showUseUSDTforPool() {
         return;
     }
     
-    // माइनिंग पेज पर स्विच करें
     switchTab('mining');
     
-    // नोटिफिकेशन दिखाएं
     showNotification('✅ अब पेड पूल खरीदने के लिए USDT वॉलेट का उपयोग करें!', 'success');
 }
 
 // ✅ कन्वर्जन हिस्ट्री HTML जेनरेट करें
 function getConversionHistoryHTML() {
-    // कन्वर्जन ट्रांजेक्शन फिल्टर करें
     const conversionTransactions = transactionHistory.filter(t => 
         t.subCategory === 'points_to_inr' || 
         t.subCategory === 'inr_to_usdt' || 
@@ -2119,7 +2208,6 @@ function getConversionHistoryHTML() {
     conversionTransactions.slice(0, 5).forEach(transaction => {
         let description = transaction.description;
         let icon = '🔄';
-        let amount = transaction.amount;
         
         if (transaction.subCategory === 'points_to_inr') {
             icon = '₹';
@@ -2155,7 +2243,6 @@ function showFullConversionHistory() {
     const profileContent = document.getElementById('profileAppContent');
     if (!profileContent) return;
     
-    // कन्वर्जन ट्रांजेक्शन फिल्टर करें
     const conversionTransactions = transactionHistory.filter(t => 
         t.subCategory === 'points_to_inr' || 
         t.subCategory === 'inr_to_usdt' || 
@@ -2195,7 +2282,6 @@ function showFullConversionHistory() {
         conversionTransactions.forEach(transaction => {
             let description = transaction.description;
             let icon = '🔄';
-            let amount = transaction.amount;
             
             if (transaction.subCategory === 'points_to_inr') {
                 icon = '₹';
@@ -2221,7 +2307,7 @@ function showFullConversionHistory() {
                         <div class="conversion-time-full">${dateString} ${timeString}</div>
                     </div>
                     <div class="conversion-amount-full ${transaction.type}">
-                        ${transaction.type === 'earning' ? '+' : '-'}${amount}
+                        ${transaction.type === 'earning' ? '+' : '-'}${transaction.amount}
                     </div>
                 </div>
             `;
@@ -2293,7 +2379,7 @@ function closeINRConvertModal() {
     if (modal) modal.remove();
 }
 
-// ✅ SECTION 2: INITIALIZE REFERRAL SYSTEM FUNCTIONS
+// ✅ SECTION 2: INITIALIZE REFERRAL CODES DATABASE
 function initializeReferralCodesDatabase() {
     console.log('📊 Initializing referral codes database...');
     
@@ -2421,38 +2507,44 @@ function selectReferralCode(code) {
 // ==============================================
 
 function showRegistrationModal() {
-    // Close any existing modals first
     closeAllModals();
     
-    // Reset registration step to 1 when modal opens
     registrationStep = 1;
     
-    // Check if user is already registered
     if (checkRegistrationStatus()) {
         showNotification('✅ You are already registered!', 'success');
         updateUI();
         return;
     }
     
-    // ✅ Get pending referral data
-    const pendingReferralCode = sessionStorage.getItem('pendingReferralCode') || localStorage.getItem('pendingReferralCode') || '';
-    const pendingSponsorId = sessionStorage.getItem('pendingSponsorId') || localStorage.getItem('pendingSponsorId') || '';
+    // ✅ पहले URL से direct values लें
+    const urlParams = new URLSearchParams(window.location.search);
+    const refCode = urlParams.get('ref');
+    const sponsorId = urlParams.get('sponsor');
+    const sponsorName = urlParams.get('sponsorname');
+    const sponsorUsername = urlParams.get('sponsorusername');
     
-    console.log('🔄 Registration modal opening with:', { pendingReferralCode, pendingSponsorId });
+    let pendingReferralCode = refCode || localStorage.getItem('pendingReferralCode') || '';
+    let pendingSponsorId = sponsorId || localStorage.getItem('pendingSponsorId') || '';
+    let pendingSponsorName = sponsorUsername || sponsorName || localStorage.getItem('pendingSponsorName') || '';
+    let pendingSponsorFullName = sponsorName || sponsorUsername || localStorage.getItem('pendingSponsorFullName') || '';
     
-    // ✅ FIX: Always fetch fresh sponsor details
-    let sponsorData = null;
-    if (pendingReferralCode || pendingSponsorId) {
-        sponsorData = getSponsorDetailsFromAllSources(pendingReferralCode, pendingSponsorId);
-        console.log('🔄 Found sponsor data:', sponsorData);
+    // ✅ अगर sponsor name/username में sponsorId है, तो उसे replace करें
+    if (pendingSponsorName === pendingSponsorId && (sponsorUsername || sponsorName)) {
+        pendingSponsorName = sponsorUsername || sponsorName;
     }
     
-    const sponsorName = sponsorData ? (sponsorData.username || sponsorData.name || 'Unknown') : 'Unknown Sponsor';
-    const sponsorFullName = sponsorData ? (sponsorData.fullName || sponsorData.name || sponsorName) : 'Unknown Sponsor';
+    if (pendingSponsorFullName === pendingSponsorId && (sponsorName || sponsorUsername)) {
+        pendingSponsorFullName = sponsorName || sponsorUsername;
+    }
     
-    console.log('✅ Registration modal with sponsor:', { sponsorName, sponsorFullName });
+    console.log('🔄 Registration modal with sponsor:', {
+        pendingReferralCode,
+        pendingSponsorId,
+        pendingSponsorName,
+        pendingSponsorFullName
+    });
     
-    // Create modal
     const modalHTML = `
         <div class="modal active registration-modal" id="registrationModal">
             <div class="modal-content">
@@ -2472,7 +2564,12 @@ function showRegistrationModal() {
                     </div>
                     
                     <div id="registrationFormContent" class="registration-form-content">
-                        ${getRegistrationStepContent(pendingReferralCode, pendingSponsorId, sponsorName, sponsorFullName)}
+                        ${getRegistrationStepContent(
+                            pendingReferralCode, 
+                            pendingSponsorId, 
+                            pendingSponsorName, 
+                            pendingSponsorFullName
+                        )}
                     </div>
                 </div>
             </div>
@@ -2493,11 +2590,10 @@ function showRegistrationModal() {
     }
 }
 
-// ✅ NEW IMPROVED FUNCTION: Get sponsor details from ALL sources
+// ✅ FIXED: Get sponsor details from ALL sources
 function getSponsorDetailsFromAllSources(referralCode, sponsorId) {
     console.log('🔍 [DEEP SEARCH] Finding sponsor for:', { referralCode, sponsorId });
     
-    // Source 1: Check in PRE_LOADED_REFERRAL_CODES
     if (referralCode) {
         const preLoadedRef = PRE_LOADED_REFERRAL_CODES.find(ref => ref.code === referralCode);
         if (preLoadedRef) {
@@ -2513,7 +2609,6 @@ function getSponsorDetailsFromAllSources(referralCode, sponsorId) {
         }
     }
     
-    // Source 2: Check in allReferrals (localStorage)
     const allReferrals = getFromStorage('allReferrals', PRE_LOADED_REFERRAL_CODES);
     if (referralCode) {
         const referralData = allReferrals.find(ref => ref.code === referralCode);
@@ -2530,7 +2625,6 @@ function getSponsorDetailsFromAllSources(referralCode, sponsorId) {
         }
     }
     
-    // Source 3: Check in registeredUsers by referralCode
     const registeredUsers = getFromStorage('registeredUsers', []);
     if (referralCode) {
         const sponsorUser = registeredUsers.find(user => user.referralCode === referralCode);
@@ -2549,7 +2643,6 @@ function getSponsorDetailsFromAllSources(referralCode, sponsorId) {
         }
     }
     
-    // Source 4: Check in registeredUsers by sponsorId
     if (sponsorId) {
         const sponsorUser = registeredUsers.find(user => 
             user.uniqueId === sponsorId || 
@@ -2571,7 +2664,6 @@ function getSponsorDetailsFromAllSources(referralCode, sponsorId) {
         }
     }
     
-    // Source 5: Check if referral code matches pattern and create dummy sponsor
     if (referralCode && referralCode.startsWith('TAPEARN-')) {
         console.log('✅ Creating dummy sponsor for referral code:', referralCode);
         return {
@@ -2594,14 +2686,12 @@ function createDummyReferralCode(code) {
     
     const allReferrals = getFromStorage('allReferrals', PRE_LOADED_REFERRAL_CODES);
     
-    // Check if code already exists
     const exists = allReferrals.find(ref => ref.code === code);
     if (exists) {
         console.log('⚠️ Referral code already exists:', exists);
         return exists;
     }
     
-    // Create new dummy referral
     const dummyReferral = {
         code: code,
         username: 'unknown_user',
@@ -2622,6 +2712,33 @@ function createDummyReferralCode(code) {
 }
 
 function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId = '', sponsorName = '', sponsorFullName = '') {
+    // ✅ पहले URL से direct values लें
+    const urlParams = new URLSearchParams(window.location.search);
+    const urlSponsorName = urlParams.get('sponsorname');
+    const urlSponsorUsername = urlParams.get('sponsorusername');
+    
+    // ✅ URL में अगर direct sponsor name/username है तो उसे priority दें
+    if (urlSponsorName || urlSponsorUsername) {
+        sponsorName = urlSponsorUsername || urlSponsorName || sponsorName;
+        sponsorFullName = urlSponsorName || urlSponsorUsername || sponsorFullName;
+    }
+    
+    // ✅ अगर अभी भी sponsorName/FullName में sponsorId है, तो उसे replace करें
+    if (sponsorName === pendingSponsorId && (urlSponsorUsername || urlSponsorName)) {
+        sponsorName = urlSponsorUsername || urlSponsorName;
+    }
+    
+    if (sponsorFullName === pendingSponsorId && (urlSponsorName || urlSponsorUsername)) {
+        sponsorFullName = urlSponsorName || urlSponsorUsername;
+    }
+    
+    console.log('🎯 Displaying sponsor in registration:', {
+        pendingReferralCode,
+        pendingSponsorId,
+        sponsorName,
+        sponsorFullName
+    });
+    
     switch(registrationStep) {
         case 1:
             return `
@@ -2633,18 +2750,21 @@ function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId =
                         <div style="font-size: 32px; margin-bottom: 10px;">👥</div>
                         <div style="font-weight: bold; color: #4CAF50; font-size: 16px;">Joining Through Referral</div>
                         <div style="margin-top: 10px;">
-                            <div><strong>Sponsor Name:</strong> ${sponsorFullName}</div>
-                            <div><strong>Sponsor Username:</strong> ${sponsorName}</div>
-                            <div><strong>Referral Code:</strong> ${pendingReferralCode || 'N/A'}</div>
-                            <div><strong>Sponsor ID:</strong> ${pendingSponsorId || 'N/A'}</div>
+                            <div><strong>Sponsor Name:</strong> ${sponsorFullName || sponsorName || 'Not Available'}</div>
+                            <div><strong>Sponsor Username:</strong> ${sponsorName || 'Not Available'}</div>
+                            ${pendingReferralCode ? `<div><strong>Referral Code:</strong> ${pendingReferralCode}</div>` : ''}
+                            ${pendingSponsorId ? `<div><strong>Sponsor ID:</strong> ${pendingSponsorId}</div>` : ''}
+                            <div><strong>Joining via:</strong> Direct Referral Link</div>
                         </div>
                         <div style="font-size: 12px; color: #FFD700; margin-top: 10px; font-weight: bold;">
                             ✅ Sponsor details are locked and cannot be changed
                         </div>
+                        <div style="font-size: 11px; color: #4CAF50; margin-top: 5px;">
+                            🎯 You will earn under ${sponsorFullName || sponsorName || 'Sponsor'}'s network
+                        </div>
                     </div>
                     ` : ''}
                     
-                    <!-- Real Full Name Field -->
                     <div class="form-group">
                         <label for="regFullName">Full Name *</label>
                         <input type="text" id="regFullName" placeholder="Enter your full name" required>
@@ -2677,7 +2797,6 @@ function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId =
                         <input type="password" id="regConfirmPassword" placeholder="Confirm password">
                     </div>
                     
-                    <!-- Hidden Sponsor Fields -->
                     <input type="hidden" id="regSponsorCode" value="${pendingReferralCode || ''}">
                     <input type="hidden" id="regSponsorId" value="${pendingSponsorId || ''}">
                     <input type="hidden" id="regSponsorName" value="${sponsorName || ''}">
@@ -2687,41 +2806,22 @@ function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId =
                 </div>
             `;
         case 2:
-            // ✅ FIX: Step 2 में fresh sponsor details fetch करें
             let finalSponsorFullName = sponsorFullName || 'Unknown Sponsor';
             let finalSponsorUniqueId = pendingSponsorId || 'UNKNOWN';
             let finalSponsorName = sponsorName || 'Unknown';
             let finalSponsorReferralCode = pendingReferralCode || '';
             
-            // Force fetch fresh sponsor data
-            if (pendingReferralCode || pendingSponsorId) {
-                const sponsorData = getSponsorDetailsFromAllSources(pendingReferralCode, pendingSponsorId);
-                if (sponsorData) {
-                    finalSponsorFullName = sponsorData.fullName || sponsorData.name || 'Sponsor User';
-                    finalSponsorUniqueId = sponsorData.uniqueId || finalSponsorUniqueId;
-                    finalSponsorName = sponsorData.username || sponsorData.name || 'Sponsor';
-                    finalSponsorReferralCode = sponsorData.referralCode || finalSponsorReferralCode;
-                    
-                    console.log('✅ Step 2 sponsor data:', { 
-                        finalSponsorFullName, 
-                        finalSponsorUniqueId, 
-                        finalSponsorName, 
-                        finalSponsorReferralCode 
-                    });
-                } else {
-                    // Create dummy sponsor if not found
-                    console.log('⚠️ No sponsor found, creating dummy...');
-                    if (pendingReferralCode) {
-                        const dummyRef = createDummyReferralCode(pendingReferralCode);
-                        finalSponsorFullName = dummyRef.fullName || dummyRef.name;
-                        finalSponsorUniqueId = dummyRef.userId;
-                        finalSponsorName = dummyRef.username;
-                        finalSponsorReferralCode = dummyRef.code;
-                    }
-                }
+            const pendingSponsorUsername = localStorage.getItem('pendingSponsorUsername') || '';
+            const pendingSponsorEmail = localStorage.getItem('pendingSponsorEmail') || '';
+            
+            if (pendingSponsorUsername) {
+                finalSponsorName = pendingSponsorUsername;
             }
             
-            // User's own details
+            if (pendingSponsorEmail) {
+                finalSponsorFullName = `${finalSponsorFullName} (${pendingSponsorEmail})`;
+            }
+            
             const username = document.getElementById('regUsername')?.value.trim() || userId;
             const userFullNameValue = document.getElementById('regFullName')?.value.trim() || '';
             const userRefCode = generateReferralCode();
@@ -2731,7 +2831,6 @@ function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId =
                 <div class="registration-step" data-step="2">
                     <h4>Step 2: Sponsor Information</h4>
                     
-                    <!-- Sponsor Info Display - READ ONLY -->
                     <div class="sponsor-info-card read-only">
                         <div class="sponsor-header">
                             <h5 style="color: #4CAF50;">👥 Your Sponsor Details</h5>
@@ -2739,31 +2838,47 @@ function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId =
                         </div>
                         
                         ${finalSponsorUniqueId !== 'UNKNOWN' ? `
-                        <div class="sponsor-details-grid">
-                            <div class="sponsor-detail">
-                                <div class="detail-label">Sponsor Name:</div>
-                                <div class="detail-value">${finalSponsorFullName}</div>
+                        <div class="sponsor-details-complete">
+                            <div class="sponsor-detail-row">
+                                <div class="detail-label">Sponsor Full Name:</div>
+                                <div class="detail-value highlight">${finalSponsorFullName}</div>
                             </div>
-                            <div class="sponsor-detail">
+                            <div class="sponsor-detail-row">
+                                <div class="detail-label">Sponsor Username:</div>
+                                <div class="detail-value">@${finalSponsorName}</div>
+                            </div>
+                            <div class="sponsor-detail-row">
                                 <div class="detail-label">Sponsor Unique ID:</div>
                                 <div class="detail-value">${finalSponsorUniqueId}</div>
                             </div>
-                            <div class="sponsor-detail">
-                                <div class="detail-label">Sponsor Username:</div>
-                                <div class="detail-value">${finalSponsorName}</div>
-                            </div>
-                            <div class="sponsor-detail">
+                            <div class="sponsor-detail-row">
                                 <div class="detail-label">Sponsor Referral Code:</div>
-                                <div class="detail-value">${finalSponsorReferralCode}</div>
+                                <div class="detail-value code">${finalSponsorReferralCode}</div>
+                            </div>
+                            ${pendingSponsorEmail ? `
+                            <div class="sponsor-detail-row">
+                                <div class="detail-label">Sponsor Email:</div>
+                                <div class="detail-value">${pendingSponsorEmail}</div>
+                            </div>
+                            ` : ''}
+                        </div>
+                        
+                        <div class="sponsor-message">
+                            <div class="message-icon">💡</div>
+                            <div class="message-text">
+                                <strong>You are joining through ${finalSponsorFullName}'s referral.</strong><br>
+                                Your sponsor will earn commission on your earnings.
                             </div>
                         </div>
                         
                         <div class="sponsor-benefits">
-                            <h6>🎯 Sponsor Benefits:</h6>
+                            <h6>🎯 Benefits of Joining Through Referral:</h6>
                             <ul>
-                                <li>✅ Your sponsor earns 5-20% commission on your earnings</li>
-                                <li>✅ You help <strong>${finalSponsorFullName}</strong> earn passive income</li>
-                                <li>✅ Get access to sponsor's network</li>
+                                <li>✅ <strong>${finalSponsorFullName}</strong> earns 5-20% commission on your earnings</li>
+                                <li>✅ You help your sponsor earn passive income</li>
+                                <li>✅ Get access to sponsor's network and support</li>
+                                <li>✅ 25 Bonus Points on registration</li>
+                                <li>✅ Priority support from your sponsor</li>
                             </ul>
                         </div>
                         ` : `
@@ -2775,19 +2890,17 @@ function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId =
                         `}
                     </div>
                     
-                    <!-- Read-only inputs (hidden but populated) -->
                     <div style="display: none;">
                         <input type="text" id="regSponsorFullNameInput" value="${finalSponsorFullName}" readonly>
                         <input type="text" id="regSponsorUniqueIdInput" value="${finalSponsorUniqueId}" readonly>
                         <input type="text" id="regSponsorReferralCodeInput" value="${finalSponsorReferralCode}" readonly>
                         <input type="text" id="regSponsorUsernameInput" value="${finalSponsorName}" readonly>
+                        ${pendingSponsorEmail ? `<input type="text" id="regSponsorEmailInput" value="${pendingSponsorEmail}" readonly>` : ''}
                     </div>
                     
-                    <!-- Your Referral Section -->
                     <div class="user-referral-section">
                         <h5 style="color: #2196F3; margin-bottom: 10px;">🎁 Your Referral Information</h5>
                         
-                        <!-- Your Full Name -->
                         <div class="form-group">
                             <label for="userFullNameConfirm">Your Full Name</label>
                             <input type="text" id="userFullNameConfirm" 
@@ -2796,14 +2909,12 @@ function getRegistrationStepContent(pendingReferralCode = '', pendingSponsorId =
                             <div class="form-hint">This is your registered name</div>
                         </div>
                         
-                        <!-- Your Generated Referral Code -->
                         <div class="generated-referral-code">
                             <div class="code-label">Your Unique Referral Code:</div>
                             <div class="code-value" id="userGeneratedReferralCode">${userRefCode}</div>
                             <div class="code-note">Share this code to earn commission from referrals</div>
                         </div>
                         
-                        <!-- Your Unique ID -->
                         <div class="generated-unique-id">
                             <div class="id-label">Your Unique ID:</div>
                             <div class="id-value">${userUniqueId}</div>
@@ -2880,11 +2991,9 @@ function refreshRegistrationModal() {
     
     console.log('🔄 Refreshing registration modal to step:', registrationStep);
     
-    // Get referral data
-    const pendingReferralCode = sessionStorage.getItem('pendingReferralCode') || localStorage.getItem('pendingReferralCode') || '';
-    const pendingSponsorId = sessionStorage.getItem('pendingSponsorId') || localStorage.getItem('pendingSponsorId') || '';
+    const pendingReferralCode = localStorage.getItem('pendingReferralCode') || '';
+    const pendingSponsorId = localStorage.getItem('pendingSponsorId') || '';
     
-    // Get fresh sponsor details
     let sponsorName = 'Unknown Sponsor';
     let sponsorFullName = 'Unknown Sponsor';
     
@@ -2898,13 +3007,11 @@ function refreshRegistrationModal() {
     
     console.log('🔄 Refreshing modal with sponsor:', { sponsorName, sponsorFullName });
     
-    // Update content
     const contentEl = document.getElementById('registrationFormContent');
     if (contentEl) {
         contentEl.innerHTML = getRegistrationStepContent(pendingReferralCode, pendingSponsorId, sponsorName, sponsorFullName);
     }
     
-    // Update step indicators
     const steps = document.querySelectorAll('.step-indicator .step');
     steps.forEach(step => {
         const stepNum = parseInt(step.getAttribute('data-step') || '0');
@@ -2943,7 +3050,6 @@ function checkUsernameAvailability() {
 function validateStep1() {
     console.log('🔄 validateStep1() called, current step:', registrationStep);
     
-    // Get form values
     const fullName = document.getElementById('regFullName')?.value.trim() || '';
     const username = document.getElementById('regUsername')?.value.trim() || '';
     const email = document.getElementById('regEmail')?.value.trim() || '';
@@ -2953,26 +3059,22 @@ function validateStep1() {
     
     console.log('Validating:', { fullName, username, email, mobile });
     
-    // Validate full name
     if (!fullName || fullName.length < 2) {
         showNotification('❌ Full name must be at least 2 characters', 'warning');
         return false;
     }
     
-    // Validate username
     if (!username || username.length < 3) {
         showNotification('❌ Username must be at least 3 characters', 'warning');
         return false;
     }
     
-    // Check username availability
     const existingUsers = getFromStorage('registeredUsers', []);
     if (existingUsers.some(user => user.username === username)) {
         showNotification('❌ Username already taken', 'warning');
         return false;
     }
     
-    // Validate email
     if (!email || !email.includes('@') || !email.includes('.')) {
         showNotification('❌ Please enter valid email', 'warning');
         return false;
@@ -2983,7 +3085,6 @@ function validateStep1() {
         return false;
     }
     
-    // Validate mobile
     if (!mobile || mobile.length !== 10 || !/^\d+$/.test(mobile)) {
         showNotification('❌ Please enter 10-digit mobile number', 'warning');
         return false;
@@ -2994,7 +3095,6 @@ function validateStep1() {
         return false;
     }
     
-    // Validate password
     if (!password || password.length < 6) {
         showNotification('❌ Password must be at least 6 characters', 'warning');
         return false;
@@ -3005,7 +3105,6 @@ function validateStep1() {
         return false;
     }
     
-    // Save step 1 data
     userFullName = fullName;
     userId = username;
     userEmail = email;
@@ -3014,10 +3113,7 @@ function validateStep1() {
     console.log('✅ Step 1 validation successful');
     console.log('User data saved:', { userFullName, userId, userEmail, userMobile });
     
-    // Move to step 2
     registrationStep = 2;
-    
-    // Refresh modal to show step 2
     refreshRegistrationModal();
     
     showNotification('✅ Step 1 completed! Moving to Step 2...', 'success');
@@ -3039,17 +3135,14 @@ function validateStep2() {
         showNotification('⚠️ No sponsor detected. You can still register.', 'warning');
     }
     
-    // Save to global variables
     window.sponsorFullName = spFullName;
     window.sponsorUniqueId = spUniqueId;
     window.sponsorReferralCode = spRefCode;
     window.sponsorName = spUsername;
     
-    // Generate and send OTPs
     sendEmailOTP();
     sendMobileOTP();
     
-    // Move to step 3
     registrationStep = 3;
     refreshRegistrationModal();
     
@@ -3118,7 +3211,6 @@ function verifyEmailOTP() {
         return;
     }
     
-    // For demo, accept any 6-digit number starting with 1
     if (enteredOTP.length === 6 && enteredOTP.startsWith('1')) {
         userEmailVerified = true;
         showNotification('✅ Email verified successfully!', 'success');
@@ -3165,7 +3257,6 @@ function verifyMobileOTP() {
             return;
         }
         
-        // For demo, accept any 6-digit number starting with 1
         if (enteredOTP.length === 6 && enteredOTP.startsWith('1')) {
             userMobileVerified = true;
             console.log('✅ Mobile OTP verified (demo mode)');
@@ -3207,26 +3298,29 @@ function completeRegistration() {
     const email = userEmail || '';
     const mobile = userMobile || '';
     
-    const spFullName = document.getElementById('regSponsorFullNameInput')?.value || '';
-    const spUniqueId = document.getElementById('regSponsorUniqueIdInput')?.value || '';
-    const spRefCode = document.getElementById('regSponsorReferralCodeInput')?.value || '';
-    const spUsername = document.getElementById('regSponsorUsernameInput')?.value || '';
+    const spFullName = document.getElementById('regSponsorFullNameInput')?.value || 
+                      localStorage.getItem('pendingSponsorFullName') || '';
+    const spUniqueId = document.getElementById('regSponsorUniqueIdInput')?.value || 
+                      localStorage.getItem('pendingSponsorId') || '';
+    const spRefCode = document.getElementById('regSponsorReferralCodeInput')?.value || 
+                     localStorage.getItem('pendingReferralCode') || '';
+    const spUsername = document.getElementById('regSponsorUsernameInput')?.value || 
+                      localStorage.getItem('pendingSponsorUsername') || '';
+    const spEmail = document.getElementById('regSponsorEmailInput')?.value || 
+                   localStorage.getItem('pendingSponsorEmail') || '';
     
-    console.log('📋 Registration data:', { 
+    console.log('📋 Complete registration data:', { 
         fullName, username, email, mobile, 
-        spFullName, spUniqueId, spRefCode, spUsername 
+        spFullName, spUniqueId, spRefCode, spUsername, spEmail 
     });
     
     if (!fullName || !username || !email || !mobile) {
         showNotification('❌ Registration data incomplete', 'error');
-        console.error('Missing data:', { fullName, username, email, mobile });
         return;
     }
     
     const uniqueId = generateUniqueId();
     const referralCode = generateReferralCode();
-    
-    console.log('🆔 Generated IDs:', { uniqueId, referralCode });
     
     const newUser = {
         fullName: fullName,
@@ -3240,6 +3334,9 @@ function completeRegistration() {
         sponsorUniqueId: spUniqueId,
         sponsorReferralCode: spRefCode,
         sponsorUsername: spUsername,
+        sponsorEmail: spEmail,
+        joinType: localStorage.getItem('pendingJoinType') || 'referral',
+        joinDate: new Date().toISOString(),
         points: 25,
         registrationDate: new Date().toISOString(),
         status: 'active',
@@ -3254,7 +3351,7 @@ function completeRegistration() {
         mobileVerified: true
     };
     
-    console.log('👤 New user object:', newUser);
+    console.log('👤 Complete new user object:', newUser);
     
     const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     registeredUsers.push(newUser);
@@ -3268,6 +3365,9 @@ function completeRegistration() {
     sessionStorage.removeItem('pendingSponsorId');
     sessionStorage.removeItem('pendingSponsorName');
     sessionStorage.removeItem('pendingSponsorFullName');
+    sessionStorage.removeItem('pendingSponsorUsername');
+    sessionStorage.removeItem('pendingSponsorEmail');
+    sessionStorage.removeItem('pendingJoinType');
     
     userRegistered = true;
     userFullName = fullName;
@@ -3284,6 +3384,19 @@ function completeRegistration() {
     userReferralCode = referralCode;
     userPoints = 25;
     
+    // ✅ FIX: Set global sponsor variables
+    window.sponsorId = spUniqueId;
+    window.sponsorName = spUsername;
+    window.sponsorFullName = spFullName;
+    window.sponsorUniqueId = spUniqueId;
+    window.sponsorReferralCode = spRefCode;
+    
+    console.log('✅ Global sponsor variables set:', {
+        sponsorId: window.sponsorId,
+        sponsorName: window.sponsorName,
+        sponsorFullName: window.sponsorFullName
+    });
+    
     if (spUniqueId && spUniqueId !== 'UNKNOWN') {
         awardReferralBonus(spUniqueId, spRefCode, username, email, fullName);
     }
@@ -3292,13 +3405,18 @@ function completeRegistration() {
     awardSponsorCommissionOnRegistration(newUser);
     
     closeRegistrationModal();
-    showNotification(`✅ Registration successful! Welcome ${fullName}!`, 'success');
+    
+    let welcomeMessage = `✅ Registration successful! Welcome ${fullName}!`;
+    if (spFullName && spFullName !== 'Unknown Sponsor') {
+        welcomeMessage += `\n🎯 You joined through ${spFullName}'s referral.`;
+    }
+    showNotification(welcomeMessage, 'success');
     
     initializeUserData();
     updateUI();
     notifyAdminPanel('register', newUser);
     
-    console.log('🎉 Registration completed successfully for:', fullName);
+    console.log('🎉 Complete registration successful for:', fullName);
 }
 
 function awardReferralBonus(sponsorId, sponsorCode, referredUser, referredEmail, referredFullName) {
@@ -3449,18 +3567,23 @@ function ensureUserRegistered() {
         userMobile = currentUser.mobile || '';
         userEmailVerified = currentUser.emailVerified || false;
         userMobileVerified = currentUser.mobileVerified || false;
-        sponsorId = currentUser.sponsorId || '';
-        sponsorName = currentUser.sponsorName || '';
+        
+        // ✅ CRITICAL FIX: Sponsor details लोड करें
+        sponsorId = currentUser.sponsorUniqueId || '';
+        sponsorName = currentUser.sponsorUsername || '';
         sponsorFullName = currentUser.sponsorFullName || currentUser.sponsorName || '';
         userPoints = currentUser.points || 0;
         
-        // Load unique IDs
         userUniqueId = currentUser.uniqueId || '';
         userReferralCode = currentUser.referralCode || '';
         sponsorUniqueId = currentUser.sponsorUniqueId || '';
         sponsorReferralCode = currentUser.sponsorReferralCode || '';
         
-        // Load referral data
+        // ✅ Global variables भी set करें
+        window.sponsorId = sponsorId;
+        window.sponsorName = sponsorName;
+        window.sponsorFullName = sponsorFullName;
+        
         referralData = getFromStorage(`referralData_${userId}`, {
             referralCode: currentUser.referralCode || generateReferralCode(),
             referredUsers: [],
@@ -3468,7 +3591,12 @@ function ensureUserRegistered() {
             telegramUsername: userId
         });
         
-        console.log('✅ User state ensured:', userId, 'registered:', userRegistered);
+        console.log('✅ User state ensured with sponsor:', {
+            userId,
+            sponsorId,
+            sponsorName,
+            sponsorFullName
+        });
         return true;
     }
     return false;
@@ -3481,7 +3609,6 @@ function ensureUserRegistered() {
 function showLoginModal() {
     console.log('📱 Showing login modal');
     
-    // Close any existing modals
     closeAllModals();
     
     const modal = document.createElement('div');
@@ -3533,11 +3660,9 @@ function loginUser() {
         return;
     }
     
-    // Get registered users
     const registeredUsers = getFromStorage('registeredUsers', []);
     console.log('Registered users:', registeredUsers);
     
-    // Find user by username or email
     const user = registeredUsers.find(u => 
         u.username === username || u.email === username
     );
@@ -3549,13 +3674,8 @@ function loginUser() {
         return;
     }
     
-    // For demo, accept any password
-    // In production, verify password
-    
-    // Set current user
     saveToStorage('currentUser', user);
     
-    // Update global variables
     userRegistered = true;
     userFullName = user.fullName || user.username;
     userId = user.username;
@@ -3568,41 +3688,29 @@ function loginUser() {
     sponsorFullName = user.sponsorFullName || user.sponsorName || '';
     userPoints = user.points || 0;
     
-    // Update unique IDs
     userUniqueId = user.uniqueId || '';
     userReferralCode = user.referralCode || '';
     sponsorUniqueId = user.sponsorUniqueId || '';
     sponsorReferralCode = user.sponsorReferralCode || '';
     
-    // Update last login
     user.lastLogin = new Date().toISOString();
     saveToStorage('currentUser', user);
     
-    // Update registered users list
     const updatedUsers = registeredUsers.map(u => 
         u.username === user.username ? user : u
     );
     saveToStorage('registeredUsers', updatedUsers);
     
-    // ✅ Notify admin panel
     notifyAdminPanel('login', user);
     
-    // Close modal
     closeLoginModal();
     
-    // Show success notification
     showNotification(`✅ Welcome back ${userFullName}!`, 'success');
     
-    // Update UI
     updateUI();
-    
-    // Load mining state
     loadMiningState();
-    
-    // Check and reset free pool tasks
     checkAndResetFreePoolTasks();
     
-    // ✅ Check and inject admin button if user is authorized
     setTimeout(() => {
         if (isUserAuthorizedForAdmin()) {
             injectAdminButton();
@@ -3613,13 +3721,9 @@ function loginUser() {
 
 function logoutUser() {
     if (confirm('Are you sure you want to logout?')) {
-        // Save current state before logout
         saveMiningState();
-        
-        // Clear current user session
         localStorage.removeItem('currentUser');
         
-        // Reset global variables
         userRegistered = false;
         userFullName = '';
         userId = '';
@@ -3632,32 +3736,24 @@ function logoutUser() {
         sponsorFullName = '';
         userPoints = 0;
         
-        // Reset unique IDs
         userUniqueId = '';
         userReferralCode = '';
         sponsorUniqueId = '';
         sponsorReferralCode = '';
         
-        // Reset tasks for next session
         FREE_POOL_TASKS.forEach(task => task.completed = false);
         freePoolTasksCompleted = false;
         saveToStorage('freePoolTasksCompleted', false);
         
-        // Clear active mining pool
         activeMiningPool = null;
         saveToStorage('activeMiningPool', null);
         
-        // ✅ Remove admin button on logout
         const adminBtn = document.querySelector('.admin-header-btn');
         if (adminBtn) adminBtn.remove();
         
-        // Show notification
         showNotification('✅ Logged out successfully', 'success');
-        
-        // Update UI
         updateUI();
         
-        // Show login modal after 1 second
         setTimeout(() => {
             showLoginModal();
         }, 1000);
@@ -3668,7 +3764,6 @@ function logoutUser() {
 // ✅ FUNCTION TO NOTIFY ADMIN PANEL
 // ==============================================
 
-// ✅ Function to notify admin panel when user registers/logs in
 function notifyAdminPanel(action, userData) {
     try {
         const notification = {
@@ -3681,10 +3776,8 @@ function notifyAdminPanel(action, userData) {
             source: 'main_app'
         };
         
-        // Store in localStorage (admin panel will pick this up)
         localStorage.setItem('cross_browser_sync_message', JSON.stringify(notification));
         
-        // Also send to server
         fetch('http://localhost:3000/api/notify-admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3698,18 +3791,12 @@ function notifyAdminPanel(action, userData) {
     }
 }
 
-// ✅ User registration के बाद call करें
 function handleUserRegistration(userData) {
-    // ... existing registration code ...
-    
-    // Notify admin panel
     notifyAdminPanel('register', userData);
     
-    // Broadcast to other tabs
     const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
     localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
     
-    // Create sync packet for admin panel
     const syncPacket = {
         type: 'user_update',
         users: registeredUsers,
@@ -3718,11 +3805,7 @@ function handleUserRegistration(userData) {
     localStorage.setItem('multi_tab_sync_packet', JSON.stringify(syncPacket));
 }
 
-// ✅ User login के बाद call करें
 function handleUserLogin(userData) {
-    // ... existing login code ...
-    
-    // Notify admin panel
     notifyAdminPanel('login', userData);
 }
 
@@ -3771,7 +3854,6 @@ function sendPasswordResetOTP() {
         return;
     }
     
-    // Check if email exists
     const registeredUsers = getFromStorage('registeredUsers', []);
     const user = registeredUsers.find(u => u.email === email);
     
@@ -3780,21 +3862,17 @@ function sendPasswordResetOTP() {
         return;
     }
     
-    // Generate and send OTP
     const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Save OTP to localStorage
     saveToStorage(`reset_otp_${email}`, {
         otp: resetOTP,
         email: email,
         timestamp: Date.now(),
-        expires: Date.now() + 300000 // 5 minutes
+        expires: Date.now() + 300000
     });
     
-    // Show success message (in real app, send via email)
     showNotification(`✅ OTP sent to ${email}: ${resetOTP}`, 'success');
     
-    // Show OTP verification modal
     setTimeout(() => {
         showResetPasswordModal(email);
     }, 1000);
@@ -3868,7 +3946,6 @@ function resetPassword(email) {
         return;
     }
     
-    // Verify OTP
     const savedOTP = getFromStorage(`reset_otp_${email}`);
     
     if (!savedOTP) {
@@ -3886,7 +3963,6 @@ function resetPassword(email) {
         return;
     }
     
-    // Update user's password in registered users
     const registeredUsers = getFromStorage('registeredUsers', []);
     const userIndex = registeredUsers.findIndex(u => u.email === email);
     
@@ -3895,23 +3971,17 @@ function resetPassword(email) {
         return;
     }
     
-    // Update password (in real app, hash this password)
     registeredUsers[userIndex].password = newPassword;
     registeredUsers[userIndex].lastPasswordReset = new Date().toISOString();
     
-    // Save updated users
     saveToStorage('registeredUsers', registeredUsers);
     
-    // Clear OTP
     localStorage.removeItem(`reset_otp_${email}`);
     
-    // Close modal
     closeResetModal();
     
-    // Show success notification
     showNotification('✅ Password reset successfully! You can now login with new password', 'success');
     
-    // Show login modal
     setTimeout(() => {
         showLoginModal();
     }, 2000);
@@ -3920,12 +3990,11 @@ function resetPassword(email) {
 function resendResetOTP(email) {
     const resetOTP = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Save OTP to localStorage
     saveToStorage(`reset_otp_${email}`, {
         otp: resetOTP,
         email: email,
         timestamp: Date.now(),
-        expires: Date.now() + 300000 // 5 minutes
+        expires: Date.now() + 300000
     });
     
     showNotification(`✅ New OTP sent to ${email}: ${resetOTP}`, 'success');
@@ -3942,7 +4011,6 @@ function showProfileHomePage() {
     const currentUser = getFromStorage('currentUser', {});
     const registeredUsers = getFromStorage('registeredUsers', []);
     
-    // ✅ Get sponsor details from registered users
     let sponsorDisplayName = 'Not Set';
     let sponsorDisplayFullName = 'Not Set';
     let sponsorDisplayId = 'Not Set';
@@ -3953,6 +4021,10 @@ function showProfileHomePage() {
         sponsorDisplayFullName = sponsorUser ? (sponsorUser.fullName || sponsorUser.username) : currentUser.sponsorFullName || 'Unknown';
         sponsorDisplayId = currentUser.sponsorUniqueId;
     }
+    
+    // ✅ EMBEDDED SECTIONS वापस (नहीं हटाएंगे)
+    const embeddedSponsorDashboardHTML = generateEmbeddedSponsorDashboardHTML();
+    const embeddedReferralSystemHTML = generateEmbeddedReferralSystemHTML();
     
     profileContent.innerHTML = `
         <div class="welcome-section">
@@ -3988,8 +4060,18 @@ function showProfileHomePage() {
             </div>
             `}
 
+            <!-- ============================================= -->
+            <!-- ✅ EMBEDDED SECTIONS (यहीं रहेंगे) -->
+            <!-- ============================================= -->
+            <div class="embedded-section" style="margin: 20px 0;">
+                ${embeddedSponsorDashboardHTML}
+            </div>
+
+            <div class="embedded-section" style="margin: 20px 0;">
+                ${embeddedReferralSystemHTML}
+            </div>
+
             ${userRegistered ? `
-            <!-- Personal Info Section -->
             <div class="profile-info-section">
                 <div class="telegram-id-card" onclick="showTelegramIdModal()">
                     <div class="telegram-icon">📱</div>
@@ -4000,7 +4082,6 @@ function showProfileHomePage() {
                     <div class="telegram-edit">✏️</div>
                 </div>
 
-                <!-- ✅ FIXED SPONSOR DISPLAY WITH REAL NAME -->
                 ${sponsorDisplayId !== 'Not Set' ? `
                 <div class="telegram-id-card" onclick="showSponsorDetails()">
                     <div class="telegram-icon">👥</div>
@@ -4015,7 +4096,6 @@ function showProfileHomePage() {
                 </div>
                 ` : ''}
                 
-                <!-- ✅ USER UNIQUE ID DISPLAY -->
                 <div class="telegram-id-card">
                     <div class="telegram-icon">🆔</div>
                     <div class="telegram-info">
@@ -4029,7 +4109,10 @@ function showProfileHomePage() {
                 </div>
             </div>
 
-            <!-- ✅ वॉलेट सेक्शन -->
+            <!-- ============================================ -->
+            <!-- ✅ REMOVED: "No Sponsor Yet" section HATA DIYA -->
+            <!-- ============================================ -->
+
             <div class="wallet-section">
                 <h4>💰 डिजिटल वॉलेट</h4>
                 <div class="wallet-cards">
@@ -4069,145 +4152,11 @@ function showProfileHomePage() {
                 </button>
             </div>
 
-            <!-- ✅ SPONSOR DASHBOARD BUTTON (NEW) -->
-            <div class="profile-option" onclick="showSponsorDashboard()">
-                <div class="option-icon">🎯</div>
-                <div class="option-name">Sponsor Dashboard</div>
-                <div class="option-desc">Track your referral earnings</div>
-                <div class="option-arrow">→</div>
-            </div>
-
-            <!-- ✅ SPONSOR EARNINGS DASHBOARD -->
-            ${sponsorId ? `
-            <div class="sponsor-earnings-section">
-                <div class="section-header">
-                    <h3>🎯 Sponsor Earnings</h3>
-                    <button class="btn-refresh" onclick="refreshSponsorData()">🔄 Refresh</button>
-                </div>
-                
-                <!-- Commission Stats -->
-                <div class="commission-stats-grid">
-                    <div class="commission-stat-card">
-                        <div class="stat-icon">💰</div>
-                        <div class="stat-content">
-                            <div class="stat-value">${formatNumber(sponsorCommissionEarned)}</div>
-                            <div class="stat-label">Total Commission</div>
-                        </div>
-                    </div>
-                    
-                    <div class="commission-stat-card">
-                        <div class="stat-icon">📈</div>
-                        <div class="stat-content">
-                            <div class="stat-value">${formatNumber(calculateThisMonthCommission())}</div>
-                            <div class="stat-label">This Month</div>
-                        </div>
-                    </div>
-                    
-                    <div class="commission-stat-card">
-                        <div class="stat-icon">👥</div>
-                        <div class="stat-content">
-                            <div class="stat-value">${referralData.referredUsers.length || 0}</div>
-                            <div class="stat-label">Direct Referrals</div>
-                        </div>
-                    </div>
-                    
-                    <div class="commission-stat-card">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-content">
-                            <div class="stat-value">${referralData.referredUsers.length || 0}</div>
-                            <div class="stat-label">Team Size</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Commission Breakdown -->
-                <div class="commission-breakdown">
-                    <h4>📊 Commission Breakdown</h4>
-                    <div class="breakdown-grid">
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">⛏️</div>
-                            <div class="breakdown-info">
-                                <div class="breakdown-category">Mining</div>
-                                <div class="breakdown-amount">${formatNumber(sponsorIncomeBreakdown.mining)} pts</div>
-                            </div>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">🎬</div>
-                            <div class="breakdown-info">
-                                <div class="breakdown-category">Videos</div>
-                                <div class="breakdown-amount">${formatNumber(sponsorIncomeBreakdown.videos)} pts</div>
-                            </div>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">📋</div>
-                            <div class="breakdown-info">
-                                <div class="breakdown-category">Tasks</div>
-                                <div class="breakdown-amount">${formatNumber(sponsorIncomeBreakdown.tasks)} pts</div>
-                            </div>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">👥</div>
-                            <div class="breakdown-info">
-                                <div class="breakdown-category">Referrals</div>
-                                <div class="breakdown-amount">${formatNumber(sponsorIncomeBreakdown.referrals)} pts</div>
-                            </div>
-                        </div>
-                        
-                        <div class="breakdown-item">
-                            <div class="breakdown-icon">🎁</div>
-                            <div class="breakdown-info">
-                                <div class="breakdown-category">Bonuses</div>
-                                <div class="breakdown-amount">${formatNumber(sponsorIncomeBreakdown.bonuses)} pts</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Recent Activities -->
-                <div class="recent-activities">
-                    <h4>📈 Recent Activities</h4>
-                    ${userSponsorActivities.length > 0 ? `
-                    <div class="activities-list">
-                        ${userSponsorActivities.slice(0, 5).map(activity => `
-                        <div class="activity-item">
-                            <div class="activity-icon">${getActivityIcon(activity.activityType)}</div>
-                            <div class="activity-details">
-                                <div class="activity-title">${activity.description || 'Commission Earned'}</div>
-                                <div class="activity-time">${formatTimeAgo(activity.timestamp)}</div>
-                            </div>
-                            <div class="activity-amount">+${activity.commission || 0}</div>
-                        </div>
-                        `).join('')}
-                    </div>
-                    ` : `
-                    <div class="no-activities">
-                        <div class="no-activities-icon">📊</div>
-                        <div class="no-activities-text">No sponsor activities yet</div>
-                    </div>
-                    `}
-                </div>
-                
-                <!-- View Full History Button -->
-                <button class="btn-view-full-history" onclick="showSponsorTransactionHistory()">
-                    📋 View Full Transaction History
-                </button>
-            </div>
-            ` : `
-            <!-- No Sponsor Message -->
-            <div class="no-sponsor-message">
-                <div class="message-icon">👥</div>
-                <div class="message-content">
-                    <h4>No Sponsor Yet</h4>
-                    <p>Join through a referral link to get a sponsor!</p>
-                </div>
-            </div>
-            `}
-            ` : ''}
+            <!-- ============================================ -->
+            <!-- ✅ MODIFIED PLATFORM CARDS SECTION -->
+            <!-- Refer & Earn card को हटाया, बाकी 3 cards रखे -->
+            <!-- ============================================ -->
             
-            <!-- Platform Cards -->
             <div class="platforms-grid">
                 <div class="platform-card" onclick="showWalletSection()">
                     <span class="platform-icon">💰</span>
@@ -4227,15 +4176,9 @@ function showProfileHomePage() {
                     <span class="platform-points">All Transactions</span>
                     <span class="platform-time">📈 View</span>
                 </div>
-                <div class="platform-card" onclick="showReferralSystem()">
-                    <span class="platform-icon">👥</span>
-                    <span class="platform-name">Refer & Earn</span>
-                    <span class="platform-points">+50 points</span>
-                    <span class="platform-time">⚡ Per Referral</span>
-                </div>
+                <!-- ❌ Refer & Earn card हटाया -->
             </div>
 
-            <!-- Quick Stats -->
             <div class="earn-stats">
                 <div class="earn-stat" onclick="showWalletHistory()">
                     <div class="stat-number" id="profileTotalPoints">${userPoints}</div>
@@ -4254,10 +4197,411 @@ function showProfileHomePage() {
                     <div class="stat-label">USDT</div>
                 </div>
             </div>
+            
+            <!-- ✅ Step 4: Refresh Sponsor Data Button -->
+            <div class="refresh-section" style="margin: 10px 0; text-align: center;">
+                <button class="btn-refresh" onclick="refreshSponsorDashboardData()" 
+                        style="background: #4CAF50; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 12px;">
+                    🔄 Refresh Sponsor Data
+                </button>
+                <div style="font-size: 10px; color: #666; margin-top: 5px;">
+                    Click if commission not showing
+                </div>
+            </div>
+            ` : ''}
         </div>
     `;
     
     updateProfileUI();
+}
+
+// ==============================================
+// ✅ EMBEDDED REFERRAL SYSTEM HTML GENERATOR
+// ==============================================
+
+function generateEmbeddedReferralSystemHTML() {
+    if (!userRegistered) {
+        return `<div class="not-registered-message" style="text-align: center; padding: 20px; background: rgba(255,0,0,0.1); border-radius: 10px;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">🔒</div>
+                    <h4 style="color: #ff0000;">Register to Access Referral System</h4>
+                    <p style="opacity: 0.8;">Please register to view your referral link and start earning</p>
+                </div>`;
+    }
+    
+    const currentUser = getFromStorage('currentUser', {});
+    
+    // Generate complete referral link with ALL sponsor details
+    const referralLink = generateCompleteReferralLink();
+    
+    // WhatsApp Share Link
+    const whatsappMessage = `🎉 *Join TapEarn - Earn Free Points!* 🎉
+
+👤 *Recommended by:* ${currentUser.fullName || currentUser.username}
+🎯 *Use my referral code:* ${currentUser.referralCode}
+💰 *Get:* 25 Bonus Points on Signup
+
+✨ *What you get:*
+• Watch videos & earn points
+• Complete tasks for rewards
+• Mining system for passive income
+• Redeem for gift cards & cash!
+
+🚀 *Start earning now:*
+👉 ${referralLink} 👈
+
+#TapEarn #EarnMoney #FreePoints`;
+    
+    const whatsappShareLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(whatsappMessage)}`;
+    
+    // Telegram Share Link
+    const telegramMessage = `🎉 Join TapEarn and earn free points!
+
+Use my referral code: ${currentUser.referralCode}
+Get 25 bonus points on signup!
+
+Features:
+• Watch videos & earn points
+• Complete tasks for rewards
+• Mining system for passive income
+• Redeem for gift cards & cash!
+
+Join now: ${referralLink}`;
+    
+    const telegramShareLink = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(telegramMessage)}`;
+    
+    // Generate COMPLETE EMBEDDED HTML (NO BUTTONS)
+    return `
+        <div class="embedded-referral-system" style="border: 2px solid #2196F3; border-radius: 15px; overflow: hidden; background: linear-gradient(135deg, rgba(33,150,243,0.1), rgba(156,39,176,0.1));">
+            <div class="referral-header" style="background: #2196F3; color: white; padding: 15px; text-align: center;">
+                <h3 style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <span>👥</span>
+                    <span>Referral System (Embedded)</span>
+                </h3>
+            </div>
+            
+            <div style="padding: 20px;">
+                <!-- Clickable Referral Link -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2196F3; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <span>🔗</span>
+                        <span>Your Clickable Referral Link</span>
+                    </h4>
+                    <div style="background: white; border-radius: 10px; padding: 15px; word-break: break-all; border: 1px solid #ddd;">
+                        <a href="${referralLink}" target="_blank" style="color: #2196F3; text-decoration: none; font-size: 14px; display: block;">
+                            ${referralLink}
+                        </a>
+                    </div>
+                    <div style="font-size: 11px; color: #666; margin-top: 5px; text-align: center;">
+                        🔗 Click the link above to open in new tab
+                    </div>
+                </div>
+                
+                <!-- Clickable Social Share Links -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2196F3; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <span>📱</span>
+                        <span>Click to Share on Social Media</span>
+                    </h4>
+                    
+                    <!-- WhatsApp Share Card -->
+                    <div style="background: white; border-radius: 10px; overflow: hidden; border: 1px solid #ddd; margin-bottom: 10px;">
+                        <div style="display: flex; align-items: center; background: #25D366; color: white; padding: 10px 15px;">
+                            <div style="font-size: 20px; margin-right: 10px;">📱</div>
+                            <div style="font-weight: bold;">WhatsApp</div>
+                        </div>
+                        <div style="padding: 15px;">
+                            <a href="${whatsappShareLink}" target="_blank" 
+                               style="color: #2196F3; text-decoration: none; display: block; padding: 12px; background: #f5f5f5; border-radius: 8px; text-align: center; font-weight: bold;">
+                                📱 Click to Share on WhatsApp
+                            </a>
+                            <div style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">
+                                Will open WhatsApp with pre-filled message
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Telegram Share Card -->
+                    <div style="background: white; border-radius: 10px; overflow: hidden; border: 1px solid #ddd;">
+                        <div style="display: flex; align-items: center; background: #0088cc; color: white; padding: 10px 15px;">
+                            <div style="font-size: 20px; margin-right: 10px;">📲</div>
+                            <div style="font-weight: bold;">Telegram</div>
+                        </div>
+                        <div style="padding: 15px;">
+                            <a href="${telegramShareLink}" target="_blank" 
+                               style="color: #2196F3; text-decoration: none; display: block; padding: 12px; background: #f5f5f5; border-radius: 8px; text-align: center; font-weight: bold;">
+                                📲 Click to Share on Telegram
+                            </a>
+                            <div style="font-size: 11px; color: #666; margin-top: 8px; text-align: center;">
+                                Will open Telegram with pre-filled message
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Referral Details -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2196F3; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <span>🎯</span>
+                        <span>Your Referral Details</span>
+                    </h4>
+                    <div style="background: white; border-radius: 10px; padding: 15px;">
+                        <div style="display: grid; gap: 12px;">
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                                <span style="font-weight: bold; color: #666;">Referral Code:</span>
+                                <span style="color: #4CAF50; font-weight: bold; font-size: 16px;">${currentUser.referralCode || 'N/A'}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                                <span style="font-weight: bold; color: #666;">Your Name:</span>
+                                <span style="color: #333; font-weight: bold;">${currentUser.fullName || currentUser.username}</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                                <span style="font-weight: bold; color: #666;">Commission Rate:</span>
+                                <span style="color: #FF9800; font-weight: bold;">5-20% per referral</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                                <span style="font-weight: bold; color: #666;">Bonus Points:</span>
+                                <span style="color: #9C27B0; font-weight: bold;">25 points per referral</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Simple Message Template -->
+                <div style="margin-bottom: 20px;">
+                    <h4 style="color: #2196F3; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
+                        <span>💬</span>
+                        <span>Simple Share Message</span>
+                    </h4>
+                    <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; border-left: 4px solid #4CAF50;">
+                        <div style="font-size: 13px; color: #333; line-height: 1.5;">
+                            Join TapEarn using my code <strong style="color: #4CAF50;">${currentUser.referralCode}</strong> 
+                            and get 25 bonus points! Click this link: 
+                            <a href="${referralLink}" target="_blank" style="color: #2196F3; text-decoration: underline;">
+                                ${referralLink}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Embedded Note -->
+                <div style="margin-top: 15px; padding: 12px; background: rgba(255,215,0,0.1); border-radius: 10px; border-left: 4px solid #FFD700;">
+                    <div style="font-size: 12px; color: #666; display: flex; align-items: center;">
+                        <span style="font-size: 16px; margin-right: 8px;">ℹ️</span>
+                        <span><strong>All links are clickable</strong> and will open in new tab. This is an embedded referral system - everything is pre-configured for easy sharing.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// ==============================================
+// ✅ UPDATED: Generate complete referral link embade with ALL sponsor details
+// ==============================================
+
+function generateCompleteReferralLink() {
+    const currentUser = getFromStorage('currentUser', {});
+    if (!currentUser || !currentUser.referralCode) {
+        return '#';
+    }
+    
+    const baseUrl = window.location.origin + window.location.pathname;
+    
+    // ✅ ALL sponsor details included for proper tracking
+    const referralLink = `${baseUrl}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}&sponsorname=${encodeURIComponent(currentUser.fullName || currentUser.username)}&sponsorusername=${encodeURIComponent(currentUser.username)}&sponsoremail=${encodeURIComponent(currentUser.email || '')}&join=referral`;
+    
+    return referralLink;
+}
+
+// ==============================================
+// ✅ EMBEDDED SPONSOR DASHBOARD HTML GENERATOR
+// ==============================================
+
+function generateEmbeddedSponsorDashboardHTML() {
+    if (!userRegistered) {
+        return `<div class="not-registered-message" style="text-align: center; padding: 20px; background: rgba(255,0,0,0.1); border-radius: 10px;">
+                    <div style="font-size: 32px; margin-bottom: 10px;">🔒</div>
+                    <h4 style="color: #ff0000;">Register to Access Sponsor Dashboard</h4>
+                    <p style="opacity: 0.8;">Please register to view your sponsor earnings</p>
+                </div>`;
+    }
+    
+    const currentUser = getFromStorage('currentUser', {});
+    const registeredUsers = getFromStorage('registeredUsers', []);
+    
+    // Calculate commission data
+    const myReferredUsers = registeredUsers.filter(user => 
+        user.sponsorUniqueId === currentUser.uniqueId ||
+        user.sponsorReferralCode === currentUser.referralCode
+    );
+    
+    let totalCommission = currentUser.sponsorEarnings || 0;
+    let todayCommission = 0;
+    let monthlyCommission = 0;
+    
+    const commissionBreakdown = {
+        registration: 0,
+        mining: 0,
+        videos: 0,
+        tasks: 0,
+        other: 0
+    };
+    
+    const commissionHistory = currentUser.sponsorCommissionHistory || [];
+    
+    commissionHistory.forEach(commission => {
+        if (commission.type === 'registration') {
+            commissionBreakdown.registration += commission.commission || 0;
+        } else if (commission.type === 'mining') {
+            commissionBreakdown.mining += commission.commission || 0;
+        } else if (commission.type === 'video') {
+            commissionBreakdown.videos += commission.commission || 0;
+        } else if (commission.type === 'task') {
+            commissionBreakdown.tasks += commission.commission || 0;
+        } else {
+            commissionBreakdown.other += commission.commission || 0;
+        }
+        
+        const commissionDate = new Date(commission.timestamp);
+        const today = new Date();
+        if (commissionDate.toDateString() === today.toDateString()) {
+            todayCommission += commission.commission || 0;
+        }
+        
+        if (commissionDate.getMonth() === today.getMonth() && 
+            commissionDate.getFullYear() === today.getFullYear()) {
+            monthlyCommission += commission.commission || 0;
+        }
+    });
+    
+    // Generate HTML (NON-CLICKABLE, COMPLETELY EMBEDDED)
+    return `
+        <div class="embedded-sponsor-dashboard" style="border: 2px solid #4CAF50; border-radius: 15px; overflow: hidden; background: linear-gradient(135deg, rgba(76,175,80,0.1), rgba(33,150,243,0.1));">
+            <div class="dashboard-header" style="background: #4CAF50; color: white; padding: 15px; text-align: center;">
+                <h3 style="margin: 0; display: flex; align-items: center; justify-content: center; gap: 10px;">
+                    <span>🎯</span>
+                    <span>Sponsor Dashboard (Embedded)</span>
+                </h3>
+            </div>
+            
+            <div style="padding: 20px;">
+                <!-- User Info (Static) -->
+                <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div style="font-size: 40px;">👤</div>
+                        <div>
+                            <div style="font-weight: bold; font-size: 16px;">${currentUser.fullName || currentUser.username}</div>
+                            <div style="font-size: 12px; color: #666;">@${currentUser.username}</div>
+                            <div style="font-size: 12px; color: #666;">ID: ${currentUser.uniqueId}</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Commission Stats Grid (Static) -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
+                    <div style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <div style="font-size: 24px; font-weight: bold; color: #4CAF50;">${formatNumber(totalCommission)}</div>
+                        <div style="font-size: 12px; color: #666;">Total Commission</div>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <div style="font-size: 24px; font-weight: bold; color: #2196F3;">${formatNumber(todayCommission)}</div>
+                        <div style="font-size: 12px; color: #666;">Today</div>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <div style="font-size: 24px; font-weight: bold; color: #FF9800;">${formatNumber(monthlyCommission)}</div>
+                        <div style="font-size: 12px; color: #666;">This Month</div>
+                    </div>
+                    
+                    <div style="background: white; border-radius: 10px; padding: 15px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                        <div style="font-size: 24px; font-weight: bold; color: #9C27B0;">${myReferredUsers.length}</div>
+                        <div style="font-size: 12px; color: #666;">Referred Users</div>
+                    </div>
+                </div>
+                
+                <!-- Commission Breakdown (Static) -->
+                <div style="background: white; border-radius: 10px; padding: 15px; margin-bottom: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <h4 style="margin-top: 0; margin-bottom: 15px; color: #4CAF50; display: flex; align-items: center; gap: 8px;">
+                        <span>📊</span>
+                        <span>Commission Breakdown</span>
+                    </h4>
+                    <div style="display: grid; gap: 10px;">
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <span>📝</span>
+                                <span>Registration</span>
+                            </span>
+                            <span style="font-weight: bold;">${formatNumber(commissionBreakdown.registration)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <span>⛏️</span>
+                                <span>Mining</span>
+                            </span>
+                            <span style="font-weight: bold;">${formatNumber(commissionBreakdown.mining)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <span>🎬</span>
+                                <span>Videos</span>
+                            </span>
+                            <span style="font-weight: bold;">${formatNumber(commissionBreakdown.videos)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <span>📋</span>
+                                <span>Tasks</span>
+                            </span>
+                            <span style="font-weight: bold;">${formatNumber(commissionBreakdown.tasks)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 8px 0;">
+                            <span style="display: flex; align-items: center; gap: 8px;">
+                                <span>🎁</span>
+                                <span>Other</span>
+                            </span>
+                            <span style="font-weight: bold;">${formatNumber(commissionBreakdown.other)}</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Referred Users (Static) -->
+                <div style="background: white; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                    <h4 style="margin-top: 0; margin-bottom: 15px; color: #4CAF50; display: flex; align-items: center; gap: 8px;">
+                        <span>👥</span>
+                        <span>Referred Users (${myReferredUsers.length})</span>
+                    </h4>
+                    ${myReferredUsers.length > 0 ? `
+                    <div style="max-height: 150px; overflow-y: auto;">
+                        ${myReferredUsers.map((user, index) => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; background: ${index % 2 === 0 ? '#f9f9f9' : 'white'};">
+                            <div>
+                                <div style="font-weight: bold;">${user.fullName || user.username}</div>
+                                <div style="font-size: 11px; color: #666;">${user.email}</div>
+                            </div>
+                            <div style="font-size: 12px; color: #4CAF50; font-weight: bold;">+50 points</div>
+                        </div>
+                        `).join('')}
+                    </div>
+                    ` : `
+                    <div style="text-align: center; padding: 20px; color: #666;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">👤</div>
+                        <div>No referred users yet</div>
+                        <div style="font-size: 12px; margin-top: 5px;">Share your referral link to earn commission</div>
+                    </div>
+                    `}
+                </div>
+                
+                <!-- Note Section -->
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255,215,0,0.1); border-radius: 10px; border-left: 4px solid #FFD700;">
+                    <div style="font-size: 12px; color: #666; display: flex; align-items: center;">
+                        <span style="font-size: 16px; margin-right: 8px;">ℹ️</span>
+                        <span>This is an embedded view of your sponsor dashboard. All data is read-only and automatically updated.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
 }
 
 // ✅ Show sponsor details
@@ -4292,755 +4636,501 @@ function showSponsorDetails() {
     }
 }
 
-// ✅ HELPER FUNCTIONS FOR SPONSOR DASHBOARD
+// ==============================================
+// ✅ FIXED SPONSORSHIP SYSTEM - SINGLE awardPoints FUNCTION
+// ==============================================
 
-function calculateThisMonthCommission() {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-    
-    const thisMonthActivities = userSponsorActivities.filter(activity => {
-        if (!activity.timestamp) return false;
-        const activityDate = new Date(activity.timestamp);
-        return activityDate.getMonth() === currentMonth && 
-               activityDate.getFullYear() === currentYear;
+// ✅ FIX 1: SINGLE awardPoints function (केवल यही इस्तेमाल करें)
+function awardPoints(points, activity, activityType) {
+    console.log('🎯 Awarding points:', { 
+        points, 
+        activity, 
+        activityType,
+        sponsorId: sponsorId,
+        sponsorName: sponsorName,
+        userRegistered: userRegistered
     });
     
-    return thisMonthActivities.reduce((total, activity) => total + (activity.commission || 0), 0);
-}
-
-function getActivityIcon(activityType) {
-    switch(activityType) {
-        case 'mining_earnings': return '⛏️';
-        case 'video_watch': return '🎬';
-        case 'task_earnings': return '📋';
-        case 'referral_earning': return '👥';
-        case 'bonus_earnings': return '🎁';
-        default: return '💰';
-    }
-}
-
-function formatTimeAgo(timestamp) {
-    if (!timestamp) return 'Just now';
+    if (points <= 0) return;
     
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffSec = Math.floor(diffMs / 1000);
-    const diffMin = Math.floor(diffSec / 60);
-    const diffHour = Math.floor(diffMin / 60);
-    const diffDay = Math.floor(diffHour / 24);
-    
-    if (diffDay > 0) return `${diffDay} day${diffDay > 1 ? 's' : ''} ago`;
-    if (diffHour > 0) return `${diffHour} hour${diffHour > 1 ? 's' : ''} ago`;
-    if (diffMin > 0) return `${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
-    return 'Just now';
-}
-
-function refreshSponsorData() {
-    // Reload sponsor data from storage
-    sponsorCommissionEarned = getFromStorage('sponsorCommissionEarned', 0);
-    sponsorTransactions = getFromStorage('sponsorTransactions', []);
-    userGeneratedSponsorIncome = getFromStorage('userGeneratedSponsorIncome', 0);
-    userSponsorActivities = getFromStorage('userSponsorActivities', []);
-    sponsorIncomeBreakdown = getFromStorage('sponsorIncomeBreakdown', sponsorIncomeBreakdown);
-    
-    // Refresh profile page
-    showProfileHomePage();
-    showNotification('✅ Sponsor data refreshed!', 'success');
-}
-
-function showSponsorTransactionHistory() {
-    const profileContent = document.getElementById('profileAppContent');
-    if (!profileContent) return;
-    
-    let html = `
-        <div class="earn-page">
-            <div class="platform-header">
-                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
-                <h3>📋 Sponsor Transaction History</h3>
-            </div>
-            
-            <div class="sponsor-history-stats">
-                <div class="stat-card">
-                    <div class="stat-number">${formatNumber(sponsorCommissionEarned)}</div>
-                    <div class="stat-label">Total Earned</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${sponsorTransactions.length}</div>
-                    <div class="stat-label">Transactions</div>
-                </div>
-            </div>
-            
-            <div class="transactions-list">
-    `;
-    
-    if (sponsorTransactions.length === 0) {
-        html += `<div class="no-transactions">No sponsor transactions yet</div>`;
-    } else {
-        sponsorTransactions.forEach(transaction => {
-            const date = new Date(transaction.timestamp);
-            const timeString = date.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: true 
-            });
-            const dateString = date.toLocaleDateString();
-            
-            html += `
-                <div class="transaction-item earning">
-                    <div class="transaction-icon">${getActivityIcon(transaction.activityType)}</div>
-                    <div class="transaction-details">
-                        <div class="transaction-description">${transaction.description}</div>
-                        <div class="transaction-time">${dateString} ${timeString}</div>
-                        <div class="transaction-meta">
-                            From: ${transaction.fromUser || 'User'} • 
-                            Type: ${transaction.activityType || 'Commission'}
-                        </div>
-                    </div>
-                    <div class="transaction-amount earning">
-                        +${transaction.amount}
-                    </div>
-                </div>
-            `;
-        });
-    }
-    
-    html += `
-            </div>
-            
-            <div class="export-actions" style="margin-top: 20px;">
-                <button class="btn-export" onclick="exportSponsorHistory()">
-                    📤 Export History
-                </button>
-            </div>
-        </div>
-    `;
-    
-    profileContent.innerHTML = html;
-}
-
-function exportSponsorHistory() {
-    const historyData = {
-        totalCommission: sponsorCommissionEarned,
-        breakdown: sponsorIncomeBreakdown,
-        transactions: sponsorTransactions,
-        activities: userSponsorActivities,
-        exportDate: new Date().toISOString()
-    };
-    
-    const dataStr = JSON.stringify(historyData, null, 2);
-    const blob = new Blob([dataStr], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sponsor_history_${userId}_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showNotification('✅ Sponsor history exported!', 'success');
-}
-
-// ✅ ENHANCED SPONSOR DASHBOARD WITH REAL NAME
-function showSponsorDashboard() {
-    const profileContent = document.getElementById('profileAppContent');
-    if (!profileContent) return;
-    
+    // Check if user is registered
     if (!userRegistered) {
-        showNotification('❌ Please register first!', 'warning');
+        showNotification('❌ Please register to earn points!', 'warning');
         showRegistrationModal();
         return;
     }
     
-    // ✅ स्पॉन्सर का कमीशन डेटा लोड करें
-    const currentUser = getFromStorage('currentUser', {});
-    const registeredUsers = getFromStorage('registeredUsers', []);
+    // User को points दें
+    userPoints += points;
+    totalPointsEarned += points;
+    todayEarnings += points;
     
-    // ✅ खुद के referred users ढूंढें
-    const myReferredUsers = registeredUsers.filter(user => 
-        user.sponsorUniqueId === currentUser.uniqueId ||
-        user.sponsorReferralCode === currentUser.referralCode
+    // Transaction history में add करें
+    addTransaction(
+        `Earned: ${activity}`, 
+        points, 
+        'earning', 
+        activityType,
+        activityType
     );
     
-    // ✅ टोटल कमीशन कैलकुलेट करें
-    let totalCommission = currentUser.sponsorEarnings || 0;
-    let todayCommission = 0;
-    let monthlyCommission = 0;
+    showNotification(`✅ +${points} points for ${activity}`, 'success');
     
-    // ✅ Commission breakdown
-    const commissionBreakdown = {
-        registration: 0,
+    // ✅ FIX: स्पॉन्सर को कमीशन दें (अगर है तो)
+    if (sponsorId && sponsorId !== 'UNKNOWN' && sponsorId !== 'Not Set') {
+        console.log('🎯 Calculating commission for sponsor:', sponsorId);
+        awardSponsorCommission(points, activity, activityType);
+    }
+    
+    saveMiningState();
+    updateUI();
+    
+    return points;
+}
+
+// ✅ FIX 2: SINGLE sponsor commission function
+function awardSponsorCommission(userPoints, activity, activityType) {
+    console.log('💰 Calculating sponsor commission:', {
+        userPoints,
+        activity,
+        activityType,
+        sponsorId,
+        sponsorName
+    });
+    
+    if (!sponsorId || sponsorId === 'UNKNOWN' || sponsorId === 'Not Set') {
+        console.log('❌ No valid sponsor found for commission');
+        return;
+    }
+    
+    // Commission rate determine करें
+    const commissionRate = getCommissionRate(activityType);
+    const commission = Math.max(1, Math.round(userPoints * commissionRate));
+    
+    if (commission <= 0) {
+        console.log('❌ Commission too low');
+        return;
+    }
+    
+    console.log(`📊 Commission: ${commission} points (${commissionRate * 100}% of ${userPoints})`);
+    
+    // ✅ कमीशन का विवरण
+    const commissionDesc = `Commission from ${userFullName || userId}: ${activity}`;
+    
+    // ✅ Database में sponsor को update करें
+    updateSponsorCommissionInDatabase(commission, commissionDesc, activityType);
+    
+    // ✅ Local variables update करें
+    sponsorCommissionEarned += commission;
+    userGeneratedSponsorIncome += commission;
+    
+    // ✅ Transaction history में add करें
+    addTransaction(
+        commissionDesc,
+        commission,
+        'earning',
+        'sponsor_commission',
+        activityType
+    );
+    
+    // ✅ Notification (only if sponsor is current user)
+    const currentUser = getFromStorage('currentUser', {});
+    if (currentUser && currentUser.uniqueId === sponsorId) {
+        setTimeout(() => {
+            showNotification(`🎉 Commission earned: +${commission} points from ${userFullName || userId}`, 'success');
+        }, 1500);
+    }
+    
+    console.log(`✅ Commission awarded: ${sponsorName} +${commission} points`);
+}
+
+// ✅ FIX 3: Database में sponsor commission update करें
+function updateSponsorCommissionInDatabase(commission, description, activityType) {
+    const registeredUsers = getFromStorage('registeredUsers', []);
+    let sponsorUpdated = false;
+    
+    for (let i = 0; i < registeredUsers.length; i++) {
+        const user = registeredUsers[i];
+        
+        // ✅ MULTIPLE ways to identify sponsor
+        const isSponsor = (
+            user.uniqueId === sponsorId ||
+            user.username === sponsorName ||
+            user.referralCode === sponsorReferralCode ||
+            (sponsorUniqueId && user.uniqueId === sponsorUniqueId)
+        );
+        
+        if (isSponsor) {
+            console.log('✅ Sponsor found in database:', user.username);
+            
+            // Points update करें
+            user.points = (user.points || 0) + commission;
+            user.totalEarned = (user.totalEarned || 0) + commission;
+            user.sponsorEarnings = (user.sponsorEarnings || 0) + commission;
+            
+            // Commission history add करें
+            user.sponsorCommissionHistory = user.sponsorCommissionHistory || [];
+            user.sponsorCommissionHistory.push({
+                type: activityType,
+                commission: commission,
+                fromUser: userId,
+                fromFullName: userFullName || userId,
+                fromEmail: userEmail,
+                description: description,
+                timestamp: new Date().toISOString()
+            });
+            
+            registeredUsers[i] = user;
+            sponsorUpdated = true;
+            
+            // Database save करें
+            saveToStorage('registeredUsers', registeredUsers);
+            
+            console.log(`✅ Database updated: ${user.username} +${commission} points`);
+            
+            // If current user is the sponsor, update their session
+            const currentUser = getFromStorage('currentUser', {});
+            if (currentUser && currentUser.uniqueId === user.uniqueId) {
+                currentUser.points = user.points;
+                currentUser.sponsorEarnings = user.sponsorEarnings;
+                currentUser.sponsorCommissionHistory = user.sponsorCommissionHistory;
+                saveToStorage('currentUser', currentUser);
+                
+                // Force UI refresh
+                setTimeout(() => {
+                    showProfileHomePage();
+                    updateUI();
+                }, 500);
+            }
+            
+            break;
+        }
+    }
+    
+    if (!sponsorUpdated) {
+        console.log('⚠️ Sponsor not found in database. Saving to local...');
+        // Save to local sponsor tracking
+        const sponsorTransactions = getFromStorage('sponsorTransactions', []);
+        sponsorTransactions.push({
+            id: 'trx_' + Date.now(),
+            timestamp: new Date().toISOString(),
+            description: description,
+            amount: commission,
+            activityType: activityType,
+            fromUser: userId,
+            fromFullName: userFullName || userId,
+            type: 'commission'
+        });
+        saveToStorage('sponsorTransactions', sponsorTransactions);
+    }
+}
+
+// ✅ FIX 4: Commission rate function
+function getCommissionRate(activityType) {
+    // Standard commission rates
+    const rates = {
+        'mining': 0.05,      // 5%
+        'video': 0.15,       // 15%
+        'task': 0.12,        // 12%
+        'referral': 0.20,    // 20%
+        'bonus': 0.08,       // 8%
+        'default': 0.10      // 10%
+    };
+    
+    // Activity type detection
+    if (activityType.includes('mining') || activityType.includes('pool')) {
+        return rates.mining;
+    } else if (activityType.includes('video') || activityType.includes('watch')) {
+        return rates.video;
+    } else if (activityType.includes('task') || activityType.includes('complete')) {
+        return rates.task;
+    } else if (activityType.includes('referral') || activityType.includes('refer')) {
+        return rates.referral;
+    } else if (activityType.includes('bonus') || activityType.includes('reward')) {
+        return rates.bonus;
+    } else {
+        return rates.default;
+    }
+}
+
+// ✅ FIXED: Initialize sponsorship system
+function initializeSponsorshipSystem() {
+    console.log('🔄 Initializing sponsorship system...');
+    
+    const currentUser = getFromStorage('currentUser', {});
+    
+    if (currentUser && currentUser.email) {
+        // Load sponsor details
+        sponsorId = currentUser.sponsorUniqueId || '';
+        sponsorName = currentUser.sponsorUsername || currentUser.sponsorName || '';
+        sponsorFullName = currentUser.sponsorFullName || sponsorName || '';
+        sponsorUniqueId = currentUser.sponsorUniqueId || '';
+        sponsorReferralCode = currentUser.sponsorReferralCode || '';
+        
+        // Load commission data
+        sponsorCommissionEarned = currentUser.sponsorEarnings || 0;
+        userGeneratedSponsorIncome = currentUser.sponsorEarnings || 0;
+        
+        console.log('✅ Sponsorship initialized:', {
+            sponsorId,
+            sponsorName,
+            sponsorCommissionEarned
+        });
+    }
+    
+    // Load local commission tracking
+    loadLocalCommissionData();
+}
+
+// ✅ FIXED: Load local commission data
+function loadLocalCommissionData() {
+    sponsorTransactions = getFromStorage('sponsorTransactions', []);
+    userSponsorActivities = getFromStorage('userSponsorActivities', []);
+    sponsorIncomeBreakdown = getFromStorage('sponsorIncomeBreakdown', {
         mining: 0,
         videos: 0,
         tasks: 0,
-        other: 0
+        referrals: 0,
+        bonuses: 0,
+        total: 0
+    });
+    
+    console.log('📊 Local commission data loaded:', {
+        transactions: sponsorTransactions.length,
+        activities: userSponsorActivities.length,
+        breakdown: sponsorIncomeBreakdown
+    });
+}
+
+// ✅ FIXED: Registration complete function में sponsorship setup
+function completeRegistration() {
+    console.log('✅ completeRegistration() called');
+    
+    const fullName = userFullName || '';
+    const username = userId || '';
+    const email = userEmail || '';
+    const mobile = userMobile || '';
+    
+    const spFullName = document.getElementById('regSponsorFullNameInput')?.value || 
+                      localStorage.getItem('pendingSponsorFullName') || '';
+    const spUniqueId = document.getElementById('regSponsorUniqueIdInput')?.value || 
+                      localStorage.getItem('pendingSponsorId') || '';
+    const spRefCode = document.getElementById('regSponsorReferralCodeInput')?.value || 
+                     localStorage.getItem('pendingReferralCode') || '';
+    const spUsername = document.getElementById('regSponsorUsernameInput')?.value || 
+                      localStorage.getItem('pendingSponsorUsername') || '';
+    
+    console.log('📋 Registration sponsor data:', { 
+        spFullName, spUniqueId, spRefCode, spUsername 
+    });
+    
+    if (!fullName || !username || !email || !mobile) {
+        showNotification('❌ Registration data incomplete', 'error');
+        return;
+    }
+    
+    const uniqueId = generateUniqueId();
+    const referralCode = generateReferralCode();
+    
+    const newUser = {
+        fullName: fullName,
+        username: username,
+        email: email,
+        mobile: mobile,
+        password: '********',
+        uniqueId: uniqueId,
+        referralCode: referralCode,
+        sponsorFullName: spFullName,
+        sponsorUniqueId: spUniqueId,
+        sponsorReferralCode: spRefCode,
+        sponsorUsername: spUsername,
+        joinType: localStorage.getItem('pendingJoinType') || 'referral',
+        joinDate: new Date().toISOString(),
+        points: 25,
+        registrationDate: new Date().toISOString(),
+        status: 'active',
+        isVerified: true,
+        walletBalance: 0,
+        usdtWallet: 0,
+        inrWallet: 0,
+        sponsorEarnings: 0,
+        sponsorCommissionHistory: [],
+        lastLogin: new Date().toISOString(),
+        emailVerified: true,
+        mobileVerified: true
     };
     
-    // ✅ Commission history process करें
-    const commissionHistory = currentUser.sponsorCommissionHistory || [];
+    console.log('👤 Complete new user object:', newUser);
     
-    commissionHistory.forEach(commission => {
-        if (commission.type === 'registration') {
-            commissionBreakdown.registration += commission.commission || 0;
-        } else if (commission.type === 'mining') {
-            commissionBreakdown.mining += commission.commission || 0;
-        } else if (commission.type === 'video') {
-            commissionBreakdown.videos += commission.commission || 0;
-        } else if (commission.type === 'task') {
-            commissionBreakdown.tasks += commission.commission || 0;
-        } else {
-            commissionBreakdown.other += commission.commission || 0;
-        }
-        
-        // Today's commission
-        const commissionDate = new Date(commission.timestamp);
-        const today = new Date();
-        if (commissionDate.toDateString() === today.toDateString()) {
-            todayCommission += commission.commission || 0;
-        }
-        
-        // This month commission
-        if (commissionDate.getMonth() === today.getMonth() && 
-            commissionDate.getFullYear() === today.getFullYear()) {
-            monthlyCommission += commission.commission || 0;
-        }
+    const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    registeredUsers.push(newUser);
+    localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
+    
+    localStorage.setItem('currentUser', JSON.stringify(newUser));
+    
+    localStorage.removeItem('pendingReferralCode');
+    localStorage.removeItem('pendingSponsorId');
+    sessionStorage.removeItem('pendingReferralCode');
+    sessionStorage.removeItem('pendingSponsorId');
+    sessionStorage.removeItem('pendingSponsorName');
+    sessionStorage.removeItem('pendingSponsorFullName');
+    sessionStorage.removeItem('pendingSponsorUsername');
+    sessionStorage.removeItem('pendingSponsorEmail');
+    sessionStorage.removeItem('pendingJoinType');
+    
+    userRegistered = true;
+    userFullName = fullName;
+    userId = username;
+    userEmail = email;
+    userMobile = mobile;
+    userEmailVerified = true;
+    userMobileVerified = true;
+    window.sponsorFullName = spFullName;
+    window.sponsorUniqueId = spUniqueId;
+    window.sponsorReferralCode = spRefCode;
+    window.sponsorName = spUsername;
+    userUniqueId = uniqueId;
+    userReferralCode = referralCode;
+    userPoints = 25;
+    
+    // ✅ FIX: Set global sponsor variables
+    sponsorId = spUniqueId;
+    sponsorName = spUsername;
+    sponsorFullName = spFullName;
+    sponsorUniqueId = spUniqueId;
+    sponsorReferralCode = spRefCode;
+    
+    console.log('✅ Global sponsor variables set:', {
+        sponsorId,
+        sponsorName,
+        sponsorFullName
     });
     
-    profileContent.innerHTML = `
-        <div class="earn-page">
-            <div class="platform-header">
-                <button onclick="showProfileHomePage()" class="back-btn">← Back</button>
-                <div class="platform-header-icon">💰</div>
-                <h3>🎯 Sponsor Earnings Dashboard</h3>
-            </div>
-            
-            <!-- Your Info -->
-            <div class="user-info-display">
-                <div class="user-info-label">Your Info:</div>
-                <div class="user-info-content">
-                    <div class="user-name">${currentUser.fullName || currentUser.username}</div>
-                    <div class="user-username">@${currentUser.username}</div>
-                </div>
-            </div>
-            
-            <!-- यूजर का यूनिक ID -->
-            <div class="unique-id-display">
-                <div class="unique-id-label">Your Unique ID:</div>
-                <div class="unique-id-value">${currentUser.uniqueId || 'Not assigned'}</div>
-                <div class="unique-id-copy" onclick="copyUniqueId()">📋 Copy</div>
-            </div>
-            
-            <!-- रेफरल कोड -->
-            <div class="referral-code-display">
-                <div class="referral-code-label">Your Referral Code:</div>
-                <div class="referral-code-value">${currentUser.referralCode || 'Not assigned'}</div>
-                <div class="referral-code-copy" onclick="copyReferralCode()">📋 Copy</div>
-            </div>
-            
-            <!-- स्पॉन्सर डेटा -->
-            ${currentUser.sponsorUniqueId && currentUser.sponsorUniqueId !== 'UNKNOWN' ? `
-            <div class="sponsor-info-display">
-                <div class="sponsor-info-label">Your Sponsor:</div>
-                <div class="sponsor-info-content">
-                    <div class="sponsor-name">${currentUser.sponsorFullName || currentUser.sponsorName || 'Unknown'}</div>
-                    <div class="sponsor-id">ID: ${currentUser.sponsorUniqueId}</div>
-                </div>
-            </div>
-            ` : ''}
-            
-            <!-- कमीशन स्टेट्स -->
-            <div class="commission-stats-grid">
-                <div class="commission-stat-card total-commission">
-                    <div class="stat-icon">💰</div>
-                    <div class="stat-content">
-                        <div class="stat-value">${formatNumber(totalCommission)}</div>
-                        <div class="stat-label">Total Commission</div>
-                    </div>
-                </div>
-                
-                <div class="commission-stat-card today-commission">
-                    <div class="stat-icon">📈</div>
-                    <div class="stat-content">
-                        <div class="stat-value">${formatNumber(todayCommission)}</div>
-                        <div class="stat-label">Today</div>
-                    </div>
-                </div>
-                
-                <div class="commission-stat-card monthly-commission">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-content">
-                        <div class="stat-value">${formatNumber(monthlyCommission)}</div>
-                        <div class="stat-label">This Month</div>
-                    </div>
-                </div>
-                
-                <div class="commission-stat-card referred-users">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-content">
-                        <div class="stat-value">${myReferredUsers.length}</div>
-                        <div class="stat-label">Referred Users</div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- कमीशन ब्रेकडाउन -->
-            <div class="commission-breakdown-section">
-                <h4>📊 Commission Breakdown</h4>
-                <div class="breakdown-grid">
-                    <div class="breakdown-item">
-                        <div class="breakdown-icon">📝</div>
-                        <div class="breakdown-info">
-                            <div class="breakdown-category">Registration</div>
-                            <div class="breakdown-amount">${formatNumber(commissionBreakdown.registration)}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="breakdown-item">
-                        <div class="breakdown-icon">⛏️</div>
-                        <div class="breakdown-info">
-                            <div class="breakdown-category">Mining</div>
-                            <div class="breakdown-amount">${formatNumber(commissionBreakdown.mining)}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="breakdown-item">
-                        <div class="breakdown-icon">🎬</div>
-                        <div class="breakdown-info">
-                            <div class="breakdown-category">Videos</div>
-                            <div class="breakdown-amount">${formatNumber(commissionBreakdown.videos)}</div>
-                        </div>
-                    </div>
-                    
-                    <div class="breakdown-item">
-                        <div class="breakdown-icon">📋</div>
-                        <div class="breakdown-info">
-                            <div class="breakdown-category">Tasks</div>
-                            <div class="breakdown-amount">${formatNumber(commissionBreakdown.tasks)}</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- रेफर्ड यूजर्स लिस्ट -->
-            <div class="referred-users-section">
-                <h4>👥 Referred Users (${myReferredUsers.length})</h4>
-                ${myReferredUsers.length > 0 ? `
-                <div class="referred-users-list">
-                    ${myReferredUsers.map((user, index) => `
-                    <div class="referred-user-item">
-                        <div class="user-number">${index + 1}.</div>
-                        <div class="user-info">
-                            <div class="user-name">${user.fullName || user.username}</div>
-                            <div class="user-details">
-                                <span class="user-email">${user.email}</span>
-                                <span class="user-id">ID: ${user.uniqueId}</span>
-                            </div>
-                        </div>
-                        <div class="user-commission">
-                            <div class="commission-amount">+50</div>
-                            <div class="commission-label">points</div>
-                        </div>
-                    </div>
-                    `).join('')}
-                </div>
-                ` : `
-                <div class="no-referred-users">
-                    <div class="no-users-icon">👤</div>
-                    <div class="no-users-text">No referred users yet</div>
-                    <div class="no-users-desc">Share your referral link to start earning commission</div>
-                </div>
-                `}
-            </div>
-            
-            <!-- कमीशन हिस्ट्री -->
-            <div class="commission-history-section">
-                <h4>📈 Recent Commission History</h4>
-                ${commissionHistory.length > 0 ? `
-                <div class="commission-history-list">
-                    ${commissionHistory.slice(0, 10).map(commission => `
-                    <div class="commission-history-item">
-                        <div class="commission-icon">💰</div>
-                        <div class="commission-info">
-                            <div class="commission-description">${commission.description || 'Commission earned'}</div>
-                            <div class="commission-details">
-                                <span class="from-user">From: ${commission.fromFullName || commission.fromUser}</span>
-                                <span class="commission-time">${formatTimeAgo(commission.timestamp)}</span>
-                            </div>
-                        </div>
-                        <div class="commission-amount">+${commission.commission || 0}</div>
-                    </div>
-                    `).join('')}
-                </div>
-                ` : `
-                <div class="no-commission-history">
-                    <div class="no-history-icon">📊</div>
-                    <div class="no-history-text">No commission history yet</div>
-                </div>
-                `}
-            </div>
-            
-            <!-- रेफरल शेयरिंग -->
-            <div class="referral-sharing-section">
-                <h4>🔗 Share Your Referral Link</h4>
-                <div class="referral-link-container">
-                    <div class="referral-link-input">
-                        <input type="text" id="referralLinkInput" 
-                               value="${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}"
-                               readonly>
-                    </div>
-                    <div class="referral-actions">
-                        <button class="btn-copy-link" onclick="copyReferralLink()">
-                            📋 Copy Link
-                        </button>
-                        <button class="btn-share-whatsapp" onclick="shareOnWhatsAppBetter()">
-                            📱 WhatsApp
-                        </button>
-                        <button class="btn-share-telegram" onclick="shareOnTelegram()">
-                            📲 Telegram
-                        </button>
-                    </div>
-                </div>
-                
-                <div class="referral-qr-code">
-                    <div class="qr-code-placeholder" id="qrCodePlaceholder">
-                        <div class="qr-icon">🔗</div>
-                        <div>QR Code will generate here</div>
-                    </div>
-                    <button class="btn-generate-qr" onclick="generateReferralQRCode()">
-                        Generate QR Code
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
+    if (spUniqueId && spUniqueId !== 'UNKNOWN') {
+        awardReferralBonus(spUniqueId, spRefCode, username, email, fullName);
+    }
+    
+    updateReferralDatabase(newUser);
+    
+    closeRegistrationModal();
+    
+    let welcomeMessage = `✅ Registration successful! Welcome ${fullName}!`;
+    if (spFullName && spFullName !== 'Unknown Sponsor') {
+        welcomeMessage += `\n🎯 You joined through ${spFullName}'s referral.`;
+    }
+    showNotification(welcomeMessage, 'success');
+    
+    initializeUserData();
+    updateUI();
+    notifyAdminPanel('register', newUser);
+    
+    console.log('🎉 Complete registration successful for:', fullName);
 }
 
-// ✅ REFERRAL LINK COPY FUNCTIONS
-function copyUniqueId() {
-    const currentUser = getFromStorage('currentUser', {});
-    const uniqueId = currentUser.uniqueId;
-    
-    if (!uniqueId) {
-        showNotification('❌ Unique ID not found', 'warning');
+// ✅ DEBUG: Manual commission distribution function (for testing)
+function testCommissionDistribution() {
+    if (!userRegistered) {
+        showNotification('❌ Please register first', 'warning');
         return;
     }
     
-    navigator.clipboard.writeText(uniqueId)
-        .then(() => showNotification('✅ Unique ID copied to clipboard!', 'success'))
-        .catch(() => {
-            // Fallback method
-            const textArea = document.createElement('textarea');
-            textArea.value = uniqueId;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showNotification('✅ Unique ID copied to clipboard!', 'success');
-        });
+    const testAmount = 100;
+    const testActivity = 'Test Commission';
+    const testType = 'video';
+    
+    console.log('🧪 Testing commission distribution...');
+    console.log('User:', userId);
+    console.log('Sponsor:', sponsorId, sponsorName);
+    
+    awardPoints(testAmount, testActivity, testType);
+    
+    setTimeout(() => {
+        showNotification('✅ Commission test completed. Check console for details.', 'success');
+    }, 1000);
 }
 
-function copyReferralCode() {
+// ✅ DEBUG: Check sponsorship status
+function checkSponsorshipStatus() {
     const currentUser = getFromStorage('currentUser', {});
-    const referralCode = currentUser.referralCode;
     
-    if (!referralCode) {
-        showNotification('❌ Referral code not found', 'warning');
-        return;
-    }
+    const status = {
+        'User': currentUser.username || 'Not logged in',
+        'User ID': currentUser.uniqueId || 'N/A',
+        'Sponsor ID': sponsorId,
+        'Sponsor Name': sponsorName,
+        'Sponsor Full Name': sponsorFullName,
+        'Sponsor Commission Earned': sponsorCommissionEarned,
+        'User Generated Sponsor Income': userGeneratedSponsorIncome,
+        'Sponsor in Registered Users': getFromStorage('registeredUsers', []).some(u => u.uniqueId === sponsorId)
+    };
     
-    navigator.clipboard.writeText(referralCode)
-        .then(() => showNotification('✅ Referral code copied to clipboard!', 'success'))
-        .catch(() => {
-            const textArea = document.createElement('textarea');
-            textArea.value = referralCode;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showNotification('✅ Referral code copied to clipboard!', 'success');
-        });
-}
-
-// ✅ REFERRAL MESSAGE GENERATION WITH REAL NAME
-function generateReferralMessage() {
-    const currentUser = getFromStorage('currentUser', {});
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
+    console.table(status);
     
-    return `🎉 *Join TapEarn - Earn Free Points!* 🎉
-
-Recommended by: *${currentUser.fullName || currentUser.username}*
-
-Use my referral code: *${currentUser.referralCode}*
-My Unique ID: *${currentUser.uniqueId}*
-
-✨ *What you get:*
-• 25 Bonus Points on Signup
-• Watch videos & earn points
-• Complete tasks for rewards
-• Mining system for passive income
-• Redeem for gift cards & cash!
-
-🚀 *Start earning now:*
-👉 ${referralLink} 👈
-
-#TapEarn #EarnMoney #FreePoints #Referral`;
-}
-
-// ✅ COPY REFERRAL MESSAGE WITH CLICKABLE LINK
-function copyReferralLink() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) {
-        showNotification('❌ Please login first', 'warning');
-        return;
-    }
-    
-    const message = generateReferralMessage();
-    
-    navigator.clipboard.writeText(message)
-        .then(() => {
-            showNotification('✅ Referral message copied!', 'success');
-            setTimeout(() => {
-                alert(`📋 *Message Copied!*\n\nYou can now paste this anywhere. The link is clickable in most apps.`);
-            }, 500);
-        })
-        .catch(() => {
-            // Fallback method
-            const textArea = document.createElement('textarea');
-            textArea.value = message;
-            document.body.appendChild(textArea);
-            textArea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textArea);
-            showNotification('✅ Referral message copied!', 'success');
-        });
-}
-
-// ✅ WHATSAPP SHARE - WITH CLICKABLE LINK
-function shareOnWhatsApp() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) {
-        showNotification('❌ Please login first', 'warning');
-        return;
-    }
-    
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    // ✅ WhatsApp message with link at BEGINNING for better clickability
-    const message = `🚀 TapEarn Referral Link: ${referralLink}
-
-🎉 *Join TapEarn - Earn Free Points!*
-
-Use my referral code: *${currentUser.referralCode}*
-
-✨ *What you get:*
-• 25 Bonus Points on Signup
-• Watch videos & earn points
-• Complete tasks for rewards
-• Mining system for passive income
-• Redeem for gift cards & cash!
-
-#TapEarn #EarnMoney #FreePoints #Referral`;
-    
-    const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    
-    window.open(whatsappURL, '_blank', 'noopener,noreferrer');
-    showNotification('✅ Opening WhatsApp...', 'success');
-}
-
-// ✅ TELEGRAM SHARE - WITH PROPER CLICKABLE LINK
-function shareOnTelegram() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) {
-        showNotification('❌ Please login first', 'warning');
-        return;
-    }
-    
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    // ✅ Telegram format with clickable link
-    const message = `🎉 Join TapEarn - Earn Free Points!
-
-Use my referral code: ${currentUser.referralCode}
-
-✨ What you get:
-• 25 Bonus Points on Signup
-• Watch videos & earn points
-• Complete tasks for rewards
-• Mining system for passive income
-• Redeem for gift cards & cash!
-
-🚀 Start earning now!`;
-    
-    // Telegram में URL अलग से भेजें ताकि clickable हो
-    const telegramURL = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`;
-    
-    window.open(telegramURL, '_blank', 'noopener,noreferrer');
-    showNotification('✅ Opening Telegram...', 'success');
-}
-
-// ✅ **NEW: BETTER WHATSAPP SHARE WITH CLICKABLE LINK**
-function shareOnWhatsAppBetter() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) {
-        showNotification('❌ Please login first', 'warning');
-        return;
-    }
-    
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    // ✅ VERY SIMPLE message with link first (most clickable)
-    const simpleMessage = `🚀 Join TapEarn and earn free points!
-
-Recommended by: ${currentUser.fullName || currentUser.username}
-
-Use my referral code: ${currentUser.referralCode}
-
-Get 25 bonus points on signup!
-
-Click here: ${referralLink}
-
-#EarnMoney #FreePoints`;
-    
-    // Use WhatsApp Web API
-    const whatsappURL = `https://web.whatsapp.com/send?text=${encodeURIComponent(simpleMessage)}`;
-    
-    window.open(whatsappURL, '_blank');
-    showNotification('✅ Opening WhatsApp... The link is clickable!', 'success');
-}
-
-// ✅ **NEW: DIRECT LINK SHARE (सबसे बेहतर)**
-function shareDirectLink() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) {
-        showNotification('❌ Please login first', 'warning');
-        return;
-    }
-    
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    // Just the link - 100% clickable
-    const message = `${referralLink}
-
-Join TapEarn using my code: ${currentUser.referralCode}
-Get 25 bonus points! 🎁`;
-    
-    // Use Web Share API if available
-    if (navigator.share) {
-        navigator.share({
-            title: 'Join TapEarn',
-            text: `Use my referral code: ${currentUser.referralCode}`,
-            url: referralLink,
-        })
-        .then(() => console.log('Shared successfully'))
-        .catch((error) => {
-            // Fallback to WhatsApp
-            const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-            window.open(whatsappURL, '_blank');
-        });
-    } else {
-        // Fallback to WhatsApp
-        const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-        window.open(whatsappURL, '_blank');
-    }
-}
-
-// ✅ **NEW: ONE-CLICK JOIN LINK (सबसे आसान)**
-function shareOneClickJoin() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) {
-        showNotification('❌ Please login first', 'warning');
-        return;
-    }
-    
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    // Very simple, link is first and prominent
-    const message = `👉 ${referralLink}
-
-Join TapEarn with my code ${currentUser.referralCode}
-Get ₹50 bonus! 💰`;
-    
-    const whatsappURL = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    window.open(whatsappURL, '_blank');
-    
-    showNotification('✅ Sharing one-click join link!', 'success');
-}
-
-// ✅ QR CODE GENERATION
-function generateReferralQRCode() {
-    const currentUser = getFromStorage('currentUser', {});
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    const qrCodePlaceholder = document.getElementById('qrCodePlaceholder');
-    if (!qrCodePlaceholder) return;
-    
-    qrCodePlaceholder.innerHTML = `
-        <div class="qr-code-container">
-            <div class="qr-code-image">
-                <!-- QR code would be generated here with a library -->
-                <div style="width: 150px; height: 150px; background: #fff; display: flex; align-items: center; justify-content: center; border-radius: 10px;">
-                    <div style="font-size: 24px;">QR</div>
-                </div>
-            </div>
-            <div class="qr-code-info">
-                <div class="qr-code-text">Scan to join with my referral</div>
-                <div class="qr-code-download" onclick="downloadQRCode()">
-                    📥 Download QR
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-function downloadQRCode() {
-    showNotification('✅ QR Code download feature coming soon!', 'info');
-}
-
-// ✅ **NEW: PREVIEW SHARED MESSAGE**
-function previewShareMessage() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) return;
-    
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    const message = `🚀 *Join TapEarn - One Click Join!* 🚀
-
-👉 *CLICK THIS LINK:* ${referralLink}
-
-🎁 *Use my code:* ${currentUser.referralCode}
-💰 *Get:* 25 Bonus Points
-⏱️ *Start earning in seconds!*
-
-#TapEarn #EarnMoney`;
-    
-    alert(`📱 *Message Preview:*\n\n${message}\n\n✅ This link is clickable in WhatsApp/Telegram!`);
-}
-
-// ✅ **NEW: TEST LINK CLICKABILITY**
-function testLinkClickability() {
-    const currentUser = getFromStorage('currentUser', {});
-    if (!currentUser) return;
-    
-    const referralLink = `${window.location.origin}${window.location.pathname}?ref=${currentUser.referralCode}&sponsor=${currentUser.uniqueId}`;
-    
-    // Create test message
-    const testMessages = [
-        `Link at end: Some text here ${referralLink}`,
-        `Link at start: ${referralLink} Some text here`,
-        `Link alone: ${referralLink}`,
-        `Link with emoji: 👉 ${referralLink} 👈`
-    ];
-    
-    console.log('=== LINK CLICKABILITY TEST ===');
-    testMessages.forEach((msg, i) => {
-        console.log(`Test ${i+1}:`, msg);
-        console.log(`Link position: ${msg.indexOf(referralLink)}`);
+    // Show in alert
+    let alertMsg = '📊 Sponsorship Status:\n\n';
+    Object.entries(status).forEach(([key, value]) => {
+        alertMsg += `${key}: ${value}\n`;
     });
     
-    alert(`✅ Test Complete!\n\nBest format: Put link at START or ALONE for maximum clickability.\n\nLink: ${referralLink}\n\nCheck console for details.`);
+    alert(alertMsg);
+}
+
+// ✅ FIXED: Update sponsor dashboard in UI
+function refreshSponsorDashboard() {
+    console.log('🔄 Refreshing sponsor dashboard...');
+    
+    const currentUser = getFromStorage('currentUser', {});
+    const registeredUsers = getFromStorage('registeredUsers', []);
+    
+    // Find current user in registered users
+    const userData = registeredUsers.find(u => u.uniqueId === currentUser.uniqueId);
+    
+    if (userData) {
+        // Update commission displays
+        if (document.getElementById('totalCommissionDisplay')) {
+            document.getElementById('totalCommissionDisplay').textContent = (userData.sponsorEarnings || 0) + ' USDT';
+        }
+        if (document.getElementById('todayCommissionDisplay')) {
+            document.getElementById('todayCommissionDisplay').textContent = calculateTodayCommission(userData) + ' USDT';
+        }
+        if (document.getElementById('monthlyCommissionDisplay')) {
+            document.getElementById('monthlyCommissionDisplay').textContent = calculateMonthlyCommission(userData) + ' USDT';
+        }
+        
+        // Get referred users
+        const referredUsers = registeredUsers.filter(u => u.sponsorUniqueId === currentUser.uniqueId);
+        if (document.getElementById('referredUsersDisplay')) {
+            document.getElementById('referredUsersDisplay').textContent = referredUsers.length;
+        }
+        
+        console.log('✅ Dashboard refreshed');
+    }
+}
+
+// ✅ Helper functions for dashboard
+function calculateTodayCommission(userData) {
+    if (!userData.sponsorCommissionHistory) return 0;
+    
+    const today = new Date().toDateString();
+    return userData.sponsorCommissionHistory
+        .filter(com => new Date(com.timestamp).toDateString() === today)
+        .reduce((sum, com) => sum + (com.commission || 0), 0);
+}
+
+function calculateMonthlyCommission(userData) {
+    if (!userData.sponsorCommissionHistory) return 0;
+    
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return userData.sponsorCommissionHistory
+        .filter(com => {
+            const date = new Date(com.timestamp);
+            return date.getMonth() === currentMonth && 
+                   date.getFullYear() === currentYear;
+        })
+        .reduce((sum, com) => sum + (com.commission || 0), 0);
 }
 
 // ==============================================
@@ -6304,43 +6394,128 @@ function autoCompleteLoginActivity() {
 function getCommissionRate(activityType) {
     console.log('💰 Getting commission rate for:', activityType);
     
+    // ✅ सही mapping करें
+    let key = '';
+    
+    if (activityType.includes('mining')) key = 'mining';
+    else if (activityType.includes('video')) key = 'video';
+    else if (activityType.includes('task')) key = 'task';
+    else if (activityType.includes('referral')) key = 'referral';
+    else if (activityType.includes('bonus')) key = 'bonus';
+    else key = activityType;
+    
     const rates = {
-        'mining': 0.05,
-        'video': 0.15,
-        'task': 0.12,
-        'referral': 0.20,
-        'bonus': 0.08
+        'mining': 0.05,     // 5%
+        'video': 0.15,      // 15%
+        'task': 0.12,       // 12%
+        'referral': 0.20,   // 20%
+        'bonus': 0.08       // 8%
     };
     
-    let key = activityType;
-    if (activityType === 'mining_earnings') key = 'mining';
-    if (activityType === 'video_watch') key = 'video';
-    if (activityType === 'task_earnings') key = 'task';
-    if (activityType === 'referral_earning') key = 'referral';
-    if (activityType === 'bonus_earnings') key = 'bonus';
+    const rate = rates[key] || 0.10; // Default 10%
+    console.log('📈 Commission rate:', rate * 100, '% for', key);
     
-    return rates[key] || 0.10;
+    return rate;
+}
+
+// ✅ NEW FUNCTION: Update sponsor's earnings in database
+function updateSponsorEarningsInDatabase(commission, activity, activityType) {
+    console.log('💾 Updating sponsor earnings in database:', {
+        sponsorId: sponsorId,
+        commission: commission,
+        activity: activity
+    });
+    
+    if (!sponsorId || sponsorId === 'UNKNOWN') {
+        return;
+    }
+    
+    try {
+        const registeredUsers = getFromStorage('registeredUsers', []);
+        let sponsorFound = false;
+        
+        // Sponsor को ढूंढें
+        const sponsorIndex = registeredUsers.findIndex(user => 
+            user.uniqueId === sponsorId || 
+            user.referralCode === sponsorReferralCode ||
+            user.username === sponsorName
+        );
+        
+        if (sponsorIndex !== -1) {
+            sponsorFound = true;
+            const sponsor = registeredUsers[sponsorIndex];
+            
+            // Sponsor के points update करें
+            sponsor.points = (sponsor.points || 0) + commission;
+            sponsor.totalEarned = (sponsor.totalEarned || 0) + commission;
+            sponsor.sponsorEarnings = (sponsor.sponsorEarnings || 0) + commission;
+            
+            // Commission history add करें
+            sponsor.sponsorCommissionHistory = sponsor.sponsorCommissionHistory || [];
+            sponsor.sponsorCommissionHistory.push({
+                type: activityType,
+                commission: commission,
+                fromUser: userId,
+                fromFullName: userFullName,
+                fromEmail: userEmail,
+                description: `${activityType}: ${activity}`,
+                timestamp: new Date().toISOString()
+            });
+            
+            // Database update करें
+            registeredUsers[sponsorIndex] = sponsor;
+            saveToStorage('registeredUsers', registeredUsers);
+            
+            console.log(`✅ Sponsor ${sponsor.username} updated: +${commission} points`);
+            
+            // अगर sponsor खुद login है, तो UI update करें
+            const currentUser = getFromStorage('currentUser', {});
+            if (currentUser.uniqueId === sponsorId) {
+                setTimeout(() => {
+                    showNotification(`🎉 You earned ${commission} commission from ${userFullName}!`, 'success');
+                }, 1000);
+            }
+        }
+        
+        if (!sponsorFound) {
+            console.log('⚠️ Sponsor not found in database:', sponsorId);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error updating sponsor earnings:', error);
+    }
 }
 
 function addSponsorCommission(amount, userActivity, commissionRate, activityType) {
     console.log('💼 Adding sponsor commission:', {
         sponsorId: sponsorId,
+        sponsorName: sponsorName,
         amount: amount,
         activity: userActivity,
         rate: commissionRate,
         type: activityType
     });
     
-    if (!sponsorId || sponsorId.trim() === '' || amount <= 0) {
-        console.log('❌ No sponsor or invalid amount');
+    // ✅ Check if sponsor exists
+    if (!sponsorId || sponsorId.trim() === '' || sponsorId === 'UNKNOWN') {
+        console.log('❌ No sponsor found, skipping commission');
+        return;
+    }
+    
+    if (amount <= 0) {
+        console.log('❌ Invalid amount for commission');
         return;
     }
     
     const commission = Math.max(1, Math.round(amount * commissionRate));
-    console.log('📊 Calculated commission:', commission);
+    console.log('📊 Calculated commission:', commission, 'from', amount, 'at rate', commissionRate);
     
     if (commission <= 0) return;
     
+    // ✅ Update sponsor's earnings in registered users database
+    updateSponsorEarningsInDatabase(commission, userActivity, activityType);
+    
+    // ✅ Update local variables
     sponsorCommissionEarned += commission;
     userGeneratedSponsorIncome += commission;
     
@@ -6359,7 +6534,9 @@ function addSponsorCommission(amount, userActivity, commissionRate, activityType
         fromUserId: userId,
         fromActivity: userActivity,
         originalAmount: amount,
-        activityType: activityType
+        activityType: activityType,
+        sponsorId: sponsorId,
+        sponsorName: sponsorName
     };
     
     sponsorTransactions.unshift(sponsorTransaction);
@@ -6379,13 +6556,18 @@ function addSponsorCommission(amount, userActivity, commissionRate, activityType
     
     userSponsorActivities.unshift(userActivityRecord);
     
+    // ✅ Save all data
     saveToStorage('sponsorCommissionEarned', sponsorCommissionEarned);
     saveToStorage('sponsorTransactions', sponsorTransactions);
     saveToStorage('userGeneratedSponsorIncome', userGeneratedSponsorIncome);
     saveToStorage('userSponsorActivities', userSponsorActivities);
     saveToStorage('sponsorIncomeBreakdown', sponsorIncomeBreakdown);
     
-    console.log('✅ Sponsor commission recorded:', commission, 'points');
+    console.log('✅ Sponsor commission recorded:', commission, 'points for', sponsorName);
+    
+    // ✅ Show notification
+    showNotification(`💰 +${commission} points commission sent to ${sponsorName || 'sponsor'}`, 'success');
+    
     updateUI();
 }
 
@@ -6403,7 +6585,20 @@ function updateSponsorIncomeBreakdown(commission, activityType) {
 
 // ✅ SECTION 6: UPDATE AWARD POINTS FUNCTION
 function awardPoints(amount, source, category) {
-    console.log('💰 Awarding points:', { amount, source, category, sponsorId });
+    console.log('💰 Awarding points:', { 
+        amount, 
+        source, 
+        category, 
+        sponsorId, 
+        sponsorName 
+    });
+    
+    // ✅ DEBUG: Check if sponsor exists
+    if (sponsorId && sponsorId !== 'UNKNOWN') {
+        console.log('🎯 Sponsor commission will be added for:', sponsorName);
+    } else {
+        console.log('⚠️ No sponsor found for commission');
+    }
     
     initializeNaNProtection();
     const safeAmount = Math.max(0, Math.round(safeNumber(amount, 0)));
@@ -6415,7 +6610,7 @@ function awardPoints(amount, source, category) {
     
     addTransaction(source, safeAmount, 'earning', category);
     
-    if (sponsorId && sponsorId.trim() !== '' && safeAmount > 0) {
+    if (sponsorId && sponsorId.trim() !== '' && sponsorId !== 'UNKNOWN' && safeAmount > 0) {
         console.log('🎯 Adding sponsor commission for:', sponsorId);
         
         let commissionCategory = category;
@@ -7000,95 +7195,11 @@ function displayUsersFromServer(users) {
                 <td>${regDate}</td>
                 <td>
                     <button class="btn-action btn-view" onclick="viewAdminUserServer('${user.email}', '${user.username}')">View</button>
-                    <button class="btn-action btn-delete" onclick="removeAdminUserServer('${user.id || user.email}', '${user.username}')">Remove</button>
+                    <button class="btn-action btn-edit" onclick="editAdminUser('${user.email}')">Edit</button>
                 </td>
             </tr>
         `;
     });
-    
-    if (users.length === 0) {
-        html += `
-            <tr>
-                <td colspan="8" style="text-align: center; padding: 20px;">
-                    No users found in server database
-                </td>
-            </tr>
-        `;
-    }
-    
-    html += `
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="server-info" style="margin-top: 20px; padding: 10px; background: rgba(0,0,0,0.1); border-radius: 5px; font-size: 12px;">
-                <strong>💡 Server Info:</strong> Showing ${users.length} users from central database
-            </div>
-        </div>
-    `;
-    
-    contentDiv.innerHTML = html;
-}
-
-function displayUsersInAdminTab(registeredUsers) {
-    const contentDiv = document.getElementById('adminContent');
-    if (!contentDiv) return;
-
-    let html = `
-        <div class="admin-tab-content">
-            <div class="users-search-container">
-                <input type="text" class="search-input" id="adminUserSearch" 
-                       placeholder="Search users..." oninput="filterAdminUsers()">
-                <button class="btn btn-primary" onclick="adminRefreshUsers()">🔄 Refresh</button>
-            </div>
-            
-            <div class="users-stats">
-                <div class="stat-card">
-                    <div class="stat-number">${registeredUsers.length}</div>
-                    <div class="stat-label">Total Users</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number">${registeredUsers.reduce((sum, user) => sum + (user.points || 0), 0)}</div>
-                    <div class="stat-label">Total Points</div>
-                </div>
-            </div>
-            
-            <div class="users-table-container">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>#</th>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Points</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="adminUsersTable">
-    `;
-    
-    registeredUsers.forEach((user, index) => {
-        html += `
-            <tr>
-                <td>${index + 1}</td>
-                <td>${user.username || user.id}</td>
-                <td>${user.email}</td>
-                <td>${user.points || 0}</td>
-                <td>
-                    <button class="btn-action btn-view" onclick="viewAdminUser('${user.email}')">View</button>
-                    <button class="btn-action btn-delete" onclick="removeAdminUser('${user.email}')">Remove</button>
-                </td>
-            </tr>
-        `;
-    });
-    
-    if (registeredUsers.length === 0) {
-        html += `
-            <tr>
-                <td colspan="5" style="text-align: center; padding: 20px;">No registered users found</td>
-            </tr>
-        `;
-    }
     
     html += `
                     </tbody>
@@ -7100,127 +7211,27 @@ function displayUsersInAdminTab(registeredUsers) {
     contentDiv.innerHTML = html;
 }
 
-// ✅ नया फ़ंक्शन removeAdminUserServer() जोड़ें
-async function removeAdminUserServer(userId, username) {
-    if (!confirm(`Delete user "${username}" from server database? This cannot be undone!`)) return;
-    
-    try {
-        // ✅ SERVER पर DELETE request भेजें
-        const response = await fetch(`http://localhost:3000/api/delete-user/${userId}`, {
-            method: 'DELETE'
-        });
-        
-        const data = await response.json();
-        
-        if (data.success) {
-            showNotification(`✅ User "${username}" deleted from server!`, 'success');
-            
-            // ✅ Admin Panel refresh करें
-            loadAdminUsersTab();
-            
-            // ✅ LocalStorage से भी हटाएं (अगर मौजूद हो)
-            const registeredUsers = getFromStorage('registeredUsers', []);
-            const updatedUsers = registeredUsers.filter(u => u.email !== username && u.id !== username);
-            saveToStorage('registeredUsers', updatedUsers);
-        } else {
-            showNotification(`❌ Failed to delete user: ${data.message}`, 'error');
-        }
-    } catch (error) {
-        console.error('❌ Error deleting user from server:', error);
-        showNotification('❌ Server delete failed. Try again.', 'error');
-    }
+// ✅ Helper functions for admin panel
+function viewAdminUserServer(email, username) {
+    alert(`Viewing user:\n\nEmail: ${email}\nUsername: ${username}\n\nFeature coming soon!`);
 }
 
-// ✅ नया फ़ंक्शन viewAdminUserServer() जोड़ें
-async function viewAdminUserServer(email, username) {
-    try {
-        // ✅ SERVER से user details fetch करें
-        const response = await fetch(`http://localhost:3000/api/get-user?email=${encodeURIComponent(email)}&username=${encodeURIComponent(username)}`);
-        const data = await response.json();
-        
-        if (data.success && data.user) {
-            const user = data.user;
-            
-            const details = `
-👤 User Details (Server):
-
-📧 Email: ${user.email}
-👤 Username: ${user.username}
-📱 Mobile: ${user.mobile || user.phone || 'N/A'}
-💰 Points: ${user.points || 0}
-📊 Total Earned: ${user.totalEarned || 0}
-👥 Sponsor: ${user.sponsorId || 'None'} (${user.sponsorName || 'No sponsor'})
-📅 Registered: ${user.registration_date || 'N/A'}
-🔑 Last Login: ${user.last_login || 'Never'}
-🎯 Level: ${user.level || 1}
-✅ Tasks Completed: ${user.tasks_completed || 0}
-🔗 Referral Code: ${user.referral_code || 'N/A'}
-
-💾 Source: Central Database
-            `;
-            
-            alert(details);
-        } else {
-            alert('User not found in server database.');
-        }
-    } catch (error) {
-        console.error('Error fetching user from server:', error);
-        alert('Error fetching user details from server.');
-    }
+function editAdminUser(email) {
+    alert(`Edit user: ${email}\n\nFeature coming soon!`);
 }
 
 function adminRefreshUsers() {
     loadAdminUsersTab();
-    logAdminAction('User list refreshed from server');
 }
 
-function viewAdminUser(email) {
-    const registeredUsers = getFromStorage('registeredUsers', []);
-    const user = registeredUsers.find(u => u.email === email);
+function filterAdminUsers() {
+    const searchInput = document.getElementById('adminUserSearch');
+    const searchTerm = searchInput.value.toLowerCase();
+    const rows = document.querySelectorAll('#adminUsersTable tr');
     
-    if (user) {
-        alert(`User Details:\n\nUsername: ${user.username}\nEmail: ${user.email}\nPoints: ${user.points || 0}\nMobile: ${user.mobile || 'N/A'}\nRegistered: ${user.registeredAt || 'Unknown'}`);
-    }
-}
-
-function removeAdminUser(email) {
-    if (!confirm(`Remove user ${email}? This cannot be undone!`)) return;
-    
-    // Remove from registeredUsers
-    const registeredUsers = getFromStorage('registeredUsers', []);
-    const updatedUsers = registeredUsers.filter(u => u.email !== email);
-    saveToStorage('registeredUsers', updatedUsers);
-    
-    // Remove user-specific storage keys
-    const user = registeredUsers.find(u => u.email === email);
-    if (user) {
-        const userId = user.id || user.username;
-        removeUserStorageKeys(userId, email, user.mobile);
-    }
-    
-    logAdminAction(`Removed user: ${email}`);
-    loadAdminUsersTab();
-    showNotification('✅ User removed successfully', 'success');
-}
-
-function removeUserStorageKeys(userId, email, mobile) {
-    const keysToRemove = [];
-    
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        
-        if (key.includes(userId) || 
-            key.includes(email) || 
-            (mobile && key.includes(mobile)) ||
-            key === `miningState_${userId}` ||
-            key === `referralData_${userId}` ||
-            key.startsWith(`freePoolUsed_${userId}`)) {
-            keysToRemove.push(key);
-        }
-    }
-    
-    keysToRemove.forEach(key => {
-        localStorage.removeItem(key);
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
     });
 }
 
@@ -10485,11 +10496,63 @@ function loadUserUniqueId() {
 }
 
 // ==============================================
+// ✅ SPONSOR URL FUNCTIONS
+// ==============================================
+
+function parseAndValidateSponsorFromURL() {
+    console.log('🔍 Parsing sponsor from URL...');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const sponsorId = urlParams.get('ref') || urlParams.get('sponsor') || urlParams.get('referral');
+    
+    if (sponsorId) {
+        console.log('✅ Found sponsor in URL:', sponsorId);
+        
+        // Store in localStorage for later use
+        localStorage.setItem('pendingSponsorId', sponsorId);
+        
+        // Also store in session storage for immediate use
+        sessionStorage.setItem('immediateSponsorId', sponsorId);
+        
+        return sponsorId;
+    }
+    
+    return null;
+}
+
+function forceShowSponsorFromURL() {
+    console.log('🔄 Force checking sponsor from URL...');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasReferral = urlParams.has('ref') || urlParams.has('sponsor') || urlParams.has('referral');
+    
+    if (hasReferral) {
+        const sponsorId = urlParams.get('ref') || urlParams.get('sponsor') || urlParams.get('referral');
+        console.log('🎯 Force showing registration for sponsor:', sponsorId);
+        
+        // Clear any existing user data if not registered
+        const currentUser = getFromStorage('currentUser');
+        if (!currentUser) {
+            // Show registration modal with sponsor pre-filled
+            setTimeout(() => {
+                showRegistrationModalWithCompleteSponsorDetails();
+            }, 1500);
+        }
+    }
+}
+
+// ==============================================
 // ✅ MAIN APP INITIALIZATION
 // ==============================================
 
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 TapEarn App Initializing with All Features...');
+    
+    // ✅ पहले URL parameters check करें
+    parseAndValidateSponsorFromURL();
+    
+    // ✅ Emergency force show भी करें
+    forceShowSponsorFromURL();
     
     // Initialize with new system
     initializeAppWithNewSystem();
@@ -10499,12 +10562,36 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize referral codes database
     initializeReferralCodesDatabase();
+
+    // ✅ FIX: Load sponsor data first
+
+     // loadSponsorData();  
+     initializeSponsorshipSystem();
+    
+    // Check for referral URL
+    checkAndProcessReferralURL();
+    
+    // Check URL parameters
+    checkURLParameters();
+    ensureUserRegistered();
     
     // Check server connection
     checkServerConnection();
     
     // Check registration status
     const isUserRegistered = checkRegistrationStatus();
+    
+    // ✅ अगर URL में referral है, तो registration modal दिखाएं
+    const urlParams = new URLSearchParams(window.location.search);
+    const hasReferral = urlParams.has('ref') || urlParams.has('sponsor') || urlParams.has('referral');
+    
+    const currentUser = getFromStorage('currentUser');
+    if (hasReferral && !currentUser) {
+        console.log('🎯 Opening registration for referral user');
+        setTimeout(() => {
+            showRegistrationModalWithCompleteSponsorDetails();
+        }, 2000);
+    }
     
     if (isUserRegistered) {
         console.log('✅ User already registered, loading data...');
@@ -10514,17 +10601,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Check and reset free pool tasks
         checkAndResetFreePoolTasks();
-
-        // ✅ Add this line to check URL parameters
-        setTimeout(checkURLParameters, 800);
-
-        // Check URL parameters
-        setTimeout(checkURLParameters, 1000);
         
-        // ✅ Auto-complete login activity
-        autoCompleteLoginActivity();
-
-       
+        // Check URL parameters
+        setTimeout(checkURLParameters, 800);
+        
+        // Auto-complete login activity
+        setTimeout(autoCompleteLoginActivity, 1000);
         
         // Welcome notification
         setTimeout(() => {
@@ -10955,3 +11037,108 @@ window.testAdminButton = function() {
     injectAdminButtonOptimized();
     return 'Admin button test completed. Check console.';
 };
+
+// ==============================================
+// ✅ MISSING FUNCTIONS - Add these if not already present
+// ==============================================
+
+function showRegistrationModalWithCompleteSponsorDetails() {
+    console.log('📝 Opening registration modal with sponsor details...');
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const sponsorId = urlParams.get('ref') || urlParams.get('sponsor') || urlParams.get('referral');
+    
+    if (sponsorId) {
+        // Store sponsor ID
+        localStorage.setItem('pendingSponsorId', sponsorId);
+        sessionStorage.setItem('immediateSponsorId', sponsorId);
+        
+        // Show registration modal
+        showRegistrationModal();
+        
+        // Pre-fill sponsor field if it exists
+        setTimeout(() => {
+            const sponsorInput = document.getElementById('sponsorId');
+            if (sponsorInput) {
+                sponsorInput.value = sponsorId;
+                sponsorInput.disabled = true;
+                console.log('✅ Sponsor field pre-filled with:', sponsorId);
+            }
+        }, 500);
+    }
+}
+
+// Ensure user is registered function
+function ensureUserRegistered() {
+    const currentUser = getFromStorage('currentUser');
+    if (!currentUser || !currentUser.id) {
+        console.log('⚠️ No user found, ensuring registration...');
+        return false;
+    }
+    return true;
+}
+
+// ✅ DEBUG FUNCTION: Check sponsor commission status
+function debugSponsorCommission() {
+    console.log('🔍 DEBUG - Sponsor Commission Status:');
+    console.log('1. Current User:', userId);
+    console.log('2. Sponsor ID:', sponsorId);
+    console.log('3. Sponsor Name:', sponsorName);
+    console.log('4. Sponsor Unique ID:', sponsorUniqueId);
+    console.log('5. Sponsor Referral Code:', sponsorReferralCode);
+    console.log('6. User Registered:', userRegistered);
+    console.log('7. Sponsor Commission Earned:', sponsorCommissionEarned);
+    console.log('8. User Generated Sponsor Income:', userGeneratedSponsorIncome);
+    console.log('9. Sponsor Income Breakdown:', sponsorIncomeBreakdown);
+    
+    // Check in database
+    const registeredUsers = getFromStorage('registeredUsers', []);
+    const sponsorInDB = registeredUsers.find(user => user.uniqueId === sponsorId);
+    console.log('10. Sponsor in database:', sponsorInDB ? 'Found' : 'Not Found');
+    
+    if (sponsorInDB) {
+        console.log('Sponsor details:', {
+            username: sponsorInDB.username,
+            points: sponsorInDB.points,
+            sponsorEarnings: sponsorInDB.sponsorEarnings,
+            commissionHistory: sponsorInDB.sponsorCommissionHistory?.length || 0
+        });
+    }
+    
+    alert(`Sponsor Commission Debug:\n\nSponsor ID: ${sponsorId || 'Not Set'}\nSponsor Name: ${sponsorName || 'Not Set'}\n\nCheck console for full details.`);
+}
+
+// ✅ TEST: Simulate commission earning
+function testSponsorCommission() {
+    if (!userRegistered) {
+        showNotification('❌ Please register first', 'warning');
+        return;
+    }
+    
+    if (!sponsorId || sponsorId === 'UNKNOWN') {
+        showNotification('❌ No sponsor set', 'warning');
+        return;
+    }
+    
+    // Test video commission
+    const testAmount = 100;
+    const testActivity = 'Test Video Watch';
+    const commissionRate = getCommissionRate('video_watch');
+    const commission = Math.round(testAmount * commissionRate);
+    
+    console.log('🧪 Testing Sponsor Commission:');
+    console.log('- Amount:', testAmount);
+    console.log('- Commission Rate:', commissionRate);
+    console.log('- Commission:', commission);
+    console.log('- Sponsor ID:', sponsorId);
+    
+    // Update local user points (test के लिए)
+    userPoints += testAmount;
+    totalPointsEarned += testAmount;
+    
+    // Add commission
+    addSponsorCommission(testAmount, testActivity, commissionRate, 'video_watch');
+    
+    showNotification(`🧪 Test: ${testAmount} points earned, ${commission} commission to sponsor`, 'info');
+    debugSponsorCommission();
+}
