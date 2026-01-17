@@ -5618,6 +5618,653 @@
             animation: highlight 1.5s ease-out;
         }
 
+        /* ✅ SPONSOR AUTO-FILL SECTION STYLES */
+        .sponsor-auto-fill-section {
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid #4CAF50;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.1);
+        }
+
+        .section-header-with-icon {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .header-icon {
+            font-size: 32px;
+            background: #4CAF50;
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+
+        .header-content {
+            flex-grow: 1;
+        }
+
+        .lock-badge {
+            background: linear-gradient(135deg, #ff0000, #cc0000);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* 4 Boxes Grid */
+        .four-boxes-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .four-boxes-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .four-boxes-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .info-box {
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s;
+        }
+
+        .info-box:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .box-1 { border-top: 4px solid #4CAF50; }
+        .box-2 { border-top: 4px solid #2196F3; }
+        .box-3 { border-top: 4px solid #FF9800; }
+        .box-4 { border-top: 4px solid #9C27B0; }
+
+        .box-top {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .box-icon {
+            font-size: 24px;
+            margin-right: 10px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .box-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #FFA726;
+        }
+
+        .box-middle {
+            margin: 12px 0;
+        }
+
+        .box-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: white;
+            word-break: break-all;
+        }
+
+        .box-value.highlight {
+            color: #FFD700;
+            font-weight: 800;
+        }
+
+        .box-bottom {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .box-status {
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: #4CAF50;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-dot.gold {
+            background: #FFD700;
+        }
+
+        /* Sponsor Note Box */
+        .sponsor-note-box {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid #FFD700;
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .note-icon {
+            font-size: 24px;
+            color: #FFD700;
+            flex-shrink: 0;
+        }
+
+        .note-text {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.5;
+        }
+
+        /* Personal Form Section */
+        .personal-form-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(33, 150, 243, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* ============================================== */
+        /* ✅ EMBEDDED SPONSOR DASHBOARD CSS - PROFILE PAGE */
+        /* ============================================== */
+
+        /* Sponsor Dashboard Main Section */
+        .sponsor-dashboard-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sponsor-dashboard-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0.3;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-header h3 {
+            margin: 0;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-refresh {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-refresh:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .btn-refresh:active {
+            transform: scale(0.95);
+        }
+
+        /* Commission Stats Grid */
+        .commission-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .commission-stat-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .commission-stat-card:hover {
+            background: rgba(255,255,255,0.15);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .total-commission {
+            border-left: 4px solid #4CAF50;
+        }
+
+        .today-commission {
+            border-left: 4px solid #2196F3;
+        }
+
+        .monthly-commission {
+            border-left: 4px solid #FF9800;
+        }
+
+        .referred-users {
+            border-left: 4px solid #9C27B0;
+        }
+
+        .stat-icon {
+            font-size: 24px;
+            background: rgba(255,255,255,0.2);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .stat-content {
+            flex: 1;
+        }
+
+        .stat-content .stat-value {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .stat-content .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+            font-weight: 400;
+        }
+
+        /* Referred Users Mini Section */
+        .referred-users-mini {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            z-index: 1;
+        }
+
+        .referred-users-mini h4 {
+            margin: 0 0 15px 0;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .referred-users-mini h4::before {
+            content: '👥';
+        }
+
+        .referred-users-list-mini {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .referred-user-item-mini {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 10px;
+            gap: 12px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .referred-user-item-mini:hover {
+            background: rgba(0,0,0,0.3);
+            transform: translateX(5px);
+        }
+
+        .user-number {
+            background: white;
+            color: #764ba2;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+        }
+
+        .user-info-mini {
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .user-name-mini {
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 3px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-email-mini {
+            font-size: 11px;
+            opacity: 0.8;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-commission-mini {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 12px;
+            flex-shrink: 0;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .btn-view-all-referrals {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 100%;
+            padding: 14px;
+            border-radius: 10px;
+            margin-top: 15px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-view-all-referrals:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        /* Sponsor Quick Actions */
+        .sponsor-quick-actions {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .sponsor-action-btn {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 15px 5px;
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+            text-align: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .sponsor-action-btn:hover {
+            background: rgba(255,255,255,0.25);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .sponsor-action-btn:active {
+            transform: translateY(-1px);
+        }
+
+        .action-icon {
+            font-size: 22px;
+            background: rgba(255,255,255,0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .action-text {
+            font-size: 12px;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        /* No Referred Users State */
+        .no-referred-users-mini {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .no-users-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+            opacity: 0.7;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .no-users-text {
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+
+        .no-users-desc {
+            font-size: 13px;
+            opacity: 0.8;
+            line-height: 1.4;
+            max-width: 250px;
+            margin: 0 auto;
+        }
+
+        /* Loading Animation for Dashboard */
+        .dashboard-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+        }
+
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Empty State for Commission History */
+        .empty-commission-state {
+            text-align: center;
+            padding: 30px 20px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .empty-commission-icon {
+            font-size: 40px;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+
+        .empty-commission-text {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .empty-commission-desc {
+            font-size: 12px;
+            opacity: 0.6;
+        }
+
+        /* Badge for New Referrals */
+        .new-referral-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #FF4757;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Tooltip for Stats */
+        .stat-tooltip {
+            position: relative;
+            cursor: help;
+        }
+
+        .stat-tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            margin-bottom: 5px;
+        }
+
+        .stat-tooltip:hover::before {
+            content: '';
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 5px solid transparent;
+            border-top-color: rgba(0,0,0,0.8);
+            margin-bottom: -5px;
+        }
+
+        /* Performance Optimization */
+        .sponsor-dashboard-section {
+            will-change: transform;
+            contain: content;
+        }
+
+        .commission-stat-card,
+        .sponsor-action-btn,
+        .referred-user-item-mini {
+            will-change: transform, background-color;
+        }
+
         /* Animations */
         @keyframes slideIn {
             from {
@@ -5628,12 +6275,6 @@
                 transform: translateX(0);
                 opacity: 1;
             }
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
         }
 
         @keyframes fadeIn {
@@ -5750,6 +6391,16 @@
             .step-line {
                 width: 20px;
             }
+            
+            .section-header-with-icon {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .lock-badge {
+                align-self: flex-end;
+            }
         }
 
         @media (max-width: 768px) {
@@ -5813,84 +6464,116 @@
             .sharing-buttons-grid {
                 grid-template-columns: 1fr;
             }
-        }
-        
-        /* 🎯 CSS FOR BETTER BUTTONS */
-        .sharing-buttons-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin: 15px 0;
-        }
-
-        .share-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 12px;
-            padding: 15px 10px;
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .share-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .share-btn span:first-child {
-            font-size: 24px;
-            margin-bottom: 5px;
-        }
-
-        .share-btn span:nth-child(2) {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 3px;
-        }
-
-        .share-btn small {
-            font-size: 10px;
-            opacity: 0.7;
-        }
-
-        /* Button Colors */
-        .copy-btn { background: linear-gradient(135deg, #4CAF50, #45a049); }
-        .whatsapp-btn { background: linear-gradient(135deg, #25D366, #128C7E); }
-        .telegram-btn { background: linear-gradient(135deg, #0088cc, #006699); }
-        .universal-btn { background: linear-gradient(135deg, #667eea, #764ba2); }
-
-        /* Link Preview */
-        .link-preview {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 12px;
-            margin-top: 15px;
-        }
-
-        .preview-label {
-            font-size: 12px;
-            opacity: 0.8;
-            margin-bottom: 5px;
+            
+            .sponsor-dashboard-section {
+                padding: 15px;
+                margin: 15px 0;
+                border-radius: 12px;
+            }
+            
+            .section-header h3 {
+                font-size: 16px;
+            }
+            
+            .commission-stats-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .commission-stat-card {
+                padding: 12px;
+            }
+            
+            .stat-icon {
+                width: 45px;
+                height: 45px;
+                font-size: 22px;
+            }
+            
+            .stat-content .stat-value {
+                font-size: 18px;
+            }
+            
+            .referred-users-mini {
+                padding: 15px;
+            }
+            
+            .referred-user-item-mini {
+                padding: 10px 12px;
+            }
+            
+            .user-commission-mini {
+                padding: 5px 10px;
+                font-size: 11px;
+            }
+            
+            .sponsor-quick-actions {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            
+            .sponsor-action-btn {
+                padding: 12px 5px;
+            }
+            
+            .action-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 20px;
+            }
+            
+            .action-text {
+                font-size: 11px;
+            }
         }
 
-        .preview-link {
-            font-size: 12px;
-            word-break: break-all;
-            color: #4CAF50;
-            font-family: monospace;
-            margin-bottom: 5px;
+        @media (max-width: 480px) {
+            .sponsor-dashboard-section {
+                padding: 12px;
+                margin: 12px 0;
+            }
+            
+            .section-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .btn-refresh {
+                align-self: flex-end;
+            }
+            
+            .sponsor-quick-actions {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            
+            .user-email-mini {
+                font-size: 10px;
+            }
         }
 
-        .preview-note {
-            font-size: 11px;
-            color: #FFD700;
-            text-align: center;
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            .sponsor-dashboard-section {
+                background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            }
+            
+            .commission-stat-card {
+                background: rgba(255,255,255,0.05);
+            }
+            
+            .referred-users-mini {
+                background: rgba(255,255,255,0.05);
+            }
+            
+            .referred-user-item-mini {
+                background: rgba(0,0,0,0.3);
+            }
+            
+            .sponsor-action-btn {
+                background: rgba(255,255,255,0.08);
+            }
         }
     </style>
 </head>
@@ -6055,51 +6738,51 @@
                         <p>Manage your account, rewards, and settings</p>
                         
                         <!-- User Status Card - Will be dynamically updated by JavaScript -->
-<div id="userStatusCard" class="user-status-card" onclick="handleUserCardClick()">
-    <div class="user-info-mini">
-        <div class="user-avatar">👤</div>
-        <div class="user-details">
-            <div class="user-name" id="profileUserName">Guest User</div>
-            <div class="user-points" id="profileUserPoints">0 USDT</div>
-        </div>
-    </div>
-    <div class="btn-register">
-        📝 Register Now
-    </div>
-</div>
+                        <div id="userStatusCard" class="user-status-card" onclick="handleUserCardClick()">
+                            <div class="user-info-mini">
+                                <div class="user-avatar">👤</div>
+                                <div class="user-details">
+                                    <div class="user-name" id="profileUserName">Guest User</div>
+                                    <div class="user-points" id="profileUserPoints">0 USDT</div>
+                                </div>
+                            </div>
+                            <div class="btn-register">
+                                📝 Register Now
+                            </div>
+                        </div>
 
-<!-- New Sponsor Dashboard Button -->
-<div class="profile-option" onclick="showSponsorDashboard()">
-    <div class="option-icon">🎯</div>
-    <div class="option-name">Sponsor Dashboard</div>
-    <div class="option-desc">Track your referral earnings</div>
-    <div class="option-arrow">→</div>
-</div>
+                        <!-- New Sponsor Dashboard Button -->
+                        <div class="profile-option" onclick="showSponsorDashboard()">
+                            <div class="option-icon">🎯</div>
+                            <div class="option-name">Sponsor Dashboard</div>
+                            <div class="option-desc">Track your referral earnings</div>
+                            <div class="option-arrow">→</div>
+                        </div>
 
-<!-- प्रोफाइल में नया Unique ID Display -->
-<div id="profileInfoSection" class="profile-info-section" style="margin-bottom: 20px;">
-    <!-- यूजर का यूनिक ID -->
-    <div class="unique-id-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1);">
-        <div class="card-icon">🆔</div>
-        <div class="card-content" style="flex: 1;">
-            <div class="card-label" style="font-size: 12px; opacity: 0.8;">Your Unique ID</div>
-            <div class="card-value" id="uniqueIdDisplay" style="font-size: 16px; font-weight: bold; color: #FFD700;">--</div>
-            <div class="card-sub" id="referralCodeDisplay" style="font-size: 11px; opacity: 0.7;">Referral: --</div>
-        </div>
-        <div class="card-action" onclick="copyUniqueId()" style="font-size: 20px; cursor: pointer;">📋</div>
-    </div>
-    
-    <!-- स्पॉन्सर का ID -->
-    <div class="sponsor-id-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1);">
-        <div class="card-icon">👥</div>
-        <div class="card-content" style="flex: 1;">
-            <div class="card-label" style="font-size: 12px; opacity: 0.8;">Your Sponsor</div>
-            <div class="card-value" id="sponsorNameDisplay" style="font-size: 14px; font-weight: bold; color: #4CAF50;">No Sponsor</div>
-            <div class="card-sub" id="sponsorIdDisplay" style="font-size: 11px; opacity: 0.7;">ID: --</div>
-        </div>
-        <div class="card-action" onclick="copySponsorId()" style="font-size: 20px; cursor: pointer;">📋</div>
-    </div>
-</div>
+                        <!-- प्रोफाइल में नया Unique ID Display -->
+                        <div id="profileInfoSection" class="profile-info-section" style="margin-bottom: 20px;">
+                            <!-- यूजर का यूनिक ID -->
+                            <div class="unique-id-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                                <div class="card-icon">🆔</div>
+                                <div class="card-content" style="flex: 1;">
+                                    <div class="card-label" style="font-size: 12px; opacity: 0.8;">Your Unique ID</div>
+                                    <div class="card-value" id="uniqueIdDisplay" style="font-size: 16px; font-weight: bold; color: #FFD700;">--</div>
+                                    <div class="card-sub" id="referralCodeDisplay" style="font-size: 11px; opacity: 0.7;">Referral: --</div>
+                                </div>
+                                <div class="card-action" onclick="copyUniqueId()" style="font-size: 20px; cursor: pointer;">📋</div>
+                            </div>
+                            
+                            <!-- स्पॉन्सर का ID -->
+                            <div class="sponsor-id-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 15px; display: flex; align-items: center; gap: 15px; border: 1px solid rgba(255,255,255,0.1);">
+                                <div class="card-icon">👥</div>
+                                <div class="card-content" style="flex: 1;">
+                                    <div class="card-label" style="font-size: 12px; opacity: 0.8;">Your Sponsor</div>
+                                    <div class="card-value" id="sponsorNameDisplay" style="font-size: 14px; font-weight: bold; color: #4CAF50;">No Sponsor</div>
+                                    <div class="card-sub" id="sponsorIdDisplay" style="font-size: 11px; opacity: 0.7;">ID: --</div>
+                                </div>
+                                <div class="card-action" onclick="copySponsorId()" style="font-size: 20px; cursor: pointer;">📋</div>
+                            </div>
+                        </div>
                         
                         <div class="platforms-grid">
                             <div class="platform-card" onclick="showCashier()">
@@ -6144,88 +6827,75 @@
                         </div>
 
                         <!-- Enhanced Sponsor Section - Now matching profile theme -->
-                        <div class="sponsor-dashboard">
-                            <div class="sponsor-header">
-                                <h3>🎯 Sponsor Earnings</h3>
-                                <button class="btn-refresh">🔄 Refresh</button>
+                        <div class="sponsor-dashboard-section">
+                            <div class="section-header">
+                                <h3>🎯 Sponsor Dashboard</h3>
+                                <button class="btn-refresh" onclick="refreshSponsorDashboard()">
+                                    <span>🔄</span> Refresh
+                                </button>
                             </div>
                             
                             <div class="commission-stats-grid">
-                                <div class="commission-stat-card">
-                                    <div class="stat-icon">👥</div>
-                                    <div class="stat-content">
-                                        <div class="stat-value" id="directReferralsCount">0</div>
-                                        <div class="stat-label">Direct Referrals</div>
-                                    </div>
-                                </div>
-                                <div class="commission-stat-card">
-                                    <div class="stat-icon">📊</div>
-                                    <div class="stat-content">
-                                        <div class="stat-value" id="teamSizeCount">0</div>
-                                        <div class="stat-label">Team Size</div>
-                                    </div>
-                                </div>
-                                <div class="commission-stat-card">
+                                <div class="commission-stat-card total-commission">
                                     <div class="stat-icon">💰</div>
                                     <div class="stat-content">
-                                        <div class="stat-value" id="totalCommission">0</div>
+                                        <div class="stat-value" id="totalCommissionDisplay">0</div>
                                         <div class="stat-label">Total Commission</div>
                                     </div>
                                 </div>
-                                <div class="commission-stat-card">
+                                <div class="commission-stat-card today-commission">
+                                    <div class="stat-icon">📊</div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="todayCommissionDisplay">0</div>
+                                        <div class="stat-label">Today's Commission</div>
+                                    </div>
+                                </div>
+                                <div class="commission-stat-card monthly-commission">
                                     <div class="stat-icon">📈</div>
                                     <div class="stat-content">
-                                        <div class="stat-value" id="monthlyCommission">0</div>
+                                        <div class="stat-value" id="monthlyCommissionDisplay">0</div>
                                         <div class="stat-label">This Month</div>
                                     </div>
                                 </div>
-                            </div>
-
-                            <div class="sponsor-commission-breakdown">
-                                <h4>Commission Breakdown</h4>
-                                <div class="sponsor-breakdown-grid">
-                                    <div class="sponsor-breakdown-item">
-                                        <div class="sponsor-breakdown-icon">👥</div>
-                                        <div class="sponsor-breakdown-info">
-                                            <div class="sponsor-breakdown-category">Direct Referrals</div>
-                                            <div class="sponsor-breakdown-amount" id="directCommission">0 points</div>
-                                        </div>
-                                    </div>
-                                    <div class="sponsor-breakdown-item">
-                                        <div class="sponsor-breakdown-icon">🏆</div>
-                                        <div class="sponsor-breakdown-info">
-                                            <div class="sponsor-breakdown-category">Team Bonuses</div>
-                                            <div class="sponsor-breakdown-amount" id="teamCommission">0 points</div>
-                                        </div>
-                                    </div>
-                                    <div class="sponsor-breakdown-item">
-                                        <div class="sponsor-breakdown-icon">⭐</div>
-                                        <div class="sponsor-breakdown-info">
-                                            <div class="sponsor-breakdown-category">Performance Rewards</div>
-                                            <div class="sponsor-breakdown-amount" id="performanceCommission">0 points</div>
-                                        </div>
-                                    </div>
-                                    <div class="sponsor-breakdown-item">
-                                        <div class="sponsor-breakdown-icon">🎯</div>
-                                        <div class="sponsor-breakdown-info">
-                                            <div class="sponsor-breakdown-category">Special Bonuses</div>
-                                            <div class="sponsor-breakdown-amount" id="specialCommission">0 points</div>
-                                        </div>
+                                <div class="commission-stat-card referred-users">
+                                    <div class="stat-icon">👥</div>
+                                    <div class="stat-content">
+                                        <div class="stat-value" id="referredUsersDisplay">0</div>
+                                        <div class="stat-label">Referred Users</div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="sponsor-recent-activities">
-                                <h4>Recent Sponsor Activities</h4>
-                                <div class="sponsor-activities-list" id="sponsorActivitiesList">
-                                    <div class="no-sponsor-activities">
-                                        <div class="no-sponsor-activities-icon">📊</div>
-                                        <div class="no-sponsor-activities-text">No recent sponsor activities</div>
+                            <!-- Referred Users Mini Section -->
+                            <div class="referred-users-mini">
+                                <h4>Recently Referred Users</h4>
+                                <div class="referred-users-list-mini" id="recentReferredUsers">
+                                    <div class="no-referred-users-mini">
+                                        <div class="no-users-icon">👥</div>
+                                        <div class="no-users-text">No referred users yet</div>
+                                        <div class="no-users-desc">Start sharing your referral link to earn commissions!</div>
                                     </div>
                                 </div>
+                                <button class="btn-view-all-referrals" onclick="viewAllReferredUsers()">
+                                    <span>👁️</span> View All Referred Users
+                                </button>
                             </div>
 
-                            <button class="btn-view-full-history">View Full Commission History</button>
+                            <!-- Sponsor Quick Actions -->
+                            <div class="sponsor-quick-actions">
+                                <div class="sponsor-action-btn" onclick="shareReferralLink()">
+                                    <div class="action-icon">🔗</div>
+                                    <div class="action-text">Share Link</div>
+                                </div>
+                                <div class="sponsor-action-btn" onclick="viewCommissionHistory()">
+                                    <div class="action-icon">📊</div>
+                                    <div class="action-text">Commission History</div>
+                                </div>
+                                <div class="sponsor-action-btn" onclick="viewTeamStats()">
+                                    <div class="action-icon">🏆</div>
+                                    <div class="action-text">Team Stats</div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- रेफरल शेयरिंग सेक्शन -->
@@ -6424,6 +7094,109 @@
         </div>
     </div>
 
+    <!-- ✅ ADDITIONAL CSS FOR ENHANCED SPONSOR DISPLAY -->
+    <style>
+        .sponsor-details-complete {
+            background: rgba(76, 175, 80, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #4CAF50;
+        }
+
+        .sponsor-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(76, 175, 80, 0.1);
+        }
+
+        .sponsor-detail-row:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            font-size: 14px;
+            flex: 1;
+        }
+
+        .detail-value {
+            color: #4CAF50;
+            font-weight: 600;
+            font-size: 14px;
+            flex: 2;
+            text-align: right;
+        }
+
+        .detail-value.highlight {
+            color: #2196F3;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+        .detail-value.code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #FF5722;
+        }
+
+        .sponsor-message {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid #FFC107;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 15px 0;
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .sponsor-message .message-icon {
+            font-size: 20px;
+            margin-right: 10px;
+            color: #FF9800;
+        }
+
+        .sponsor-message .message-text {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+            line-height: 1.4;
+        }
+
+        .sponsor-benefits {
+            background: rgba(33, 150, 243, 0.05);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            border: 1px dashed #2196F3;
+        }
+
+        .sponsor-benefits h6 {
+            color: #2196F3;
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-size: 15px;
+        }
+
+        .sponsor-benefits ul {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 13px;
+        }
+
+        .sponsor-benefits li {
+            margin-bottom: 6px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+
     <!-- ✅ UPDATED BROADCAST FUNCTIONS FOR MAIN APP -->
     <script>
     // ✅ Updated function to save user and broadcast universally
@@ -6548,16 +7321,55 @@
     // ✅ Show Sponsor Dashboard
     function showSponsorDashboard() {
         // Scroll to the sponsor dashboard section
-        const sponsorSection = document.querySelector('.sponsor-dashboard');
+        const sponsorSection = document.querySelector('.sponsor-dashboard-section');
         if (sponsorSection) {
             sponsorSection.scrollIntoView({ behavior: 'smooth' });
+        }
+        // Update dashboard data
+        refreshSponsorDashboard();
+    }
+    
+    // ✅ Refresh Sponsor Dashboard
+    function refreshSponsorDashboard() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        const referredUsers = JSON.parse(localStorage.getItem('referredUsers') || '[]');
+        const userReferred = referredUsers.filter(user => user.sponsorId === currentUser.uniqueId);
+        
+        // Update commission displays
+        document.getElementById('totalCommissionDisplay').textContent = (currentUser.totalCommission || 0) + ' USDT';
+        document.getElementById('todayCommissionDisplay').textContent = (currentUser.todayCommission || 0) + ' USDT';
+        document.getElementById('monthlyCommissionDisplay').textContent = (currentUser.monthlyCommission || 0) + ' USDT';
+        document.getElementById('referredUsersDisplay').textContent = userReferred.length;
+        
+        // Update recent referred users
+        const recentReferredUsers = document.getElementById('recentReferredUsers');
+        if (userReferred.length > 0) {
+            const recentUsers = userReferred.slice(0, 3); // Show only 3 recent users
+            recentReferredUsers.innerHTML = recentUsers.map((user, index) => `
+                <div class="referred-user-item-mini">
+                    <div class="user-number">${index + 1}</div>
+                    <div class="user-info-mini">
+                        <div class="user-name-mini">${user.username || 'User'}</div>
+                        <div class="user-email-mini">${user.email || 'No email'}</div>
+                    </div>
+                    <div class="user-commission-mini">+${user.commission || 50}</div>
+                </div>
+            `).join('');
+        } else {
+            recentReferredUsers.innerHTML = `
+                <div class="no-referred-users-mini">
+                    <div class="no-users-icon">👥</div>
+                    <div class="no-users-text">No referred users yet</div>
+                    <div class="no-users-desc">Start sharing your referral link to earn commissions!</div>
+                </div>
+            `;
         }
     }
     
     // ✅ Generate full referral link function
     function generateFullReferralLink() {
         const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        const referralCode = currentUser.referralCode || 'GET-CODE';
+        const referralCode = currentUser.referralCode || currentUser.uniqueId || 'GET-CODE';
         return `https://tapearn.com/ref/${referralCode}`;
     }
     
@@ -6583,12 +7395,6 @@
         navigator.clipboard.writeText(referralLink).then(() => {
             alert('Referral link copied to clipboard!');
         });
-    }
-    
-    // ✅ Show more sharing options function
-    function showMoreSharingOptions() {
-        // Implement more sharing options as needed
-        alert('More sharing options coming soon!');
     }
     
     // ✅ New sharing functions
@@ -6635,6 +7441,15 @@
         
         if (currentUser.email) {
             // Update unique ID display
+            if (!currentUser.uniqueId) {
+                currentUser.uniqueId = 'TAP-' + Math.floor(Math.random() * 10000);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            if (!currentUser.referralCode) {
+                currentUser.referralCode = 'REF-' + Math.floor(Math.random() * 1000);
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+            }
+            
             document.getElementById('uniqueIdDisplay').textContent = currentUser.uniqueId || 'TAP-' + Math.floor(Math.random() * 10000);
             document.getElementById('referralCodeDisplay').textContent = 'Referral: ' + (currentUser.referralCode || '--');
             
@@ -6648,9 +7463,41 @@
             
             // Show referral sharing section
             document.getElementById('referralSharingSection').style.display = 'block';
+            
+            // Update user status card
+            document.getElementById('profileUserName').textContent = currentUser.username || 'User';
+            document.getElementById('profileUserPoints').textContent = (currentUser.usdtWallet || 0) + ' USDT';
+            document.getElementById('userLevel').textContent = currentUser.level || 'Member';
+            document.getElementById('walletPoints').textContent = currentUser.usdtWallet || 0;
+            document.getElementById('profileTotalPoints').textContent = currentUser.usdtWallet || 0;
+            
+            // Update register button to profile
+            const registerBtn = document.querySelector('#userStatusCard .btn-register');
+            if (registerBtn) {
+                registerBtn.textContent = '👤 Profile';
+                registerBtn.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
+            }
         } else {
             document.getElementById('referralSharingSection').style.display = 'none';
         }
+    }
+    
+    // ✅ Handle User Card Click
+    function handleUserCardClick() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        if (currentUser.email) {
+            // User is logged in, show profile options
+            showUserProfile();
+        } else {
+            // User is not logged in, show registration
+            showRegistrationModal();
+        }
+    }
+    
+    // ✅ Show User Profile
+    function showUserProfile() {
+        // Show user info in modal or navigate to profile details
+        alert('User profile view coming soon!');
     }
     
     // ✅ Example usage when user registers:
@@ -6666,9 +7513,58 @@
     
     await onUserRegistered(newUser);
     */
+   
+   // ✅ Check URL Parameters for sponsor ID
+   function checkURLParameters() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const sponsorId = urlParams.get('ref');
+        const sponsorName = urlParams.get('sponsor');
+        
+        if (sponsorId || sponsorName) {
+            // Store sponsor info in localStorage
+            localStorage.setItem('pendingSponsorId', sponsorId || '');
+            localStorage.setItem('pendingSponsorName', sponsorName || '');
+            
+            // Auto-show registration modal if not logged in
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (!currentUser.email) {
+                setTimeout(() => {
+                    showRegistrationModal();
+                }, 1000);
+            }
+        }
+    }
+    
+    // ✅ Initialize profile info display on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        updateProfileInfoDisplay();
+        checkURLParameters();
+        refreshSponsorDashboard();
+    });
+    
+    // ✅ Initialize navigation
+    function switchTab(tabName) {
+        // Hide all content pages
+        document.querySelectorAll('.content-page').forEach(page => {
+            page.classList.remove('active');
+        });
+        
+        // Remove active class from all nav buttons
+        document.querySelectorAll('.nav-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        // Show selected tab content
+        document.getElementById(tabName + 'Content').classList.add('active');
+        
+        // Add active class to clicked nav button
+        event.target.closest('.nav-btn').classList.add('active');
+    }
     </script>
 
+    <!-- Main JavaScript File -->
     <script src="app.js"></script>
+    <!-- Admin Panel Integration -->
     <script src="admin-panel-integration.js"></script>
 
     <!-- Admin Test Button (Debugging) -->
@@ -6693,9 +7589,140 @@
         alert('Admin system test complete. Check console for details.');
     }
     
-    // Initialize profile info display
+    // Check if user is authorized for admin
+    function isUserAuthorizedForAdmin() {
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        return currentUser.email === 'admin@tapearn.com' || currentUser.isAdmin === true;
+    }
+    
+    // Inject admin button
+    function injectAdminButtonOptimized() {
+        if (isUserAuthorizedForAdmin()) {
+            const header = document.querySelector('.header-content');
+            if (header && !document.querySelector('.admin-header-btn')) {
+                const adminBtn = document.createElement('div');
+                adminBtn.className = 'admin-header-btn';
+                adminBtn.innerHTML = `
+                    <button onclick="showAdminPanel()" 
+                            style="background: #ff0000; color: white; border: none; padding: 8px 15px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 12px;">
+                        ⚙️ Admin
+                    </button>
+                `;
+                header.appendChild(adminBtn);
+            }
+        }
+    }
+    
+    // Show admin panel
+    function showAdminPanel() {
+        // Create admin modal if not exists
+        if (!document.getElementById('adminModal')) {
+            const adminModal = document.createElement('div');
+            adminModal.id = 'adminModal';
+            adminModal.className = 'modal admin-modal';
+            adminModal.innerHTML = `
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h3>⚙️ Admin Panel</h3>
+                        <button class="modal-close" onclick="closeAdminPanel()">×</button>
+                    </div>
+                    <div class="admin-content">
+                        <div class="admin-tabs">
+                            <button class="admin-tab active" onclick="switchAdminTab('users')">👥 Users</button>
+                            <button class="admin-tab" onclick="switchAdminTab('storage')">💾 Storage</button>
+                            <button class="admin-tab" onclick="switchAdminTab('tools')">🛠️ Tools</button>
+                            <button class="admin-tab" onclick="switchAdminTab('danger')">⚠️ Danger Zone</button>
+                        </div>
+                        <div id="adminTabContent">
+                            <!-- Admin content will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(adminModal);
+        }
+        
+        // Show admin modal
+        document.getElementById('adminModal').classList.add('active');
+        loadUsersTab(); // Load default tab
+    }
+    
+    // Close admin panel
+    function closeAdminPanel() {
+        document.getElementById('adminModal').classList.remove('active');
+    }
+    
+    // Switch admin tab
+    function switchAdminTab(tabName) {
+        // Update active tab
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Load tab content
+        switch(tabName) {
+            case 'users': loadUsersTab(); break;
+            case 'storage': loadStorageTab(); break;
+            case 'tools': loadToolsTab(); break;
+            case 'danger': loadDangerTab(); break;
+        }
+    }
+    
+    // Load users tab
+    function loadUsersTab() {
+        const users = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+        const content = `
+            <div class="users-search-container">
+                <input type="text" class="search-input" placeholder="Search users..." id="adminUserSearch">
+                <button onclick="searchUsers()">Search</button>
+            </div>
+            <div class="users-stats">
+                <div class="stat-card">
+                    <div class="stat-number">${users.length}</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">${users.filter(u => u.status === 'active').length}</div>
+                    <div class="stat-label">Active Users</div>
+                </div>
+            </div>
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Username</th>
+                            <th>Points</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map((user, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${user.email || 'N/A'}</td>
+                                <td>${user.username || 'N/A'}</td>
+                                <td>${user.points || 0}</td>
+                                <td><span style="color: ${user.status === 'active' ? '#4CAF50' : '#FF6B6B'}">${user.status || 'inactive'}</span></td>
+                                <td>
+                                    <button class="btn-action btn-view">View</button>
+                                    <button class="btn-action btn-delete">Delete</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+        document.getElementById('adminTabContent').innerHTML = content;
+    }
+    
+    // Initialize admin button on load
     document.addEventListener('DOMContentLoaded', function() {
-        updateProfileInfoDisplay();
+        setTimeout(injectAdminButtonOptimized, 1000);
     });
     </script>
 </body>
