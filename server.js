@@ -12,6 +12,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ✅ FIX: Render.com proxy trust setting
+app.set('trust proxy', 1);  // This fixes the rate-limit error
+
 // ✅ MongoDB Connection String (SAME AS RENDER)
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
 
@@ -437,6 +440,130 @@ app.get('/api/health-fast', (req, res) => {
     timestamp: new Date().toISOString(),
     database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
   });
+});
+
+// ✅ Health endpoint
+app.get('/api/health', async (req, res) => {
+  try {
+    const health = {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      memory: process.memoryUsage(),
+      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+      totalUsers: await User.countDocuments(),
+      totalTransactions: await WalletTransaction.countDocuments(),
+      server: 'tapearn-native-app.onrender.com'
+    };
+    
+    res.json(health);
+  } catch (error) {
+    res.json({
+      status: 'error',
+      timestamp: new Date().toISOString(),
+      error: error.message
+    });
+  }
+});
+
+// ==========================================
+// ✅ MISSING ENDPOINTS FIX (Admin Panel के लिए)
+// ==========================================
+
+// ✅ 1. Get All Transactions
+app.get('/api/get-all-transactions', async (req, res) => {
+  try {
+    const transactions = await WalletTransaction.find()
+      .populate('user_id', 'username email')
+      .sort({ transaction_date: -1 })
+      .limit(100);
+    
+    res.json({
+      success: true,
+      transactions: transactions,
+      count: transactions.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching transactions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ 2. Get All Referrals
+app.get('/api/get-all-referrals', async (req, res) => {
+  try {
+    const referrals = await Referral.find()
+      .populate('referrer_id', 'username email')
+      .populate('referred_id', 'username email')
+      .sort({ referral_date: -1 })
+      .limit(100);
+    
+    res.json({
+      success: true,
+      referrals: referrals,
+      count: referrals.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching referrals:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ 3. Get All Commissions
+app.get('/api/get-all-commissions', async (req, res) => {
+  try {
+    const commissions = await SponsorCommission.find()
+      .populate('sponsor_id', 'username email')
+      .populate('user_id', 'username email')
+      .sort({ created_at: -1 })
+      .limit(100);
+    
+    res.json({
+      success: true,
+      commissions: commissions,
+      count: commissions.length,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching commissions:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ✅ 4. Server Stats
+app.get('/api/server-stats', async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const activeUsers = await User.countDocuments({ status: 'active' });
+    const totalPoints = await User.aggregate([
+      { $group: { _id: null, total: { $sum: "$points" } } }
+    ]);
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayRegistrations = await User.countDocuments({
+      registration_date: { $gte: today }
+    });
+    
+    res.json({
+      success: true,
+      stats: {
+        totalUsers: totalUsers,
+        activeUsers: activeUsers,
+        totalPoints: totalPoints[0]?.total || 0,
+        todayRegistrations: todayRegistrations,
+        uptime: process.uptime(),
+        memoryUsage: process.memoryUsage(),
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        serverTime: new Date().toISOString()
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching server stats:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
 });
 
 // ==========================================
@@ -2376,28 +2503,6 @@ app.get('/api/user-by-referral/:referralCode', async (req, res) => {
   } catch (error) {
     console.error('❌ Error fetching user by referral:', error);
     res.status(500).json({ error: 'Database error' });
-  }
-});
-
-app.get('/api/health', async (req, res) => {
-  try {
-    const health = {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-      totalUsers: await User.countDocuments(),
-      totalTransactions: await WalletTransaction.countDocuments()
-    };
-    
-    res.json(health);
-  } catch (error) {
-    res.json({
-      status: 'error',
-      timestamp: new Date().toISOString(),
-      error: error.message
-    });
   }
 });
 
