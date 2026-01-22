@@ -499,6 +499,451 @@ const YOUTUBE_API_KEYS = [
 ];
 let currentApiKeyIndex = 0;
 
+// ========================
+// ✅ DUAL SERVER CONFIGURATION
+// ========================
+
+const SERVER_CONFIG = {
+  // Primary Server (Always Online)
+  PRIMARY_SERVER: 'https://tapearn-native-app.onrender.com',
+  
+  // Fallback Server (Local)
+  FALLBACK_SERVER: 'http://localhost:3000',
+  
+  // Sync Strategy
+  SYNC_STRATEGY: 'primary_first', // 'primary_first' or 'local_first'
+  
+  // Auto-retry settings
+  MAX_RETRIES: 3,
+  RETRY_DELAY: 2000
+};
+
+// ✅ Intelligent Server Selector
+function getActiveServer() {
+  return new Promise(async (resolve) => {
+    // Check primary server first
+    try {
+      const response = await fetch(`${SERVER_CONFIG.PRIMARY_SERVER}/api/health`, {
+        timeout: 5000
+      });
+      
+      if (response && response.ok) {
+        console.log('🌍 Primary server online');
+        resolve({
+          url: SERVER_CONFIG.PRIMARY_SERVER,
+          type: 'primary',
+          online: true
+        });
+        return;
+      }
+    } catch (error) {
+      console.log('🌍 Primary server offline, checking fallback...');
+    }
+    
+    // Check fallback server
+    try {
+      const response = await fetch(`${SERVER_CONFIG.FALLBACK_SERVER}/api/health`, {
+        timeout: 5000
+      });
+      
+      if (response && response.ok) {
+        console.log('🌍 Fallback server online');
+        resolve({
+          url: SERVER_CONFIG.FALLBACK_SERVER,
+          type: 'fallback',
+          online: true
+        });
+        return;
+      }
+    } catch (error) {
+      console.log('🌍 Both servers offline');
+    }
+    
+    // Both offline
+    resolve({
+      url: SERVER_CONFIG.PRIMARY_SERVER, // Still try primary for sync
+      type: 'offline',
+      online: false
+    });
+  });
+}
+
+// ✅ Dual-Write Function (Writes to both servers)
+async function dualWriteToServers(endpoint, data) {
+  const results = {
+    primary: { success: false, error: null },
+    fallback: { success: false, error: null },
+    local: { success: true, stored: true } // Always store locally
+  };
+  
+  // 1. Always store in local storage first (for offline mode)
+  storeLocally(endpoint, data);
+  
+  // 2. Try primary server (Online)
+  try {
+    const primaryResponse = await fetch(`${SERVER_CONFIG.PRIMARY_SERVER}${endpoint}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        ...data,
+        source: 'dual_write_primary',
+        timestamp: Date.now()
+      })
+    });
+    
+    if (primaryResponse.ok) {
+      results.primary.success = true;
+      console.log('✅ Written to primary server');
+    }
+  } catch (error) {
+    results.primary.error = error.message;
+    console.log('⚠️ Primary server write failed:', error.message);
+  }
+  
+  // 3. Try fallback server (Local)
+  try {
+    const fallbackResponse = await fetch(`${SERVER_CONFIG.FALLBACK_SERVER}${endpoint}`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        ...data,
+        source: 'dual_write_fallback',
+        timestamp: Date.now()
+      })
+    });
+    
+    if (fallbackResponse.ok) {
+      results.fallback.success = true;
+      console.log('✅ Written to fallback server');
+    }
+  } catch (error) {
+    results.fallback.error = error.message;
+    console.log('⚠️ Fallback server write failed:', error.message);
+  }
+  
+  // 4. Queue failed writes for retry
+  if (!results.primary.success || !results.fallback.success) {
+    queueForRetry(endpoint, data);
+  }
+  
+  return results;
+}
+
+// ✅ Store locally function
+function storeLocally(endpoint, data) {
+  if (endpoint === '/api/sync-user') {
+    const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+    const existingIndex = localUsers.findIndex(u => u.email === data.email);
+    
+    if (existingIndex >= 0) {
+      localUsers[existingIndex] = { ...localUsers[existingIndex], ...data };
+    } else {
+      localUsers.push(data);
+    }
+    
+    localStorage.setItem('registeredUsers', JSON.stringify(localUsers));
+    console.log('💾 Stored locally');
+  }
+  
+  // Store for sync queue
+  const pendingWrites = JSON.parse(localStorage.getItem('pendingWrites') || '[]');
+  pendingWrites.push({
+    endpoint,
+    data,
+    timestamp: Date.now(),
+    retries: 0
+  });
+  localStorage.setItem('pendingWrites', JSON.stringify(pendingWrites));
+}
+
+// ✅ Retry queue system
+function queueForRetry(endpoint, data) {
+  const retryQueue = JSON.parse(localStorage.getItem('retryQueue') || '[]');
+  
+  retryQueue.push({
+    endpoint,
+    data,
+    timestamp: Date.now(),
+    retryCount: 0,
+    lastServer: 'both'
+  });
+  
+  localStorage.setItem('retryQueue', JSON.stringify(retryQueue));
+  console.log('📝 Added to retry queue');
+  
+  // Start retry process if not already running
+  startRetryProcess();
+}
+
+// ✅ Automatic retry process
+function startRetryProcess() {
+  if (window.retryInterval) return;
+  
+  window.retryInterval = setInterval(async () => {
+    const retryQueue = JSON.parse(localStorage.getItem('retryQueue') || '[]');
+    
+    if (retryQueue.length === 0) {
+      clearInterval(window.retryInterval);
+      window.retryInterval = null;
+      return;
+    }
+    
+    const item = retryQueue[0];
+    
+    if (item.retryCount >= SERVER_CONFIG.MAX_RETRIES) {
+      // Move to failed queue
+      const failedQueue = JSON.parse(localStorage.getItem('failedQueue') || '[]');
+      failedQueue.push(item);
+      localStorage.setItem('failedQueue', JSON.stringify(failedQueue));
+      
+      // Remove from retry queue
+      retryQueue.shift();
+      localStorage.setItem('retryQueue', JSON.stringify(retryQueue));
+      return;
+    }
+    
+    // Try to sync
+    try {
+      // Try primary first
+      const response = await fetch(`${SERVER_CONFIG.PRIMARY_SERVER}${item.endpoint}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          ...item.data,
+          source: 'retry_sync',
+          retryCount: item.retryCount + 1
+        })
+      });
+      
+      if (response.ok) {
+        console.log(`✅ Retry successful for ${item.endpoint}`);
+        retryQueue.shift();
+        localStorage.setItem('retryQueue', JSON.stringify(retryQueue));
+      } else {
+        item.retryCount++;
+        item.lastTry = Date.now();
+        retryQueue[0] = item;
+        localStorage.setItem('retryQueue', JSON.stringify(retryQueue));
+      }
+    } catch (error) {
+      item.retryCount++;
+      item.lastTry = Date.now();
+      retryQueue[0] = item;
+      localStorage.setItem('retryQueue', JSON.stringify(retryQueue));
+    }
+  }, SERVER_CONFIG.RETRY_DELAY);
+}
+
+// ========================
+// ✅ REPLACE ALL SERVER CALLS
+// ========================
+
+// ✅ Replace checkServerConnection
+async function checkServerConnection() {
+  const server = await getActiveServer();
+  
+  if (server.online) {
+    console.log(`✅ ${server.type} server is online: ${server.url}`);
+    return true;
+  } else {
+    console.log('⚠️ All servers offline - using local storage');
+    return false;
+  }
+}
+
+// ✅ Replace syncUserToServer
+async function syncUserToServer(userData) {
+  return await dualWriteToServers('/api/sync-user', userData);
+}
+
+// ✅ Replace all fetch calls with this function
+async function smartFetch(endpoint, options = {}) {
+  const server = await getActiveServer();
+  
+  // If offline, store locally and queue
+  if (!server.online) {
+    storeLocally(endpoint, options.body ? JSON.parse(options.body) : {});
+    return {
+      ok: false,
+      json: async () => ({ 
+        success: false, 
+        message: 'Offline - stored locally',
+        queued: true 
+      })
+    };
+  }
+  
+  // Try selected server
+  try {
+    const response = await fetch(`${server.url}${endpoint}`, options);
+    
+    // If failed, try other server
+    if (!response.ok && server.type === 'primary') {
+      console.log('🔄 Primary failed, trying fallback...');
+      
+      try {
+        const fallbackResponse = await fetch(`${SERVER_CONFIG.FALLBACK_SERVER}${endpoint}`, options);
+        if (fallbackResponse.ok) {
+          return fallbackResponse;
+        }
+      } catch (fallbackError) {
+        console.log('Fallback also failed');
+      }
+    }
+    
+    return response;
+  } catch (error) {
+    console.log(`❌ ${server.type} server error:`, error.message);
+    
+    // Store locally for retry
+    if (options.body) {
+      storeLocally(endpoint, JSON.parse(options.body));
+    }
+    
+    throw error;
+  }
+}
+
+// ========================
+// ✅ AUTO-SYNC SYSTEM
+// ========================
+
+// ✅ Sync local data to online server
+async function syncLocalToOnline() {
+  const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+  const pendingWrites = JSON.parse(localStorage.getItem('pendingWrites') || '[]');
+  
+  if (localUsers.length === 0 && pendingWrites.length === 0) {
+    console.log('✅ Nothing to sync');
+    return;
+  }
+  
+  console.log(`🔄 Syncing ${localUsers.length} users and ${pendingWrites.length} writes to online...`);
+  
+  let syncedUsers = 0;
+  let syncedWrites = 0;
+  
+  // Sync users
+  for (const user of localUsers) {
+    try {
+      await fetch(`${SERVER_CONFIG.PRIMARY_SERVER}/api/sync-user`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+          ...user,
+          source: 'auto_sync',
+          sync_timestamp: Date.now()
+        })
+      });
+      syncedUsers++;
+    } catch (error) {
+      console.log('User sync failed:', user.email);
+    }
+  }
+  
+  // Sync pending writes
+  for (const write of pendingWrites) {
+    try {
+      await fetch(`${SERVER_CONFIG.PRIMARY_SERVER}${write.endpoint}`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(write.data)
+      });
+      syncedWrites++;
+    } catch (error) {
+      console.log('Write sync failed:', write.endpoint);
+    }
+  }
+  
+  // Clear synced data
+  if (syncedUsers === localUsers.length) {
+    localStorage.removeItem('registeredUsers');
+  }
+  
+  if (syncedWrites === pendingWrites.length) {
+    localStorage.removeItem('pendingWrites');
+  }
+  
+  console.log(`✅ Auto-sync complete: ${syncedUsers} users, ${syncedWrites} writes`);
+}
+
+// ✅ Auto-sync every 30 seconds
+setInterval(syncLocalToOnline, 30000);
+
+// ✅ Initial sync check
+setTimeout(syncLocalToOnline, 5000);
+
+// ========================
+// ✅ UI STATUS INDICATOR
+// ========================
+
+function createServerStatusIndicator() {
+  const indicator = document.createElement('div');
+  indicator.id = 'serverStatusIndicator';
+  indicator.style.cssText = `
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+  `;
+  
+  document.body.appendChild(indicator);
+  
+  // Update status every 10 seconds
+  setInterval(async () => {
+    const server = await getActiveServer();
+    
+    if (server.online) {
+      indicator.innerHTML = `
+        <span style="font-size: 16px;">${server.type === 'primary' ? '🌍' : '🏠'}</span>
+        <span>${server.type === 'primary' ? 'Online' : 'Local'}</span>
+        <small>${server.url.replace('https://', '').replace('http://', '').split('/')[0]}</small>
+      `;
+      indicator.style.background = server.type === 'primary' ? '#4CAF50' : '#2196F3';
+      indicator.style.color = 'white';
+    } else {
+      indicator.innerHTML = `
+        <span style="font-size: 16px;">📴</span>
+        <span>Offline</span>
+        <small>Local storage</small>
+      `;
+      indicator.style.background = '#f44336';
+      indicator.style.color = 'white';
+    }
+  }, 10000);
+  
+  // Initial update
+  setTimeout(() => {
+    getActiveServer().then(server => {
+      if (server.online) {
+        indicator.innerHTML = `
+          <span style="font-size: 16px;">${server.type === 'primary' ? '🌍' : '🏠'}</span>
+          <span>${server.type === 'primary' ? 'Online' : 'Local'}</span>
+        `;
+        indicator.style.background = server.type === 'primary' ? '#4CAF50' : '#2196F3';
+      } else {
+        indicator.innerHTML = `
+          <span style="font-size: 16px;">📴</span>
+          <span>Offline</span>
+        `;
+        indicator.style.background = '#f44336';
+      }
+      indicator.style.color = 'white';
+    });
+  }, 1000);
+}
+
+// Add status indicator
+setTimeout(createServerStatusIndicator, 2000);
+
 // ✅ SECTION 1: PRE-LOADED REFERRAL CODES
 const PRE_LOADED_REFERRAL_CODES = [
     {
@@ -1385,7 +1830,9 @@ async function performOptimizedAdminSync() {
         
         const currentUser = getFromStorage('currentUser', {});
         if (currentUser && currentUser.email) {
-            console.log('✅ User synced to server:', currentUser.username);
+            // Use syncUserToServer instead of direct fetch
+            const results = await syncUserToServer(currentUser);
+            console.log('✅ User synced to server:', currentUser.username, results);
         }
         
     } catch (error) {
@@ -3778,7 +4225,8 @@ function notifyAdminPanel(action, userData) {
         
         localStorage.setItem('cross_browser_sync_message', JSON.stringify(notification));
         
-        fetch('http://localhost:3000/api/notify-admin', {
+        // Use smartFetch instead of direct fetch
+        smartFetch('/api/notify-admin', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(notification)
@@ -6864,11 +7312,24 @@ function performFullAdminSync() {
     
     console.log('🔄 Performing full admin sync...');
     
-    // Sync user data to server
-    syncUserToServer();
+    const currentUser = getFromStorage('currentUser');
+    if (currentUser) {
+        // Use the new syncUserToServer function
+        syncUserToServer(currentUser);
+    }
     
-    // Fetch server stats
-    setTimeout(fetchServerStats, 500);
+    // Fetch server stats using smartFetch
+    setTimeout(() => {
+        smartFetch('/api/stats').then(response => {
+            if (response.ok) {
+                return response.json();
+            }
+        }).then(data => {
+            console.log('Server stats:', data);
+        }).catch(error => {
+            console.log('Failed to fetch server stats');
+        });
+    }, 500);
     
     // Update admin panel if open
     const adminModal = document.getElementById('adminModal');
