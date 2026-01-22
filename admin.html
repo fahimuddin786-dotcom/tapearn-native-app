@@ -1120,6 +1120,14 @@
 
     <script>
         // ========================
+        // ✅ DUAL SERVER MANAGEMENT CONFIG
+        // ========================
+        const ADMIN_SERVERS = {
+            online: 'https://tapearn-native-app.onrender.com',
+            local: 'http://localhost:3000'
+        };
+
+        // ========================
         // ✅ OPTIMIZATION CONFIG
         // ========================
         const OPTIMIZATION_CONFIG = {
@@ -1422,6 +1430,180 @@
                 }
             } catch (error) {
                 console.error('Error syncing mobile users:', error);
+            }
+        }
+
+        // ========================
+        // ✅ DUAL SERVER MANAGEMENT
+        // ========================
+        // ✅ Check both servers
+        async function checkAllServers() {
+            const results = {};
+            
+            for (const [name, url] of Object.entries(ADMIN_SERVERS)) {
+                try {
+                    const response = await fetch(`${url}/api/health`);
+                    results[name] = {
+                        online: response.ok,
+                        url: url,
+                        timestamp: new Date().toISOString()
+                    };
+                } catch (error) {
+                    results[name] = {
+                        online: false,
+                        error: error.message,
+                        url: url
+                    };
+                }
+            }
+            
+            return results;
+        }
+
+        // ✅ Sync between servers
+        async function syncBetweenServers(fromServer, toServer) {
+            try {
+                // 1. Get users from source server
+                const sourceResponse = await fetch(`${ADMIN_SERVERS[fromServer]}/api/get-all-users`);
+                const sourceData = await sourceResponse.json();
+                
+                if (!sourceData.success) {
+                    throw new Error('Failed to get users from source server');
+                }
+                
+                // 2. Sync to target server
+                const syncResponse = await fetch(`${ADMIN_SERVERS[toServer]}/api/bulk-sync-users`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        users: sourceData.users,
+                        source: `admin_sync_from_${fromServer}`
+                    })
+                });
+                
+                const syncResult = await syncResponse.json();
+                
+                return {
+                    success: true,
+                    message: `Synced ${syncResult.synced || 0} users from ${fromServer} to ${toServer}`,
+                    details: syncResult
+                };
+                
+            } catch (error) {
+                return {
+                    success: false,
+                    error: error.message
+                };
+            }
+        }
+
+        // ✅ Add server management UI to admin panel
+        function addServerManagementUI() {
+            // Check if already exists
+            if (document.querySelector('.server-management')) return;
+            
+            const serverControls = `
+                <div class="server-management" style="
+                    position: fixed;
+                    bottom: 100px;
+                    right: 20px;
+                    background: white;
+                    padding: 15px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+                    z-index: 9998;
+                    min-width: 300px;
+                ">
+                    <h4 style="margin-top: 0; color: #333;">
+                        <i class="fas fa-server"></i> Server Management
+                    </h4>
+                    
+                    <div id="serverStatusDisplay">
+                        <div class="loading">Checking servers...</div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; display: flex; gap: 10px; flex-direction: column;">
+                        <button class="btn btn-sm btn-primary" onclick="syncLocalToOnline()">
+                            <i class="fas fa-arrow-up"></i> Local → Online
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="syncOnlineToLocal()">
+                            <i class="fas fa-arrow-down"></i> Online → Local
+                        </button>
+                        <button class="btn btn-sm btn-info" onclick="checkAllServersStatus()">
+                            <i class="fas fa-sync-alt"></i> Refresh Status
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', serverControls);
+            checkAllServersStatus();
+        }
+
+        // ✅ Update server status display
+        async function checkAllServersStatus() {
+            const servers = await checkAllServers();
+            const display = document.getElementById('serverStatusDisplay');
+            
+            if (!display) return;
+            
+            let html = '';
+            
+            for (const [name, data] of Object.entries(servers)) {
+                html += `
+                    <div style="
+                        display: flex; 
+                        align-items: center; 
+                        justify-content: space-between;
+                        padding: 8px;
+                        margin-bottom: 5px;
+                        background: ${data.online ? '#e8f5e9' : '#ffebee'};
+                        border-radius: 5px;
+                    ">
+                        <div>
+                            <strong>${name === 'online' ? '🌍 Online' : '🏠 Local'}</strong>
+                            <div style="font-size: 11px; color: #666;">
+                                ${data.url.replace('https://', '').replace('http://', '')}
+                            </div>
+                        </div>
+                        <span style="
+                            padding: 3px 8px;
+                            border-radius: 10px;
+                            font-size: 11px;
+                            background: ${data.online ? '#4CAF50' : '#f44336'};
+                            color: white;
+                        ">
+                            ${data.online ? '🟢 ONLINE' : '🔴 OFFLINE'}
+                        </span>
+                    </div>
+                `;
+            }
+            
+            display.innerHTML = html;
+        }
+
+        // ✅ Sync functions for UI
+        async function syncLocalToOnline() {
+            const result = await syncBetweenServers('local', 'online');
+            
+            if (result.success) {
+                alert(`✅ ${result.message}`);
+                checkAllServersStatus();
+                optimizedLoadAdminData();
+            } else {
+                alert(`❌ Sync failed: ${result.error}`);
+            }
+        }
+
+        async function syncOnlineToLocal() {
+            const result = await syncBetweenServers('online', 'local');
+            
+            if (result.success) {
+                alert(`✅ ${result.message}`);
+                checkAllServersStatus();
+                optimizedLoadAdminData();
+            } else {
+                alert(`❌ Sync failed: ${result.error}`);
             }
         }
 
@@ -2075,6 +2257,9 @@
             // Setup performance monitoring
             setupPerformanceMonitoring();
             
+            // Add server management UI
+            setTimeout(addServerManagementUI, 3000);
+            
             console.log('✅ Optimized Admin Panel Initialized');
         }
 
@@ -2371,7 +2556,7 @@
             }
         }
 
-        // Navigation functions
+        // Navigation functions (all original functions remain intact)
         function showDashboard() {
             setActiveNav('Dashboard');
             document.querySelector('.admin-header h2').innerHTML = '<i class="fas fa-tachometer-alt"></i> Dashboard';
