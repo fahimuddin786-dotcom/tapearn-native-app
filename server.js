@@ -13,9 +13,9 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ✅ FIX: Render.com proxy trust setting
-app.set('trust proxy', 1);  // This fixes the rate-limit error
+app.set('trust proxy', 1);
 
-// ✅ MongoDB Connection String (SAME AS RENDER)
+// ✅ MongoDB Connection String
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://tapearn_admin:Admin123456@cluster0.ivp6m5c.mongodb.net/tapearn_db?retryWrites=true&w=majority&appName=Cluster0';
 
 // ✅ ENHANCED CORS CONFIGURATION
@@ -37,13 +37,11 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
     if (allowedOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {
-      // Allow any origin in development
       if (process.env.NODE_ENV !== 'production') {
         callback(null, true);
       } else {
@@ -55,13 +53,12 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   exposedHeaders: ['Content-Length', 'X-Request-Id'],
   credentials: true,
-  maxAge: 86400 // 24 hours
+  maxAge: 86400
 }));
 
-// Handle preflight requests
 app.options('*', cors());
 
-// ✅ Security Middleware - Simplified
+// ✅ Security Middleware
 app.use(helmet({
   contentSecurityPolicy: false,
   crossOriginEmbedderPolicy: false
@@ -108,7 +105,6 @@ const connectDB = async () => {
     console.log('✅ Connected to MongoDB Atlas successfully!');
     console.log('📊 Database:', mongoose.connection.name);
     
-    // Check collections
     try {
       const collections = await mongoose.connection.db.listCollections().toArray();
       console.log(`📋 Existing collections: ${collections.length}`);
@@ -125,7 +121,6 @@ const connectDB = async () => {
 
 connectDB();
 
-// MongoDB connection events
 mongoose.connection.on('disconnected', () => {
   console.log('⚠️ MongoDB disconnected. Reconnecting...');
 });
@@ -140,68 +135,45 @@ mongoose.connection.on('reconnected', () => {
 
 // ✅ User Schema
 const userSchema = new mongoose.Schema({
-  // Basic Information
   email: { type: String, required: true, unique: true },
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  
-  // Personal Details
   telegram_id: String,
   phone: String,
   full_name: String,
-  
-  // Wallet & Earnings
   points: { type: Number, default: 0 },
   total_earned: { type: Number, default: 0 },
   inr_wallet: { type: Number, default: 0 },
   usdt_wallet: { type: Number, default: 0 },
   total_converted: { type: Number, default: 0 },
-  
-  // Referral System
   referral_code: { type: String, unique: true },
   referred_by: String,
   sponsor_id: String,
   sponsor_name: String,
-  
-  // Stats & Levels
   level: { type: Number, default: 1 },
   tasks_completed: { type: Number, default: 0 },
   daily_streak: { type: Number, default: 0 },
   last_login_date: Date,
   last_daily_activity: Date,
-  
-  // Verification
   email_verified: { type: Boolean, default: false },
   mobile_verified: { type: Boolean, default: false },
   verification_status: { type: String, default: 'pending' },
-  
-  // Status & Dates
   status: { type: String, default: 'active' },
   registration_date: { type: Date, default: Date.now },
   last_login: { type: Date, default: Date.now },
-  
-  // Additional Fields
   free_pool_completed: { type: Boolean, default: false },
   free_pool_tasks: [{
     task_id: String,
     completed: Boolean,
     completed_at: Date
   }],
-  
-  // Tracking
   today_earnings: { type: Number, default: 0 },
   total_mining_time: { type: Number, default: 0 },
   session_count: { type: Number, default: 0 },
-  
-  // Admin Fields
   is_admin: { type: Boolean, default: false },
   admin_level: { type: Number, default: 0 },
-  
-  // Source tracking for mobile sync
   source: { type: String, default: 'web' },
   device_type: String,
-  
-  // Metadata
   ip_address: String,
   user_agent: String
 }, {
@@ -221,11 +193,9 @@ const walletTransactionSchema = new mongoose.Schema({
   currency: { type: String, default: 'points' },
   status: { type: String, default: 'completed' },
   transaction_date: { type: Date, default: Date.now },
-  
   conversion_rate: Number,
   converted_from: String,
   converted_to: String,
-  
   reference_id: String,
   reference_type: String
 }, {
@@ -239,25 +209,19 @@ const miningPoolSchema = new mongoose.Schema({
   pool_name: String,
   pool_icon: String,
   pool_type: { type: String, default: 'free' },
-  
   investment_amount: { type: Number, default: 0 },
   investment_currency: { type: String, default: 'points' },
-  
   duration_hours: Number,
   expected_points: Number,
   actual_points: Number,
-  
   start_time: { type: Date, default: Date.now },
   end_time: Date,
   completed_at: Date,
-  
   progress: { type: Number, default: 0 },
   status: { type: String, default: 'active' },
-  
   base_rate: Number,
   multiplier: Number,
   min_investment: Number,
-  
   transaction_id: String,
   claimed: { type: Boolean, default: false },
   claim_date: Date
@@ -271,17 +235,13 @@ const taskCompletionSchema = new mongoose.Schema({
   task_id: { type: String, required: true },
   task_type: String,
   task_name: String,
-  
   completed_at: { type: Date, default: Date.now },
   points_earned: Number,
-  
   platform: String,
   video_id: String,
   channel_id: String,
-  
   verified: { type: Boolean, default: true },
   verification_method: String,
-  
   ip_address: String,
   user_agent: String
 }, {
@@ -292,16 +252,12 @@ const taskCompletionSchema = new mongoose.Schema({
 const referralSchema = new mongoose.Schema({
   referrer_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   referred_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  
   referral_code: String,
   points_earned: { type: Number, default: 25 },
-  
   status: { type: String, default: 'active' },
   completed: { type: Boolean, default: false },
-  
   referral_date: { type: Date, default: Date.now },
   completed_at: Date,
-  
   commission_paid: { type: Boolean, default: false },
   commission_amount: Number
 }, {
@@ -312,19 +268,15 @@ const referralSchema = new mongoose.Schema({
 const sponsorCommissionSchema = new mongoose.Schema({
   sponsor_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-  
   commission_type: String,
   amount: { type: Number, required: true },
   percentage: Number,
-  
   activity_type: String,
   activity_description: String,
   original_amount: Number,
-  
   status: { type: String, default: 'pending' },
   paid: { type: Boolean, default: false },
   paid_date: Date,
-  
   transaction_id: String,
   wallet_transaction_id: String
 }, {
@@ -336,13 +288,10 @@ const dailyActivitySchema = new mongoose.Schema({
   user_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   activity_id: { type: String, required: true },
   activity_type: String,
-  
   completed_at: { type: Date, default: Date.now },
   points_earned: Number,
-  
   date: { type: String, required: true },
   streak_day: Number,
-  
   platform: String,
   verified: { type: Boolean, default: true }
 }, {
@@ -353,17 +302,13 @@ const dailyActivitySchema = new mongoose.Schema({
 const adminLogSchema = new mongoose.Schema({
   admin_id: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   action: { type: String, required: true },
-  
   target_type: String,
   target_id: String,
   target_description: String,
-  
   changes_before: mongoose.Schema.Types.Mixed,
   changes_after: mongoose.Schema.Types.Mixed,
-  
   ip_address: String,
   user_agent: String,
-  
   status: { type: String, default: 'completed' }
 }, {
   timestamps: true
@@ -414,7 +359,6 @@ async function logAdminAction(adminId, action, targetType, targetId, changesBefo
 // ✅ KEEP-ALIVE ENDPOINTS
 // ==========================================
 
-// ✅ Quick ping endpoint
 app.get('/ping', (req, res) => {
   res.json({ 
     status: 'ok', 
@@ -423,7 +367,6 @@ app.get('/ping', (req, res) => {
   });
 });
 
-// ✅ Keep-alive endpoint
 app.get('/api/keep-alive', (req, res) => {
   res.json({ 
     success: true, 
@@ -433,7 +376,6 @@ app.get('/api/keep-alive', (req, res) => {
   });
 });
 
-// ✅ Quick health check
 app.get('/api/health-fast', (req, res) => {
   res.json({
     status: 'ok',
@@ -442,7 +384,6 @@ app.get('/api/health-fast', (req, res) => {
   });
 });
 
-// ✅ Health endpoint
 app.get('/api/health', async (req, res) => {
   try {
     const health = {
@@ -467,10 +408,9 @@ app.get('/api/health', async (req, res) => {
 });
 
 // ==========================================
-// ✅ MISSING ENDPOINTS FIX (Admin Panel के लिए)
+// ✅ MISSING ENDPOINTS FIX
 // ==========================================
 
-// ✅ 1. Get All Transactions
 app.get('/api/get-all-transactions', async (req, res) => {
   try {
     const transactions = await WalletTransaction.find()
@@ -490,7 +430,6 @@ app.get('/api/get-all-transactions', async (req, res) => {
   }
 });
 
-// ✅ 2. Get All Referrals
 app.get('/api/get-all-referrals', async (req, res) => {
   try {
     const referrals = await Referral.find()
@@ -511,7 +450,6 @@ app.get('/api/get-all-referrals', async (req, res) => {
   }
 });
 
-// ✅ 3. Get All Commissions
 app.get('/api/get-all-commissions', async (req, res) => {
   try {
     const commissions = await SponsorCommission.find()
@@ -532,7 +470,6 @@ app.get('/api/get-all-commissions', async (req, res) => {
   }
 });
 
-// ✅ 4. Server Stats
 app.get('/api/server-stats', async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
@@ -570,13 +507,11 @@ app.get('/api/server-stats', async (req, res) => {
 // ✅ UNIVERSAL SYNC ENDPOINTS (MOBILE FIX)
 // ==========================================
 
-// ✅ 1. REAL-TIME USER REGISTRATION BROADCAST
 app.post('/api/universal/user-registered', async (req, res) => {
     try {
         const userData = req.body;
         console.log('📱 Mobile user registered:', userData.email);
         
-        // Save user to database
         const newUser = new User({
             email: userData.email,
             username: userData.username || `user_${Date.now().toString().slice(-8)}`,
@@ -607,19 +542,15 @@ app.post('/api/universal/user-registered', async (req, res) => {
     }
 });
 
-// ✅ 2. GET USERS FROM ALL SOURCES
 app.get('/api/universal/get-all-users', async (req, res) => {
     try {
-        // Get users from database
         const dbUsers = await User.find()
             .select('-password -__v')
             .sort({ registration_date: -1 })
             .limit(500);
         
-        // Get users from localStorage sync (for offline panels)
         const localUsers = JSON.parse(req.query.localUsers || '[]');
         
-        // Merge all users (remove duplicates by email)
         const allUsers = [...dbUsers];
         
         localUsers.forEach(localUser => {
@@ -635,7 +566,6 @@ app.get('/api/universal/get-all-users', async (req, res) => {
             }
         });
         
-        // Format response
         const formattedUsers = allUsers.map(user => ({
             id: user._id || user.id,
             email: user.email,
@@ -668,18 +598,15 @@ app.get('/api/universal/get-all-users', async (req, res) => {
     }
 });
 
-// ✅ 3. REAL-TIME SYNC STATUS
 app.get('/api/universal/sync-status', async (req, res) => {
     try {
         const lastSync = req.query.lastSync || 0;
         const lastSyncDate = new Date(parseInt(lastSync));
         
-        // Get new users since last sync
         const newUsers = await User.find({
             registration_date: { $gt: lastSyncDate }
         }).select('email username registration_date').limit(50);
         
-        // Get recent transactions
         const newTransactions = await WalletTransaction.find({
             transaction_date: { $gt: lastSyncDate }
         }).limit(50);
@@ -698,13 +625,11 @@ app.get('/api/universal/sync-status', async (req, res) => {
     }
 });
 
-// ✅ 4. MOBILE REGISTRATION WEBHOOK
 app.post('/api/mobile/register', async (req, res) => {
     try {
         const mobileUser = req.body;
         console.log('📱 Mobile registration received:', mobileUser.email);
 
-        // Check if user already exists
         let user = await User.findOne({ 
             $or: [
                 { email: mobileUser.email },
@@ -713,14 +638,12 @@ app.post('/api/mobile/register', async (req, res) => {
         });
 
         if (user) {
-            // Update existing user
             user.points = Math.max(user.points, mobileUser.points || 0);
             user.last_login = new Date();
             await user.save();
 
             console.log(`✅ Updated existing mobile user: ${user.email}`);
         } else {
-            // Create new user
             user = new User({
                 email: mobileUser.email,
                 username: mobileUser.username || `mobile_${Date.now().toString().slice(-8)}`,
@@ -754,7 +677,6 @@ app.post('/api/mobile/register', async (req, res) => {
     }
 });
 
-// ✅ 5. SYNC ALL MOBILE USERS
 app.get('/api/mobile/get-all-users', async (req, res) => {
     try {
         const mobileUsers = await User.find({
@@ -773,7 +695,6 @@ app.get('/api/mobile/get-all-users', async (req, res) => {
     }
 });
 
-// ✅ 6. MOBILE TO ADMIN SYNC
 app.post('/api/mobile/sync-to-admin', async (req, res) => {
     try {
         const { users, source } = req.body;
@@ -806,7 +727,6 @@ app.post('/api/mobile/sync-to-admin', async (req, res) => {
                     
                     console.log(`✅ Synced mobile user: ${mobileUser.email}`);
                 } else {
-                    // Update points if mobile has more
                     if (mobileUser.points > user.points) {
                         user.points = mobileUser.points;
                         await user.save();
@@ -832,15 +752,13 @@ app.post('/api/mobile/sync-to-admin', async (req, res) => {
 });
 
 // ==========================================
-// ✅ PROXY & SYNC ENDPOINTS (CORS FIX)
+// ✅ PROXY & SYNC ENDPOINTS
 // ==========================================
 
-// ✅ PROXY ENDPOINT for cross-origin requests
 app.get('/api/proxy/users', async (req, res) => {
   try {
     const targetServer = req.query.server || 'http://localhost:3000';
     
-    // Don't allow arbitrary servers for security
     const allowedServers = [
       'http://localhost:3000',
       'https://tapearn-native-app.onrender.com'
@@ -850,7 +768,6 @@ app.get('/api/proxy/users', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid server' });
     }
     
-    // Use http or https module based on protocol
     const protocol = targetServer.startsWith('https') ? https : http;
     
     const url = new URL(`${targetServer}/api/get-all-users`);
@@ -899,7 +816,6 @@ app.get('/api/proxy/users', async (req, res) => {
   }
 });
 
-// ✅ UNIVERSAL SYNC ENDPOINT
 app.post('/api/universal-sync', async (req, res) => {
   try {
     const { action, data, source } = req.body;
@@ -908,7 +824,6 @@ app.post('/api/universal-sync', async (req, res) => {
     
     switch(action) {
       case 'user_registered':
-        // Save user to database
         const user = new User({
           email: data.email,
           username: data.username,
@@ -929,7 +844,6 @@ app.post('/api/universal-sync', async (req, res) => {
         return;
         
       case 'sync_users':
-        // Return all users
         const users = await User.find().select('-password').limit(100);
         res.json({ success: true, users: users });
         return;
@@ -944,7 +858,6 @@ app.post('/api/universal-sync', async (req, res) => {
   }
 });
 
-// ✅ GET USERS FROM ALL SERVERS
 app.get('/api/get-all-servers-users', async (req, res) => {
   try {
     const servers = [
@@ -954,7 +867,6 @@ app.get('/api/get-all-servers-users', async (req, res) => {
     
     const allUsers = [];
     
-    // Get users from local database first
     const localUsers = await User.find().select('-password').limit(100);
     allUsers.push(...localUsers.map(user => ({
       ...user.toObject(),
@@ -975,7 +887,6 @@ app.get('/api/get-all-servers-users', async (req, res) => {
   }
 });
 
-// ✅ CROSS-ORIGIN USER SYNC ENDPOINT
 app.post('/api/cross-origin-sync', async (req, res) => {
   try {
     const { users, source } = req.body;
@@ -991,11 +902,9 @@ app.post('/api/cross-origin-sync', async (req, res) => {
     
     for (const userData of users) {
       try {
-        // Check if user already exists
         let user = await User.findOne({ email: userData.email });
         
         if (!user) {
-          // Create new user
           user = new User({
             email: userData.email,
             username: userData.username || `user_${Date.now().toString().slice(-8)}`,
@@ -1016,7 +925,6 @@ app.post('/api/cross-origin-sync', async (req, res) => {
           await user.save();
           syncedCount++;
         } else {
-          // Update existing user with highest values
           user.points = Math.max(user.points, userData.points || 0);
           user.total_earned = Math.max(user.total_earned, userData.totalEarned || 0);
           user.tasks_completed = Math.max(user.tasks_completed, userData.tasksCompleted || 0);
@@ -1039,6 +947,126 @@ app.post('/api/cross-origin-sync', async (req, res) => {
     
   } catch (error) {
     console.error('Error in cross-origin sync:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ==========================================
+// ✅ BULK SYNC ENDPOINTS
+// ==========================================
+
+app.post('/api/bulk-sync-users', async (req, res) => {
+  try {
+    const { users, source } = req.body;
+    
+    if (!Array.isArray(users)) {
+      return res.status(400).json({ success: false, message: 'Users must be an array' });
+    }
+    
+    console.log(`📦 Bulk sync from ${source}: ${users.length} users`);
+    
+    let synced = 0;
+    const results = [];
+    
+    for (const userData of users) {
+      try {
+        let user = await User.findOne({ email: userData.email });
+        
+        if (!user) {
+          user = new User({
+            email: userData.email,
+            username: userData.username || `user_${Date.now().toString().slice(-8)}`,
+            password: userData.password || `sync_${Math.random().toString(36).slice(-8)}`,
+            points: userData.points || 0,
+            status: 'active',
+            registration_date: userData.registration_date || new Date(),
+            source: source || 'bulk_sync'
+          });
+          
+          await user.save();
+          synced++;
+          results.push({ email: userData.email, status: 'created' });
+        } else {
+          const localDate = new Date(userData.registration_date || 0);
+          const dbDate = new Date(user.registration_date || 0);
+          
+          if (localDate > dbDate) {
+            user.points = Math.max(user.points, userData.points || 0);
+            await user.save();
+            synced++;
+            results.push({ email: userData.email, status: 'updated' });
+          } else {
+            results.push({ email: userData.email, status: 'skipped' });
+          }
+        }
+      } catch (error) {
+        results.push({ email: userData.email, status: 'error', error: error.message });
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Bulk sync completed: ${synced} users processed`,
+      total: users.length,
+      synced: synced,
+      results: results
+    });
+    
+  } catch (error) {
+    console.error('Bulk sync error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/cross-server-sync', async (req, res) => {
+  try {
+    const { serverUrl, action } = req.body;
+    
+    if (!serverUrl) {
+      return res.status(400).json({ success: false, message: 'Server URL required' });
+    }
+    
+    console.log(`🔄 Cross-server sync with: ${serverUrl}`);
+    
+    const response = await fetch(`${serverUrl}/api/get-all-users`);
+    const data = await response.json();
+    
+    if (data.success) {
+      let synced = 0;
+      
+      for (const user of data.users) {
+        try {
+          const exists = await User.findOne({ email: user.email });
+          
+          if (!exists) {
+            const newUser = new User({
+              email: user.email,
+              username: user.username,
+              points: user.points || 0,
+              status: user.status || 'active',
+              registration_date: user.registration_date || new Date(),
+              source: `sync_from_${new URL(serverUrl).hostname}`
+            });
+            
+            await newUser.save();
+            synced++;
+          }
+        } catch (error) {
+          console.log(`Error syncing user ${user.email}:`, error.message);
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Synced ${synced} users from ${serverUrl}`,
+        synced: synced
+      });
+    } else {
+      res.status(500).json({ success: false, message: 'Failed to fetch from source server' });
+    }
+    
+  } catch (error) {
+    console.error('Cross-server sync error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -2018,7 +2046,6 @@ app.get('/api/admin/users-full', async (req, res) => {
   }
 });
 
-// ✅ NEW ENDPOINT: User sync check
 app.get('/api/admin/user-sync-check', async (req, res) => {
   try {
     const since = parseInt(req.query.since) || 0;
@@ -2040,14 +2067,12 @@ app.get('/api/admin/user-sync-check', async (req, res) => {
   }
 });
 
-// ✅ NEW ENDPOINT: Get all users with filtering
 app.get('/api/admin/get-all-users-enhanced', async (req, res) => {
   try {
     const users = await User.find()
       .sort({ registration_date: -1 })
       .select('-password -__v');
     
-    // Get recent registrations (last 5 minutes)
     const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
     const recentUsers = await User.find({
       registration_date: { $gte: fiveMinutesAgo }
@@ -2086,7 +2111,6 @@ app.get('/api/admin/user-stats', async (req, res) => {
       last_login: { $gte: today }
     });
     
-    // Count by source
     const sourceStats = await User.aggregate([
       { $group: { _id: "$source", count: { $sum: 1 } } }
     ]);
@@ -2512,18 +2536,15 @@ app.get('/api/user-by-referral/:referralCode', async (req, res) => {
 
 let lastRequestTime = Date.now();
 
-// Middleware to update last request time
 app.use((req, res, next) => {
   lastRequestTime = Date.now();
   next();
 });
 
-// Self-ping function to keep server awake
 const selfPing = () => {
   const now = Date.now();
   const idleTime = now - lastRequestTime;
   
-  // If server has been idle for more than 5 minutes, ping itself
   if (idleTime > 5 * 60 * 1000) {
     console.log('🔄 Auto-pinging server to prevent sleep...');
     try {
@@ -2550,7 +2571,6 @@ const selfPing = () => {
   }
 };
 
-// Start self-ping interval (every 1 minute)
 setInterval(selfPing, 60 * 1000);
 
 // ==========================================
@@ -2569,12 +2589,10 @@ app.get('/admin-panel.html', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin-panel.html'));
 });
 
-// Handle 404
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Endpoint not found' });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error('Server error:', err);
   res.status(500).json({ 
@@ -2607,7 +2625,6 @@ const server = app.listen(PORT, () => {
   `);
 });
 
-// Graceful shutdown
 process.on('SIGTERM', () => {
   console.log('SIGTERM received. Shutting down gracefully...');
   server.close(() => {
