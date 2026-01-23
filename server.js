@@ -14,6 +14,388 @@ const server = http.createServer(app); // ✅ HTTP server for WebSocket
 
 const PORT = process.env.PORT || 3000;
 
+// Server type detection
+const isReplit = process.env.REPLIT_DB_URL || process.env.REPL_ID;
+const isRender = process.env.RENDER;
+const isLocal = !isReplit && !isRender;
+
+console.log(`🖥️ Server Type: ${isReplit ? 'Replit' : isRender ? 'Render' : 'Local'}`);
+
+// ==========================================
+// ✅ SERVER-TO-SERVER WEBSOCKET CONNECTIONS
+// ==========================================
+
+const serverConnections = {
+  replit: null,
+  render: null,
+  localhost: null
+};
+
+// Connect to other servers via WebSocket
+function connectToOtherServers() {
+  const servers = [
+    { name: 'replit', url: 'wss://tapearn-native-app--fahimuddin786.replit.app/ws' },
+    { name: 'render', url: 'wss://tapearn-native-app.onrender.com/ws' },
+    { name: 'localhost', url: 'ws://localhost:3000/ws' }
+  ];
+
+  console.log('🔄 Attempting to connect to other servers...');
+
+  servers.forEach(server => {
+    // Skip connecting to self
+    if ((isReplit && server.name === 'replit') || 
+        (isRender && server.name === 'render') || 
+        (isLocal && server.name === 'localhost')) {
+      console.log(`⏭️ Skipping self-connection to ${server.name}`);
+      return;
+    }
+
+    // If already connected, skip
+    if (serverConnections[server.name] && serverConnections[server.name].readyState === WebSocket.OPEN) {
+      console.log(`✅ Already connected to ${server.name}`);
+      return;
+    }
+
+    try {
+      console.log(`🔗 Connecting to ${server.name} at ${server.url}...`);
+      const ws = new WebSocket(server.url);
+      
+      ws.onopen = () => {
+        console.log(`🟢 Connected to ${server.name} server`);
+        serverConnections[server.name] = ws;
+        
+        // Send server info
+        ws.send(JSON.stringify({
+          type: 'server_handshake',
+          server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+          serverId: `${isReplit ? 'replit' : isRender ? 'render' : 'localhost'}_${Date.now()}`,
+          timestamp: Date.now(),
+          message: 'Server connected for data synchronization'
+        }));
+        
+        // Request initial sync
+        ws.send(JSON.stringify({
+          type: 'sync_request',
+          server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+          timestamp: Date.now()
+        }));
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const message = JSON.parse(event.data);
+          console.log(`📨 Received from ${server.name}: ${message.type}`);
+          handleServerMessage(message, server.name);
+        } catch (error) {
+          console.error(`❌ Error parsing message from ${server.name}:`, error);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log(`🔴 Disconnected from ${server.name}`);
+        serverConnections[server.name] = null;
+        // Reconnect after 10 seconds
+        setTimeout(() => {
+          console.log(`🔄 Reconnecting to ${server.name}...`);
+          connectToOtherServers();
+        }, 10000);
+      };
+
+      ws.onerror = (error) => {
+        console.error(`❌ WebSocket error with ${server.name}:`, error.message);
+      };
+
+    } catch (error) {
+      console.log(`⚠️ Failed to connect to ${server.name}:`, error.message);
+    }
+  });
+}
+
+// Handle messages from other servers
+async function handleServerMessage(message, sourceServer) {
+  console.log(`📨 Processing message from ${sourceServer}:`, message.type);
+  
+  switch(message.type) {
+    case 'server_handshake':
+      console.log(`🤝 Handshake received from ${sourceServer} server`);
+      break;
+      
+    case 'user_registered':
+      await syncUserFromServer(message.data.user, sourceServer);
+      break;
+      
+    case 'transaction_added':
+      await syncTransactionFromServer(message.data, sourceServer);
+      break;
+      
+    case 'sync_request':
+      await sendLocalDataToServer(sourceServer);
+      break;
+      
+    case 'sync_users':
+      await syncUsersFromServer(message.data.users, sourceServer);
+      break;
+      
+    case 'sync_transactions':
+      await syncTransactionsFromServer(message.data.transactions, sourceServer);
+      break;
+      
+    case 'ping':
+      // Send pong back
+      if (serverConnections[sourceServer] && serverConnections[sourceServer].readyState === WebSocket.OPEN) {
+        serverConnections[sourceServer].send(JSON.stringify({
+          type: 'pong',
+          server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+          timestamp: Date.now()
+        }));
+      }
+      break;
+  }
+}
+
+// Sync user from other server
+async function syncUserFromServer(userData, sourceServer) {
+  try {
+    if (!userData || !userData.email) {
+      console.log('⚠️ Invalid user data received from server');
+      return;
+    }
+
+    console.log(`🔄 Syncing user from ${sourceServer}: ${userData.email}`);
+    
+    const existingUser = await User.findOne({ email: userData.email });
+    
+    if (existingUser) {
+      // Update existing user with latest data
+      const updated = await User.findByIdAndUpdate(existingUser._id, {
+        points: Math.max(existingUser.points, userData.points || 0),
+        total_earned: Math.max(existingUser.total_earned, userData.total_earned || 0),
+        last_login: new Date(),
+        source: `synced_from_${sourceServer}`
+      }, { new: true });
+      
+      console.log(`✅ Updated user from ${sourceServer}: ${updated.email}`);
+    } else {
+      // Create new user
+      const newUser = new User({
+        email: userData.email,
+        username: userData.username || `user_${Date.now().toString().slice(-8)}`,
+        password: `synced_${Math.random().toString(36).slice(-8)}`,
+        phone: userData.phone || userData.mobile,
+        full_name: userData.full_name || userData.username,
+        referral_code: userData.referral_code || generateReferralCode(),
+        referred_by: userData.referred_by || userData.sponsorId,
+        points: userData.points || 0,
+        total_earned: userData.total_earned || 0,
+        status: 'active',
+        registration_date: userData.registration_date || new Date(),
+        source: `synced_from_${sourceServer}`,
+        sync_source: sourceServer,
+        sync_timestamp: Date.now()
+      });
+      
+      await newUser.save();
+      console.log(`✅ Created user from ${sourceServer}: ${newUser.email}`);
+      
+      // Broadcast to admin clients
+      broadcastNewUser({
+        user: {
+          id: newUser._id,
+          email: newUser.email,
+          username: newUser.username,
+          points: newUser.points,
+          source: `synced_from_${sourceServer}`,
+          registration_date: newUser.registration_date
+        },
+        source: `server_sync_${sourceServer}`
+      });
+    }
+  } catch (error) {
+    console.error(`❌ Error syncing user from ${sourceServer}:`, error);
+  }
+}
+
+// Sync transaction from other server
+async function syncTransactionFromServer(transactionData, sourceServer) {
+  try {
+    if (!transactionData || !transactionData.userId) {
+      console.log('⚠️ Invalid transaction data received from server');
+      return;
+    }
+
+    console.log(`🔄 Syncing transaction from ${sourceServer}`);
+    
+    const user = await User.findById(transactionData.userId);
+    if (!user) {
+      console.log(`⚠️ User not found for transaction: ${transactionData.userId}`);
+      return;
+    }
+
+    // Check if transaction already exists
+    const existingTransaction = await WalletTransaction.findOne({
+      user_id: transactionData.userId,
+      transaction_type: transactionData.type,
+      amount: transactionData.amount,
+      description: transactionData.description,
+      'transaction_date': {
+        $gte: new Date(Date.now() - 60000) // Within last minute
+      }
+    });
+
+    if (existingTransaction) {
+      console.log(`✅ Transaction already exists, skipping`);
+      return;
+    }
+
+    const walletTransaction = new WalletTransaction({
+      user_id: transactionData.userId,
+      transaction_type: transactionData.type || 'earning',
+      amount: transactionData.amount || 0,
+      description: transactionData.description || `Synced from ${sourceServer}`,
+      category: transactionData.category || 'sync',
+      balance_before: user.points,
+      balance_after: user.points + (transactionData.amount || 0),
+      currency: 'points',
+      sync_source: sourceServer,
+      sync_timestamp: Date.now()
+    });
+
+    await walletTransaction.save();
+    
+    // Update user points
+    user.points += transactionData.amount || 0;
+    user.total_earned += transactionData.amount || 0;
+    await user.save();
+    
+    console.log(`✅ Transaction synced from ${sourceServer}`);
+    
+    // Broadcast to admin clients
+    broadcastNewTransaction({
+      userId: transactionData.userId,
+      type: transactionData.type || 'earning',
+      amount: transactionData.amount || 0,
+      description: `Synced from ${sourceServer}: ${transactionData.description}`,
+      category: 'server_sync',
+      timestamp: new Date(),
+      source: sourceServer
+    });
+  } catch (error) {
+    console.error(`❌ Error syncing transaction from ${sourceServer}:`, error);
+  }
+}
+
+// Send local data to requesting server
+async function sendLocalDataToServer(targetServer) {
+  try {
+    const connection = serverConnections[targetServer];
+    if (!connection || connection.readyState !== WebSocket.OPEN) {
+      console.log(`⚠️ Cannot send data to ${targetServer}: Connection not open`);
+      return;
+    }
+
+    console.log(`📤 Sending local data to ${targetServer}...`);
+    
+    // Get recent users (last 24 hours)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const recentUsers = await User.find({
+      registration_date: { $gte: oneDayAgo }
+    }).limit(50);
+    
+    // Get recent transactions (last 24 hours)
+    const recentTransactions = await WalletTransaction.find({
+      transaction_date: { $gte: oneDayAgo }
+    }).limit(100);
+    
+    // Send users
+    connection.send(JSON.stringify({
+      type: 'sync_users',
+      server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+      data: {
+        users: recentUsers.map(user => ({
+          email: user.email,
+          username: user.username,
+          points: user.points,
+          total_earned: user.total_earned,
+          registration_date: user.registration_date,
+          source: user.source
+        }))
+      },
+      timestamp: Date.now()
+    }));
+    
+    // Send transactions
+    connection.send(JSON.stringify({
+      type: 'sync_transactions',
+      server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+      data: {
+        transactions: recentTransactions.map(transaction => ({
+          userId: transaction.user_id,
+          type: transaction.transaction_type,
+          amount: transaction.amount,
+          description: transaction.description,
+          category: transaction.category,
+          transaction_date: transaction.transaction_date
+        }))
+      },
+      timestamp: Date.now()
+    }));
+    
+    console.log(`✅ Sent ${recentUsers.length} users and ${recentTransactions.length} transactions to ${targetServer}`);
+  } catch (error) {
+    console.error(`❌ Error sending data to ${targetServer}:`, error);
+  }
+}
+
+// Sync multiple users from server
+async function syncUsersFromServer(users, sourceServer) {
+  try {
+    console.log(`🔄 Syncing ${users.length} users from ${sourceServer}`);
+    
+    let syncedCount = 0;
+    for (const userData of users) {
+      await syncUserFromServer(userData, sourceServer);
+      syncedCount++;
+    }
+    
+    console.log(`✅ Synced ${syncedCount} users from ${sourceServer}`);
+  } catch (error) {
+    console.error(`❌ Error syncing users from ${sourceServer}:`, error);
+  }
+}
+
+// Sync multiple transactions from server
+async function syncTransactionsFromServer(transactions, sourceServer) {
+  try {
+    console.log(`🔄 Syncing ${transactions.length} transactions from ${sourceServer}`);
+    
+    let syncedCount = 0;
+    for (const transactionData of transactions) {
+      await syncTransactionFromServer(transactionData, sourceServer);
+      syncedCount++;
+    }
+    
+    console.log(`✅ Synced ${syncedCount} transactions from ${sourceServer}`);
+  } catch (error) {
+    console.error(`❌ Error syncing transactions from ${sourceServer}:`, error);
+  }
+}
+
+// Broadcast to all connected servers
+function broadcastToServers(message) {
+  const messageStr = JSON.stringify(message);
+  
+  Object.keys(serverConnections).forEach(serverName => {
+    const connection = serverConnections[serverName];
+    if (connection && connection.readyState === WebSocket.OPEN) {
+      try {
+        connection.send(messageStr);
+      } catch (error) {
+        console.error(`Error broadcasting to ${serverName}:`, error);
+      }
+    }
+  });
+}
+
 // ==========================================
 // ✅ REPLIT WEBSOCKET SERVER SETUP
 // ==========================================
@@ -38,7 +420,8 @@ wss.on('connection', (ws, req) => {
         type: 'connected',
         message: 'Connected to TapEarn Admin WebSocket',
         timestamp: Date.now(),
-        clientId: clientId
+        clientId: clientId,
+        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
     }));
     
     // Handle incoming messages
@@ -52,7 +435,8 @@ wss.on('connection', (ws, req) => {
                     ws.send(JSON.stringify({
                         type: 'admin_authenticated',
                         message: 'Admin authenticated successfully',
-                        timestamp: Date.now()
+                        timestamp: Date.now(),
+                        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
                     }));
                     break;
                     
@@ -70,6 +454,25 @@ wss.on('connection', (ws, req) => {
                         from: data.adminId || 'unknown',
                         timestamp: Date.now()
                     });
+                    break;
+                    
+                case 'server_sync_request':
+                    // Request sync from other servers
+                    Object.keys(serverConnections).forEach(serverName => {
+                        const connection = serverConnections[serverName];
+                        if (connection && connection.readyState === WebSocket.OPEN) {
+                            connection.send(JSON.stringify({
+                                type: 'sync_request',
+                                server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                                timestamp: Date.now()
+                            }));
+                        }
+                    });
+                    ws.send(JSON.stringify({
+                        type: 'server_sync_started',
+                        message: 'Server sync requested',
+                        timestamp: Date.now()
+                    }));
                     break;
                     
                 default:
@@ -106,7 +509,16 @@ function broadcastNewUser(userData) {
     broadcastToAdmins({
         type: 'user_registered',
         data: userData,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+    });
+    
+    // Also broadcast to other servers
+    broadcastToServers({
+        type: 'user_registered',
+        data: userData,
+        timestamp: Date.now(),
+        server: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
     });
 }
 
@@ -115,7 +527,16 @@ function broadcastNewTransaction(transactionData) {
     broadcastToAdmins({
         type: 'transaction_added',
         data: transactionData,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+    });
+    
+    // Also broadcast to other servers
+    broadcastToServers({
+        type: 'transaction_added',
+        data: transactionData,
+        timestamp: Date.now(),
+        server: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
     });
 }
 
@@ -273,6 +694,8 @@ const userSchema = new mongoose.Schema({
     is_admin: { type: Boolean, default: false },
     admin_level: { type: Number, default: 0 },
     source: { type: String, default: 'web' },
+    sync_source: String,
+    sync_timestamp: Date,
     device_type: String,
     ip_address: String,
     user_agent: String
@@ -297,7 +720,9 @@ const walletTransactionSchema = new mongoose.Schema({
     converted_from: String,
     converted_to: String,
     reference_id: String,
-    reference_type: String
+    reference_type: String,
+    sync_source: String,
+    sync_timestamp: Date
 }, {
     timestamps: true
 });
@@ -481,9 +906,15 @@ app.get('/ping', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         platform: 'Replit',
+        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
         websocket: {
             connected: connectedAdmins.size,
             status: 'active'
+        },
+        serverConnections: {
+            replit: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected',
+            render: serverConnections.render ? serverConnections.render.readyState : 'disconnected',
+            localhost: serverConnections.localhost ? serverConnections.localhost.readyState : 'disconnected'
         }
     });
 });
@@ -493,7 +924,8 @@ app.get('/api/keep-alive', (req, res) => {
         success: true, 
         message: 'Server is awake',
         timestamp: new Date().toISOString(),
-        uptime: process.uptime()
+        uptime: process.uptime(),
+        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
     });
 });
 
@@ -501,7 +933,8 @@ app.get('/api/health-fast', (req, res) => {
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString(),
-        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+        database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
     });
 });
 
@@ -519,8 +952,14 @@ app.get('/api/health', async (req, res) => {
             },
             totalUsers: await User.countDocuments(),
             totalTransactions: await WalletTransaction.countDocuments(),
-            platform: 'Replit',
-            url: req.hostname
+            platform: isReplit ? 'Replit' : isRender ? 'Render' : 'Local',
+            serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+            url: req.hostname,
+            serverConnections: {
+                replit: serverConnections.replit ? (serverConnections.replit.readyState === WebSocket.OPEN ? 'connected' : 'disconnected') : 'not_connected',
+                render: serverConnections.render ? (serverConnections.render.readyState === WebSocket.OPEN ? 'connected' : 'disconnected') : 'not_connected',
+                localhost: serverConnections.localhost ? (serverConnections.localhost.readyState === WebSocket.OPEN ? 'connected' : 'disconnected') : 'not_connected'
+            }
         };
         
         res.json(health);
@@ -557,7 +996,13 @@ app.get('/api/server-stats', async (req, res) => {
                 uptime: process.uptime(),
                 memoryUsage: process.memoryUsage(),
                 database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-                serverTime: new Date().toISOString()
+                serverTime: new Date().toISOString(),
+                serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                serverConnections: {
+                    replit: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected',
+                    render: serverConnections.render ? serverConnections.render.readyState : 'disconnected',
+                    localhost: serverConnections.localhost ? serverConnections.localhost.readyState : 'disconnected'
+                }
             }
         });
     } catch (error) {
@@ -617,7 +1062,8 @@ app.get('/api/get-user', async (req, res) => {
                 mobile_verified: user.mobile_verified,
                 free_pool_completed: user.free_pool_completed,
                 is_admin: user.is_admin,
-                source: user.source
+                source: user.source,
+                sync_source: user.sync_source
             }
         });
     } catch (error) {
@@ -651,7 +1097,8 @@ app.get('/api/get-all-users', async (req, res) => {
                 tasks_completed: user.tasks_completed,
                 referral_code: user.referral_code,
                 is_admin: user.is_admin,
-                source: user.source
+                source: user.source,
+                sync_source: user.sync_source
             }))
         });
     } catch (error) {
@@ -1745,6 +2192,86 @@ app.get('/api/admin/search-users', async (req, res) => {
 });
 
 // ==========================================
+// ✅ SERVER SYNC ENDPOINTS
+// ==========================================
+
+app.get('/api/servers/status', (req, res) => {
+    res.json({
+        success: true,
+        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+        connections: {
+            replit: {
+                connected: serverConnections.replit ? serverConnections.replit.readyState === WebSocket.OPEN : false,
+                state: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected'
+            },
+            render: {
+                connected: serverConnections.render ? serverConnections.render.readyState === WebSocket.OPEN : false,
+                state: serverConnections.render ? serverConnections.render.readyState : 'disconnected'
+            },
+            localhost: {
+                connected: serverConnections.localhost ? serverConnections.localhost.readyState === WebSocket.OPEN : false,
+                state: serverConnections.localhost ? serverConnections.localhost.readyState : 'disconnected'
+            }
+        },
+        timestamp: Date.now()
+    });
+});
+
+app.post('/api/servers/sync-now', async (req, res) => {
+    try {
+        // Connect to all servers
+        connectToOtherServers();
+        
+        // Send sync request to all connected servers
+        Object.keys(serverConnections).forEach(serverName => {
+            const connection = serverConnections[serverName];
+            if (connection && connection.readyState === WebSocket.OPEN) {
+                connection.send(JSON.stringify({
+                    type: 'sync_request',
+                    server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                    timestamp: Date.now()
+                }));
+            }
+        });
+        
+        res.json({
+            success: true,
+            message: 'Server sync initiated',
+            timestamp: Date.now()
+        });
+    } catch (error) {
+        console.error('Error initiating server sync:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/servers/get-synced-data', async (req, res) => {
+    try {
+        const syncedUsers = await User.find({ 
+            sync_source: { $exists: true, $ne: null }
+        }).select('email username points sync_source sync_timestamp').sort({ sync_timestamp: -1 }).limit(100);
+        
+        const syncedTransactions = await WalletTransaction.find({
+            sync_source: { $exists: true, $ne: null }
+        }).select('transaction_type amount description sync_source sync_timestamp').sort({ sync_timestamp: -1 }).limit(100);
+        
+        res.json({
+            success: true,
+            syncedUsers: syncedUsers,
+            syncedTransactions: syncedTransactions,
+            counts: {
+                users: syncedUsers.length,
+                transactions: syncedTransactions.length
+            },
+            timestamp: Date.now()
+        });
+    } catch (error) {
+        console.error('Error getting synced data:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ==========================================
 // ✅ REAL-TIME SYNC ENDPOINTS
 // ==========================================
 
@@ -1858,7 +2385,12 @@ app.get('/api/websocket/status', (req, res) => {
         success: true,
         connectedAdmins: connectedAdmins.size,
         status: 'active',
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        serverConnections: {
+            replit: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected',
+            render: serverConnections.render ? serverConnections.render.readyState : 'disconnected',
+            localhost: serverConnections.localhost ? serverConnections.localhost.readyState : 'disconnected'
+        }
     });
 });
 
@@ -2059,7 +2591,8 @@ app.get('/api/replit/info', (req, res) => {
         endpoints: {
             admin: '/admin.html',
             health: '/api/health',
-            websocket: 'wss://' + req.hostname + '/ws'
+            websocket: 'wss://' + req.hostname + '/ws',
+            serverSync: '/api/servers/status'
         },
         timestamp: new Date().toISOString()
     });
@@ -2079,7 +2612,8 @@ app.use((req, res) => {
             '/api/save-user',
             '/api/mobile/register',
             '/admin.html',
-            '/api/websocket/status'
+            '/api/websocket/status',
+            '/api/servers/status'
         ]
     });
 });
@@ -2099,10 +2633,11 @@ app.use((err, req, res, next) => {
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
-    🚀 TapEarn Server v3.0 (Replit Optimized with WebSocket)
+    🚀 TapEarn Server v3.0 (Replit Optimized with Multi-Server WebSocket)
     ==========================================
-    ✅ Platform: Replit.com
-    ✅ WebSocket: Active (${connectedAdmins.size} connections)
+    ✅ Platform: ${isReplit ? 'Replit.com' : isRender ? 'Render.com' : 'Local'}
+    ✅ Server Type: ${isReplit ? 'replit' : isRender ? 'render' : 'localhost'}
+    ✅ WebSocket: Active (${connectedAdmins.size} admin connections)
     ✅ Server running on: http://localhost:${PORT}
     ✅ MongoDB: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...'}
     
@@ -2111,28 +2646,56 @@ server.listen(PORT, '0.0.0.0', () => {
     - Admin Panel: http://localhost:${PORT}/admin.html
     - Health Check: http://localhost:${PORT}/api/health
     - WebSocket: ws://localhost:${PORT}/ws
+    - Server Status: http://localhost:${PORT}/api/servers/status
     
-    🔄 Real-time Features:
-    - New user notifications ✅
-    - Transaction updates ✅
-    - Admin panel sync ✅
-    - Mobile sync ✅
+    🔄 Multi-Server Features:
+    - Server-to-Server WebSocket ✅
+    - Real-time data synchronization ✅
+    - Auto-reconnect mechanism ✅
+    - Conflict resolution (max points) ✅
     
     📊 Server started at: ${new Date().toLocaleString()}
     `);
+    
+    // Connect to other servers after 3 seconds
+    setTimeout(() => {
+        connectToOtherServers();
+    }, 3000);
     
     // Auto-ping to keep WebSocket alive
     setInterval(() => {
         broadcastToAdmins({
             type: 'heartbeat',
             timestamp: Date.now(),
-            message: 'Server heartbeat'
+            message: 'Server heartbeat',
+            serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        });
+        
+        // Ping other servers
+        Object.keys(serverConnections).forEach(serverName => {
+            const connection = serverConnections[serverName];
+            if (connection && connection.readyState === WebSocket.OPEN) {
+                connection.send(JSON.stringify({
+                    type: 'ping',
+                    server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                    timestamp: Date.now()
+                }));
+            }
         });
     }, 30000);
 });
 
 process.on('SIGTERM', () => {
     console.log('SIGTERM received. Shutting down gracefully...');
+    
+    // Close all server connections
+    Object.keys(serverConnections).forEach(serverName => {
+        const connection = serverConnections[serverName];
+        if (connection && connection.readyState === WebSocket.OPEN) {
+            connection.close();
+        }
+    });
+    
     server.close(() => {
         console.log('HTTP Server closed');
         mongoose.connection.close();
