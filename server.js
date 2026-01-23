@@ -16,10 +16,9 @@ const PORT = process.env.PORT || 3000;
 
 // Server type detection
 const isReplit = process.env.REPLIT_DB_URL || process.env.REPL_ID;
-const isRender = process.env.RENDER;
-const isLocal = !isReplit && !isRender;
+const isLocal = !isReplit;
 
-console.log(`🖥️ Server Type: ${isReplit ? 'Replit' : isRender ? 'Render' : 'Local'}`);
+console.log(`🖥️ Server Type: ${isReplit ? 'Replit' : 'Local'}`);
 
 // ==========================================
 // ✅ SERVER-TO-SERVER WEBSOCKET CONNECTIONS
@@ -27,7 +26,6 @@ console.log(`🖥️ Server Type: ${isReplit ? 'Replit' : isRender ? 'Render' : 
 
 const serverConnections = {
   replit: null,
-  render: null,
   localhost: null
 };
 
@@ -35,7 +33,6 @@ const serverConnections = {
 function connectToOtherServers() {
   const servers = [
     { name: 'replit', url: 'wss://tapearn-native-app--fahimuddin786.replit.app/ws' },
-    { name: 'render', url: 'wss://tapearn-native-app.onrender.com/ws' },
     { name: 'localhost', url: 'ws://localhost:3000/ws' }
   ];
 
@@ -44,7 +41,6 @@ function connectToOtherServers() {
   servers.forEach(server => {
     // Skip connecting to self
     if ((isReplit && server.name === 'replit') || 
-        (isRender && server.name === 'render') || 
         (isLocal && server.name === 'localhost')) {
       console.log(`⏭️ Skipping self-connection to ${server.name}`);
       return;
@@ -67,8 +63,8 @@ function connectToOtherServers() {
         // Send server info
         ws.send(JSON.stringify({
           type: 'server_handshake',
-          server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
-          serverId: `${isReplit ? 'replit' : isRender ? 'render' : 'localhost'}_${Date.now()}`,
+          server: isReplit ? 'replit' : 'localhost',
+          serverId: `${isReplit ? 'replit' : 'localhost'}_${Date.now()}`,
           timestamp: Date.now(),
           message: 'Server connected for data synchronization'
         }));
@@ -76,7 +72,7 @@ function connectToOtherServers() {
         // Request initial sync
         ws.send(JSON.stringify({
           type: 'sync_request',
-          server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+          server: isReplit ? 'replit' : 'localhost',
           timestamp: Date.now()
         }));
       };
@@ -145,7 +141,7 @@ async function handleServerMessage(message, sourceServer) {
       if (serverConnections[sourceServer] && serverConnections[sourceServer].readyState === WebSocket.OPEN) {
         serverConnections[sourceServer].send(JSON.stringify({
           type: 'pong',
-          server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+          server: isReplit ? 'replit' : 'localhost',
           timestamp: Date.now()
         }));
       }
@@ -309,7 +305,7 @@ async function sendLocalDataToServer(targetServer) {
     // Send users
     connection.send(JSON.stringify({
       type: 'sync_users',
-      server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+      server: isReplit ? 'replit' : 'localhost',
       data: {
         users: recentUsers.map(user => ({
           email: user.email,
@@ -326,7 +322,7 @@ async function sendLocalDataToServer(targetServer) {
     // Send transactions
     connection.send(JSON.stringify({
       type: 'sync_transactions',
-      server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+      server: isReplit ? 'replit' : 'localhost',
       data: {
         transactions: recentTransactions.map(transaction => ({
           userId: transaction.user_id,
@@ -421,7 +417,7 @@ wss.on('connection', (ws, req) => {
         message: 'Connected to TapEarn Admin WebSocket',
         timestamp: Date.now(),
         clientId: clientId,
-        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        serverType: isReplit ? 'replit' : 'localhost'
     }));
     
     // Handle incoming messages
@@ -436,7 +432,7 @@ wss.on('connection', (ws, req) => {
                         type: 'admin_authenticated',
                         message: 'Admin authenticated successfully',
                         timestamp: Date.now(),
-                        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+                        serverType: isReplit ? 'replit' : 'localhost'
                     }));
                     break;
                     
@@ -463,7 +459,7 @@ wss.on('connection', (ws, req) => {
                         if (connection && connection.readyState === WebSocket.OPEN) {
                             connection.send(JSON.stringify({
                                 type: 'sync_request',
-                                server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                                server: isReplit ? 'replit' : 'localhost',
                                 timestamp: Date.now()
                             }));
                         }
@@ -510,7 +506,7 @@ function broadcastNewUser(userData) {
         type: 'user_registered',
         data: userData,
         timestamp: Date.now(),
-        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        serverType: isReplit ? 'replit' : 'localhost'
     });
     
     // Also broadcast to other servers
@@ -518,7 +514,7 @@ function broadcastNewUser(userData) {
         type: 'user_registered',
         data: userData,
         timestamp: Date.now(),
-        server: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        server: isReplit ? 'replit' : 'localhost'
     });
 }
 
@@ -528,7 +524,7 @@ function broadcastNewTransaction(transactionData) {
         type: 'transaction_added',
         data: transactionData,
         timestamp: Date.now(),
-        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        serverType: isReplit ? 'replit' : 'localhost'
     });
     
     // Also broadcast to other servers
@@ -536,7 +532,7 @@ function broadcastNewTransaction(transactionData) {
         type: 'transaction_added',
         data: transactionData,
         timestamp: Date.now(),
-        server: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        server: isReplit ? 'replit' : 'localhost'
     });
 }
 
@@ -906,14 +902,13 @@ app.get('/ping', (req, res) => {
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
         platform: 'Replit',
-        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+        serverType: isReplit ? 'replit' : 'localhost',
         websocket: {
             connected: connectedAdmins.size,
             status: 'active'
         },
         serverConnections: {
             replit: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected',
-            render: serverConnections.render ? serverConnections.render.readyState : 'disconnected',
             localhost: serverConnections.localhost ? serverConnections.localhost.readyState : 'disconnected'
         }
     });
@@ -925,7 +920,7 @@ app.get('/api/keep-alive', (req, res) => {
         message: 'Server is awake',
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
-        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        serverType: isReplit ? 'replit' : 'localhost'
     });
 });
 
@@ -934,7 +929,7 @@ app.get('/api/health-fast', (req, res) => {
         status: 'ok',
         timestamp: new Date().toISOString(),
         database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+        serverType: isReplit ? 'replit' : 'localhost'
     });
 });
 
@@ -952,12 +947,11 @@ app.get('/api/health', async (req, res) => {
             },
             totalUsers: await User.countDocuments(),
             totalTransactions: await WalletTransaction.countDocuments(),
-            platform: isReplit ? 'Replit' : isRender ? 'Render' : 'Local',
-            serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+            platform: isReplit ? 'Replit' : 'Local',
+            serverType: isReplit ? 'replit' : 'localhost',
             url: req.hostname,
             serverConnections: {
                 replit: serverConnections.replit ? (serverConnections.replit.readyState === WebSocket.OPEN ? 'connected' : 'disconnected') : 'not_connected',
-                render: serverConnections.render ? (serverConnections.render.readyState === WebSocket.OPEN ? 'connected' : 'disconnected') : 'not_connected',
                 localhost: serverConnections.localhost ? (serverConnections.localhost.readyState === WebSocket.OPEN ? 'connected' : 'disconnected') : 'not_connected'
             }
         };
@@ -997,10 +991,9 @@ app.get('/api/server-stats', async (req, res) => {
                 memoryUsage: process.memoryUsage(),
                 database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
                 serverTime: new Date().toISOString(),
-                serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                serverType: isReplit ? 'replit' : 'localhost',
                 serverConnections: {
                     replit: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected',
-                    render: serverConnections.render ? serverConnections.render.readyState : 'disconnected',
                     localhost: serverConnections.localhost ? serverConnections.localhost.readyState : 'disconnected'
                 }
             }
@@ -2198,15 +2191,11 @@ app.get('/api/admin/search-users', async (req, res) => {
 app.get('/api/servers/status', (req, res) => {
     res.json({
         success: true,
-        serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+        serverType: isReplit ? 'replit' : 'localhost',
         connections: {
             replit: {
                 connected: serverConnections.replit ? serverConnections.replit.readyState === WebSocket.OPEN : false,
                 state: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected'
-            },
-            render: {
-                connected: serverConnections.render ? serverConnections.render.readyState === WebSocket.OPEN : false,
-                state: serverConnections.render ? serverConnections.render.readyState : 'disconnected'
             },
             localhost: {
                 connected: serverConnections.localhost ? serverConnections.localhost.readyState === WebSocket.OPEN : false,
@@ -2228,7 +2217,7 @@ app.post('/api/servers/sync-now', async (req, res) => {
             if (connection && connection.readyState === WebSocket.OPEN) {
                 connection.send(JSON.stringify({
                     type: 'sync_request',
-                    server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                    server: isReplit ? 'replit' : 'localhost',
                     timestamp: Date.now()
                 }));
             }
@@ -2388,7 +2377,6 @@ app.get('/api/websocket/status', (req, res) => {
         timestamp: Date.now(),
         serverConnections: {
             replit: serverConnections.replit ? serverConnections.replit.readyState : 'disconnected',
-            render: serverConnections.render ? serverConnections.render.readyState : 'disconnected',
             localhost: serverConnections.localhost ? serverConnections.localhost.readyState : 'disconnected'
         }
     });
@@ -2633,10 +2621,10 @@ app.use((err, req, res, next) => {
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`
-    🚀 TapEarn Server v3.0 (Replit Optimized with Multi-Server WebSocket)
+    🚀 TapEarn Server v3.0 (Replit + Localhost Multi-Server Sync)
     ==========================================
-    ✅ Platform: ${isReplit ? 'Replit.com' : isRender ? 'Render.com' : 'Local'}
-    ✅ Server Type: ${isReplit ? 'replit' : isRender ? 'render' : 'localhost'}
+    ✅ Platform: ${isReplit ? 'Replit.com' : 'Local'}
+    ✅ Server Type: ${isReplit ? 'replit' : 'localhost'}
     ✅ WebSocket: Active (${connectedAdmins.size} admin connections)
     ✅ Server running on: http://localhost:${PORT}
     ✅ MongoDB: ${mongoose.connection.readyState === 1 ? 'Connected' : 'Connecting...'}
@@ -2649,7 +2637,7 @@ server.listen(PORT, '0.0.0.0', () => {
     - Server Status: http://localhost:${PORT}/api/servers/status
     
     🔄 Multi-Server Features:
-    - Server-to-Server WebSocket ✅
+    - Replit ↔ Localhost WebSocket Sync ✅
     - Real-time data synchronization ✅
     - Auto-reconnect mechanism ✅
     - Conflict resolution (max points) ✅
@@ -2668,7 +2656,7 @@ server.listen(PORT, '0.0.0.0', () => {
             type: 'heartbeat',
             timestamp: Date.now(),
             message: 'Server heartbeat',
-            serverType: isReplit ? 'replit' : isRender ? 'render' : 'localhost'
+            serverType: isReplit ? 'replit' : 'localhost'
         });
         
         // Ping other servers
@@ -2677,7 +2665,7 @@ server.listen(PORT, '0.0.0.0', () => {
             if (connection && connection.readyState === WebSocket.OPEN) {
                 connection.send(JSON.stringify({
                     type: 'ping',
-                    server: isReplit ? 'replit' : isRender ? 'render' : 'localhost',
+                    server: isReplit ? 'replit' : 'localhost',
                     timestamp: Date.now()
                 }));
             }
