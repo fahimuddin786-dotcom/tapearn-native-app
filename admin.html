@@ -1196,10 +1196,10 @@
 
     <script>
         // ========================
-        // ✅ COMPLETE MULTI-SERVER SYNC SYSTEM
+        // ✅ OPTIMIZED MULTI-SERVER SYNC SYSTEM
         // ========================
 
-        // Server configurations
+        // Server configurations (ONLY Replit and Localhost)
         const SYNC_SERVERS = {
             replit: {
                 name: 'Replit',
@@ -1207,15 +1207,8 @@
                 wsUrl: 'wss://tapearn-native-app--fahimuddin786.replit.app/ws',
                 enabled: true,
                 online: false,
-                ws: null
-            },
-            render: {
-                name: 'Render',
-                url: 'https://tapearn-native-app.onrender.com',
-                wsUrl: 'wss://tapearn-native-app.onrender.com/ws',
-                enabled: true,
-                online: false,
-                ws: null
+                ws: null,
+                priority: 1 // Highest priority
             },
             localhost: {
                 name: 'Localhost',
@@ -1223,13 +1216,14 @@
                 wsUrl: 'ws://localhost:3000/ws',
                 enabled: true,
                 online: false,
-                ws: null
+                ws: null,
+                priority: 2 // Secondary
             }
         };
 
         // Initialize multi-server sync
         async function initializeMultiServerSync() {
-            console.log('🔄 Initializing multi-server sync...');
+            console.log('🔄 Initializing multi-server sync (Replit & Localhost only)...');
             
             // Connect to all enabled servers
             for (const [serverId, config] of Object.entries(SYNC_SERVERS)) {
@@ -1308,7 +1302,6 @@
         function getCurrentServerId() {
             const hostname = window.location.hostname;
             if (hostname.includes('replit')) return 'replit';
-            if (hostname.includes('render')) return 'render';
             if (hostname.includes('localhost') || hostname === '127.0.0.1') return 'localhost';
             return 'unknown';
         }
@@ -1493,7 +1486,6 @@
             
             const results = {
                 replit: { success: false, users: 0, transactions: 0 },
-                render: { success: false, users: 0, transactions: 0 },
                 localhost: { success: false, users: 0, transactions: 0 }
             };
             
@@ -1700,10 +1692,10 @@
                             <i class="fas fa-sync"></i> Full Sync
                         </button>
                         <button class="btn btn-info" onclick="syncReplitToAll()">
-                            <i class="fas fa-arrow-right"></i> Replit → All
+                            <i class="fas fa-arrow-right"></i> Replit → Localhost
                         </button>
-                        <button class="btn btn-warning" onclick="syncAllToReplit()">
-                            <i class="fas fa-arrow-left"></i> All → Replit
+                        <button class="btn btn-warning" onclick="syncLocalhostToReplit()">
+                            <i class="fas fa-arrow-left"></i> Localhost → Replit
                         </button>
                         <button class="btn btn-secondary" onclick="showSyncSettings()">
                             <i class="fas fa-cog"></i> Settings
@@ -1794,25 +1786,24 @@
             updateServerStatusDisplay();
         }
 
-        // Sync from Replit to all servers
+        // Sync from Replit to Localhost
         async function syncReplitToAll() {
             if (getCurrentServerId() !== 'replit') {
                 showOptimizedNotification('❌ This function is only available on Replit server', 'error');
                 return;
             }
             
-            showOptimizedNotification('🔄 Pushing Replit data to all servers...', 'info');
+            showOptimizedNotification('🔄 Pushing Replit data to Localhost...', 'info');
             
             // Get current Replit data
             const users = adminData.users;
             const transactions = adminData.transactions;
             
-            // Send to other servers
-            for (const [serverId, config] of Object.entries(SYNC_SERVERS)) {
-                if (serverId === 'replit' || !config.online) continue;
-                
+            // Send to Localhost
+            const localhostConfig = SYNC_SERVERS.localhost;
+            if (localhostConfig.online) {
                 try {
-                    const response = await fetch(`${config.url}/api/bulk-sync-users`, {
+                    const response = await fetch(`${localhostConfig.url}/api/bulk-sync-users`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -1825,20 +1816,22 @@
                     const result = await response.json();
                     
                     if (result.success) {
-                        console.log(`✅ Data sent to ${config.name}: ${result.syncedCount || 0} users`);
+                        console.log(`✅ Data sent to Localhost: ${result.syncedCount || 0} users`);
+                        showOptimizedNotification('✅ Replit data pushed to Localhost', 'success');
                     }
                 } catch (error) {
-                    console.error(`Failed to send to ${config.name}:`, error);
+                    console.error('Failed to send to Localhost:', error);
+                    showOptimizedNotification('❌ Failed to push to Localhost', 'error');
                 }
+            } else {
+                showOptimizedNotification('❌ Localhost server is offline', 'error');
             }
-            
-            showOptimizedNotification('✅ Replit data pushed to all online servers', 'success');
         }
 
-        // Sync all servers to Replit
-        async function syncAllToReplit() {
-            if (getCurrentServerId() !== 'replit') {
-                showOptimizedNotification('❌ This function is only available on Replit server', 'error');
+        // Sync from Localhost to Replit
+        async function syncLocalhostToReplit() {
+            if (getCurrentServerId() !== 'localhost') {
+                showOptimizedNotification('❌ This function is only available on Localhost server', 'error');
                 return;
             }
             
@@ -2017,33 +2010,25 @@
             document.getElementById('adminUserName').textContent = userIdentifier;
         }
 
-        // ✅ Get server base
+        // ✅ Get server base - PRIORITY: Replit > Localhost
         function getServerBase() {
             const currentHost = window.location.hostname;
-            const currentPort = window.location.port;
-            const currentProtocol = window.location.protocol;
             
             console.log('🌍 Current location:', window.location.href);
             
-            // If we're on render.com, use render.com server
-            if (currentHost.includes('render.com') || currentHost.includes('tapearn-native-app')) {
-                console.log('🟢 Using online server (Render.com)');
-                return 'https://tapearn-native-app.onrender.com';
-            }
-            
-            // If we're on replit.com, use replit server
+            // If we're on replit.com, use replit server (PRIORITY 1)
             if (currentHost.includes('replit.com')) {
-                console.log('🟢 Using Replit server');
+                console.log('🟢 Using Replit server (Primary)');
                 return 'https://tapearn-native-app--fahimuddin786.replit.app';
             }
             
-            // If we're on localhost, use local server
+            // If we're on localhost, use local server (PRIORITY 2)
             if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-                console.log('🔵 Using local server (localhost)');
-                return `http://${currentHost}:${currentPort || '3000'}`;
+                console.log('🔵 Using local server (Secondary)');
+                return 'http://localhost:3000';
             }
             
-            // Fallback
+            // Fallback to current origin
             console.log('⚠️ Using fallback server');
             return window.location.origin || 'http://localhost:3000';
         }
@@ -2103,44 +2088,105 @@
                 const serverBase = getServerBase();
                 console.log('🔄 OPTIMIZED: Loading admin data from', serverBase);
                 
-                // Parallel fetching with error handling
-                const [usersResponse, txResponse, statsResponse] = await Promise.allSettled([
-                    fetch(`${serverBase}/api/get-all-users`).catch(() => ({ ok: false })),
-                    fetch(`${serverBase}/api/get-all-transactions`).catch(() => ({ ok: false })),
-                    fetch(`${serverBase}/api/admin/user-stats`).catch(() => ({ ok: false }))
-                ]);
+                // Try Replit first, fallback to localhost if needed
+                let usersData = { success: false, users: [] };
+                let txData = { success: false, transactions: [] };
+                let statsData = { success: false, stats: {} };
+                
+                // Try Replit server first
+                try {
+                    const replitUrl = 'https://tapearn-native-app--fahimuddin786.replit.app';
+                    
+                    // Get users
+                    const usersResponse = await fetch(`${replitUrl}/api/get-all-users`, {
+                        signal: AbortSignal.timeout(5000)
+                    }).catch(() => null);
+                    
+                    if (usersResponse && usersResponse.ok) {
+                        usersData = await usersResponse.json();
+                    }
+                    
+                    // Get transactions
+                    const txResponse = await fetch(`${replitUrl}/api/get-all-transactions`, {
+                        signal: AbortSignal.timeout(5000)
+                    }).catch(() => null);
+                    
+                    if (txResponse && txResponse.ok) {
+                        txData = await txResponse.json();
+                    }
+                    
+                    // Get stats
+                    const statsResponse = await fetch(`${replitUrl}/api/admin/user-stats`, {
+                        signal: AbortSignal.timeout(5000)
+                    }).catch(() => null);
+                    
+                    if (statsResponse && statsResponse.ok) {
+                        statsData = await statsResponse.json();
+                    }
+                    
+                } catch (replitError) {
+                    console.log('❌ Replit server failed, trying localhost...');
+                    
+                    // Fallback to localhost
+                    try {
+                        const localhostUrl = 'http://localhost:3000';
+                        
+                        // Get users
+                        const localUsersResponse = await fetch(`${localhostUrl}/api/get-all-users`, {
+                            signal: AbortSignal.timeout(5000)
+                        }).catch(() => null);
+                        
+                        if (localUsersResponse && localUsersResponse.ok) {
+                            usersData = await localUsersResponse.json();
+                        }
+                        
+                        // Get transactions
+                        const localTxResponse = await fetch(`${localhostUrl}/api/get-all-transactions`, {
+                            signal: AbortSignal.timeout(5000)
+                        }).catch(() => null);
+                        
+                        if (localTxResponse && localTxResponse.ok) {
+                            txData = await localTxResponse.json();
+                        }
+                        
+                    } catch (localhostError) {
+                        console.log('❌ Both servers failed, using localStorage data');
+                    }
+                }
                 
                 // Process users
-                if (usersResponse.status === 'fulfilled' && usersResponse.value.ok) {
-                    const usersData = await usersResponse.value.json();
-                    if (usersData.success) {
-                        const filteredUsers = filterDeletedUsers(usersData.users);
-                        const userCountChanged = filteredUsers.length !== adminData.users.length;
-                        
-                        adminData.users = filteredUsers;
-                        document.getElementById('userCountBadge').textContent = filteredUsers.length;
-                        
-                        if (userCountChanged && Math.abs(filteredUsers.length - adminData.users.length) > 5) {
-                            showOptimizedNotification(`🔄 Users updated: ${filteredUsers.length} total`, 'info');
-                        }
+                if (usersData.success) {
+                    const filteredUsers = filterDeletedUsers(usersData.users);
+                    const userCountChanged = filteredUsers.length !== adminData.users.length;
+                    
+                    adminData.users = filteredUsers;
+                    document.getElementById('userCountBadge').textContent = filteredUsers.length;
+                    
+                    if (userCountChanged && Math.abs(filteredUsers.length - adminData.users.length) > 5) {
+                        showOptimizedNotification(`🔄 Users updated: ${filteredUsers.length} total`, 'info');
                     }
+                } else {
+                    // Fallback to localStorage
+                    const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                    const filteredUsers = filterDeletedUsers(localUsers);
+                    adminData.users = filteredUsers;
+                    document.getElementById('userCountBadge').textContent = filteredUsers.length;
                 }
                 
                 // Process transactions
-                if (txResponse.status === 'fulfilled' && txResponse.value.ok) {
-                    const txData = await txResponse.value.json();
-                    if (txData.success) {
-                        adminData.transactions = txData.transactions;
-                        document.getElementById('txCountBadge').textContent = txData.transactions.length;
-                    }
+                if (txData.success) {
+                    adminData.transactions = txData.transactions;
+                    document.getElementById('txCountBadge').textContent = txData.transactions.length;
+                } else {
+                    // Fallback to localStorage
+                    const localTransactions = JSON.parse(localStorage.getItem('allUsersTransactions') || '[]');
+                    adminData.transactions = localTransactions;
+                    document.getElementById('txCountBadge').textContent = localTransactions.length;
                 }
                 
                 // Process stats
-                if (statsResponse.status === 'fulfilled' && statsResponse.value.ok) {
-                    const statsData = await statsResponse.value.json();
-                    if (statsData.success) {
-                        adminData.serverStats = statsData.stats;
-                    }
+                if (statsData.success) {
+                    adminData.serverStats = statsData.stats;
                 }
                 
                 adminData.lastUpdated = new Date();
@@ -2468,9 +2514,8 @@
             
             // Servers to check
             const servers = [
-                { name: 'Local', url: 'http://localhost:3000' },
-                { name: 'Online', url: 'https://tapearn-native-app.onrender.com' },
-                { name: 'Replit', url: 'https://tapearn-native-app--fahimuddin786.replit.app' }
+                { name: 'Replit', url: 'https://tapearn-native-app--fahimuddin786.replit.app' },
+                { name: 'Localhost', url: 'http://localhost:3000' }
             ];
             
             for (const server of servers) {
@@ -5483,7 +5528,7 @@
                                 ${user.username || user.email} - Current: ${user.sponsorId || 'None'}
                             </option>
                         `).join('')}
-                    </select>
+                </select>
                     <small>Hold Ctrl/Cmd to select multiple users</small>
                 </div>
                 
