@@ -1221,6 +1221,677 @@
             }
         };
 
+        // ========================
+        // ✅ ORIGINAL ADMIN PANEL CODE
+        // ========================
+        
+        // Global variables
+        let adminData = {
+            users: [],
+            transactions: [],
+            miningPools: [],
+            serverStats: {},
+            lastUpdated: null
+        };
+
+        // Optimization config
+        const OPTIMIZATION_CONFIG = {
+            AUTO_REFRESH_INTERVAL: 30000,
+            SERVER_STATUS_INTERVAL: 60000,
+            FULL_SYNC_INTERVAL: 300000,
+            USER_SYNC_INTERVAL: 15000,
+            NOTIFICATION_COOLDOWN: 5000,
+            ERROR_NOTIFICATION_COOLDOWN: 10000,
+            SUCCESS_NOTIFICATION_COOLDOWN: 3000,
+            SEARCH_DEBOUNCE: 500,
+            RESIZE_DEBOUNCE: 250,
+            STORAGE_DEBOUNCE: 1000,
+            BATCH_SIZE: 50,
+            MAX_NOTIFICATIONS: 3,
+            MAX_RETRIES: 2
+        };
+
+        let refreshTimers = {
+            autoRefresh: null,
+            serverStatus: null,
+            fullSync: null,
+            userSync: null
+        };
+
+        let lastRefreshTime = 0;
+        let lastNotificationTime = 0;
+        let isRefreshing = false;
+        let refreshQueue = [];
+        let notificationQueue = [];
+        let userChangeCount = 0;
+
+        // ✅ Initialize admin panel
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Admin Panel Initializing with Multi-Server Sync...');
+            
+            checkAdminAuth();
+            initializeOptimizedAdminPanel();
+            
+            // Add sync controls after 2 seconds
+            setTimeout(() => {
+                addAdvancedSyncControls();
+                
+                // Auto-connect to other servers
+                if (getCurrentServerId() === 'replit') {
+                    setTimeout(() => initializeMultiServerSync(), 3000);
+                }
+            }, 2000);
+        });
+
+        // ✅ Check admin authentication
+        function checkAdminAuth() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const ADMIN_AUTHORIZED_USERS = [
+                'admin@tapearn.com',
+                'admin@example.com',
+                'superuser@tapearn.com',
+                'system_admin',
+                'developer',
+                'admin'
+            ];
+
+            if (!currentUser.email && !currentUser.username) {
+                alert('❌ No user logged in! Redirecting to main app...');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const userIdentifier = currentUser.email || currentUser.username || currentUser.id;
+            
+            if (!ADMIN_AUTHORIZED_USERS.some(authorized => 
+                userIdentifier.toLowerCase().includes(authorized.toLowerCase()))) {
+                alert('❌ Unauthorized access! Redirecting to main app...');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById('adminUserName').textContent = userIdentifier;
+        }
+
+        // ✅ Get current server ID
+        function getCurrentServerId() {
+            const hostname = window.location.hostname;
+            if (hostname.includes('replit')) return 'replit';
+            if (hostname.includes('localhost') || hostname === '127.0.0.1') return 'localhost';
+            return 'unknown';
+        }
+
+        // ✅ Get server base - PRIORITY: Replit > Localhost
+        function getServerBase() {
+            const currentHost = window.location.hostname;
+            
+            console.log('🌍 Current location:', window.location.href);
+            
+            // If we're on replit.com, use replit server (PRIORITY 1)
+            if (currentHost.includes('replit.com')) {
+                console.log('🟢 Using Replit server (Primary)');
+                return 'https://tapearn-native-app--fahimuddin786.replit.app';
+            }
+            
+            // If we're on localhost, use local server (PRIORITY 2)
+            if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
+                console.log('🔵 Using local server (Secondary)');
+                return 'http://localhost:3000';
+            }
+            
+            // Fallback to current origin
+            console.log('⚠️ Using fallback server');
+            return window.location.origin;
+        }
+
+        // ✅ Initialize optimized admin panel
+        function initializeOptimizedAdminPanel() {
+            console.log('🚀 Admin Panel Initializing (Optimized)...');
+            
+            // Load initial data (once)
+            optimizedLoadAdminData(true); // Force first load
+            
+            // Setup optimized sync
+            initializeDeletedUsersTracker();
+            setupOptimizedRealTimeSync();
+            
+            // Setup mobile listener
+            setupMobileUserListener();
+            
+            // Add sync controls
+            addSyncControlsToHeader();
+            
+            // Setup lazy loading
+            setTimeout(setupLazyLoading, 1000);
+            
+            // Setup performance monitoring
+            setupPerformanceMonitoring();
+            
+            console.log('✅ Optimized Admin Panel Initialized');
+        }
+
+        // ✅ Optimized load admin data
+        async function optimizedLoadAdminData(force = false) {
+            const now = Date.now();
+            const timeSinceLastRefresh = now - lastRefreshTime;
+            
+            // Rate limiting
+            if (!force && timeSinceLastRefresh < 10000) { // 10 seconds minimum
+                console.log('⏳ Skipping refresh (rate limited)');
+                return;
+            }
+            
+            // Check if already refreshing
+            if (isRefreshing) {
+                console.log('⏳ Already refreshing, queueing request');
+                if (!refreshQueue.includes('loadAdminData')) {
+                    refreshQueue.push('loadAdminData');
+                }
+                return;
+            }
+            
+            isRefreshing = true;
+            lastRefreshTime = now;
+            
+            try {
+                showLoading();
+                
+                const serverBase = getServerBase();
+                console.log('🔄 OPTIMIZED: Loading admin data from', serverBase);
+                
+                // Try current server first
+                let usersData = { success: false, users: [] };
+                let txData = { success: false, transactions: [] };
+                
+                try {
+                    // Get users from current server
+                    const usersResponse = await fetch(`${serverBase}/api/get-all-users`, {
+                        signal: AbortSignal.timeout(5000)
+                    }).catch(() => null);
+                    
+                    if (usersResponse && usersResponse.ok) {
+                        usersData = await usersResponse.json();
+                    }
+                    
+                    // Get transactions from current server
+                    const txResponse = await fetch(`${serverBase}/api/get-all-transactions`, {
+                        signal: AbortSignal.timeout(5000)
+                    }).catch(() => null);
+                    
+                    if (txResponse && txResponse.ok) {
+                        txData = await txResponse.json();
+                    }
+                    
+                } catch (error) {
+                    console.log('❌ Current server failed:', error.message);
+                }
+                
+                // Process users
+                if (usersData.success) {
+                    const filteredUsers = filterDeletedUsers(usersData.users);
+                    adminData.users = filteredUsers;
+                    document.getElementById('userCountBadge').textContent = filteredUsers.length;
+                } else {
+                    // Fallback to localStorage
+                    const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                    const filteredUsers = filterDeletedUsers(localUsers);
+                    adminData.users = filteredUsers;
+                    document.getElementById('userCountBadge').textContent = filteredUsers.length;
+                }
+                
+                // Process transactions
+                if (txData.success) {
+                    adminData.transactions = txData.transactions;
+                    document.getElementById('txCountBadge').textContent = txData.transactions.length;
+                } else {
+                    // Fallback to localStorage
+                    const localTransactions = JSON.parse(localStorage.getItem('allUsersTransactions') || '[]');
+                    adminData.transactions = localTransactions;
+                    document.getElementById('txCountBadge').textContent = localTransactions.length;
+                }
+                
+                adminData.lastUpdated = new Date();
+                
+                // Refresh view only if needed
+                const currentView = document.querySelector('.admin-header h2').textContent;
+                if (currentView.includes('Dashboard') || currentView.includes('Users')) {
+                    refreshCurrentView();
+                }
+                
+                if (!force) {
+                    showOptimizedNotification('✅ Data refreshed', 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error in optimized load:', error);
+                if (!force) {
+                    showOptimizedNotification('⚠️ Refresh failed, using cached data', 'warning');
+                }
+            } finally {
+                isRefreshing = false;
+                
+                // Process queued refreshes
+                if (refreshQueue.length > 0) {
+                    const nextRefresh = refreshQueue.shift();
+                    setTimeout(() => optimizedLoadAdminData(), 5000);
+                }
+            }
+        }
+
+        // ✅ Optimized notification system
+        function showOptimizedNotification(message, type = 'info', force = false) {
+            const now = Date.now();
+            
+            // Rate limiting
+            if (!force) {
+                if (type === 'info' && (now - lastNotificationTime < OPTIMIZATION_CONFIG.NOTIFICATION_COOLDOWN)) {
+                    if (!notificationQueue.some(n => n.message === message)) {
+                        notificationQueue.push({ message, type, timestamp: now });
+                    }
+                    return;
+                }
+                
+                if (type === 'success' && (now - lastNotificationTime < OPTIMIZATION_CONFIG.SUCCESS_NOTIFICATION_COOLDOWN)) {
+                    return;
+                }
+                
+                if (type === 'error' && (now - lastNotificationTime < OPTIMIZATION_CONFIG.ERROR_NOTIFICATION_COOLDOWN)) {
+                    return;
+                }
+            }
+            
+            lastNotificationTime = now;
+            
+            // Clear similar notifications
+            const existingNotifications = document.querySelectorAll('.admin-notification');
+            existingNotifications.forEach(notification => {
+                if (notification.textContent.includes(message.substring(0, 30))) {
+                    notification.remove();
+                }
+            });
+            
+            // Limit total notifications
+            if (existingNotifications.length >= OPTIMIZATION_CONFIG.MAX_NOTIFICATIONS) {
+                existingNotifications[0].remove();
+            }
+            
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = `admin-notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span style="flex: 1;">${message}</span>
+                <button class="notification-close" onclick="this.parentElement.remove()" style="background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0 5px;">
+                    ×
+                </button>
+            `;
+            
+            document.getElementById('notificationContainer').appendChild(notification);
+            
+            // Auto-remove after appropriate time
+            const removeTime = type === 'error' ? 8000 : type === 'info' ? 5000 : 4000;
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.style.animation = 'slideOut 0.3s ease-out forwards';
+                    setTimeout(() => notification.remove(), 300);
+                }
+            }, removeTime);
+            
+            // Process queued notifications
+            if (notificationQueue.length > 0) {
+                setTimeout(() => {
+                    const nextNotification = notificationQueue.shift();
+                    if (nextNotification) {
+                        showOptimizedNotification(nextNotification.message, nextNotification.type, true);
+                    }
+                }, OPTIMIZATION_CONFIG.NOTIFICATION_COOLDOWN);
+            }
+        }
+
+        // ✅ Debounce function
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // ✅ Setup optimized real-time sync
+        function setupOptimizedRealTimeSync() {
+            console.log('🔧 Setting up OPTIMIZED real-time sync...');
+            
+            // Clear existing timers
+            clearAllRefreshTimers();
+            
+            // Single auto-refresh timer
+            refreshTimers.autoRefresh = setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    optimizedLoadAdminData();
+                }
+            }, OPTIMIZATION_CONFIG.AUTO_REFRESH_INTERVAL);
+            
+            // Server status check (less frequent)
+            refreshTimers.serverStatus = setInterval(() => {
+                checkServerStatus();
+            }, OPTIMIZATION_CONFIG.SERVER_STATUS_INTERVAL);
+            
+            // Full sync (less frequent)
+            refreshTimers.fullSync = setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    syncFromAllServers();
+                }
+            }, OPTIMIZATION_CONFIG.FULL_SYNC_INTERVAL);
+            
+            // User sync (moderate frequency)
+            refreshTimers.userSync = setInterval(() => {
+                if (document.visibilityState === 'visible') {
+                    checkUserChanges();
+                }
+            }, OPTIMIZATION_CONFIG.USER_SYNC_INTERVAL);
+            
+            console.log('✅ Optimized sync setup complete');
+        }
+
+        // ✅ Clear all refresh timers
+        function clearAllRefreshTimers() {
+            Object.values(refreshTimers).forEach(timer => {
+                if (timer) clearInterval(timer);
+            });
+            refreshTimers = {
+                autoRefresh: null,
+                serverStatus: null,
+                fullSync: null,
+                userSync: null
+            };
+        }
+
+        // ✅ Check user changes
+        function checkUserChanges() {
+            const serverBase = getServerBase();
+            
+            fetch(`${serverBase}/api/admin/user-sync-check?since=${lastRefreshTime}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.newUsers > 0) {
+                        console.log(`📈 ${data.newUsers} new users detected`);
+                        
+                        if (data.newUsers >= 5) {
+                            optimizedLoadAdminData();
+                        } else if (data.newUsers > 0) {
+                            const newCount = parseInt(document.getElementById('userCountBadge').textContent) + data.newUsers;
+                            document.getElementById('userCountBadge').textContent = newCount;
+                            showOptimizedNotification(`+${data.newUsers} new users`, 'info');
+                        }
+                    }
+                })
+                .catch(error => console.log('User check failed:', error.message));
+        }
+
+        // ✅ Deleted users tracker
+        function initializeDeletedUsersTracker() {
+            if (!localStorage.getItem('deletedUsers')) {
+                localStorage.setItem('deletedUsers', JSON.stringify([]));
+            }
+        }
+
+        // ✅ Add to deleted users
+        function addToDeletedUsers(userId) {
+            const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers') || '[]');
+            const idStr = userId?.toString()?.toLowerCase();
+            if (idStr && !deletedUsers.includes(idStr)) {
+                deletedUsers.push(idStr);
+                localStorage.setItem('deletedUsers', JSON.stringify(deletedUsers));
+            }
+        }
+
+        // ✅ Filter deleted users
+        function filterDeletedUsers(users) {
+            const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers') || '[]');
+            const deletedUsersSet = new Set(deletedUsers.map(id => id?.toString()?.toLowerCase()));
+            
+            return users.filter(user => {
+                const userIdentifiers = [
+                    user.email,
+                    user.id?.toString(),
+                    user.username,
+                    user.email?.toLowerCase(),
+                    user.username?.toLowerCase()
+                ].filter(Boolean);
+                
+                return !userIdentifiers.some(id => 
+                    deletedUsersSet.has(id?.toString()?.toLowerCase())
+                );
+            });
+        }
+
+        // ✅ Setup mobile user listener
+        function setupMobileUserListener() {
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'mobile_user_registered') {
+                    try {
+                        const data = JSON.parse(event.newValue || '{}');
+                        if (data.user) {
+                            handleMobileUserRegistration(data.user);
+                        }
+                    } catch (error) {
+                        console.error('Error processing mobile storage event:', error);
+                    }
+                }
+            });
+            
+            console.log('📱 Mobile user listener setup complete');
+        }
+
+        // ✅ Handle mobile user registration
+        function handleMobileUserRegistration(userData) {
+            const userExists = adminData.users.some(user => 
+                user.email === userData.email || 
+                (user.mobile && userData.mobile && user.mobile === userData.mobile)
+            );
+            
+            if (!userExists) {
+                const newUser = {
+                    ...userData,
+                    id: userData.id || `mobile_${Date.now()}`,
+                    points: userData.points || 100,
+                    usdtWallet: userData.usdtWallet || 0,
+                    inrWallet: userData.inrWallet || 0,
+                    status: 'active',
+                    emailVerified: false,
+                    mobileVerified: !!userData.mobile,
+                    registration_date: userData.registeredAt || new Date().toISOString(),
+                    source: 'mobile_app',
+                    registeredAt: new Date().toISOString()
+                };
+                
+                adminData.users.unshift(newUser);
+                document.getElementById('userCountBadge').textContent = adminData.users.length;
+                
+                // Update localStorage
+                const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+                localUsers.unshift(newUser);
+                localStorage.setItem('registeredUsers', JSON.stringify(localUsers));
+                
+                // Refresh view
+                refreshCurrentView();
+                
+                showOptimizedNotification(`📱 Mobile user registered: ${userData.email || userData.mobile}`, 'success');
+            }
+        }
+
+        // ✅ Add sync controls to header
+        function addSyncControlsToHeader() {
+            const adminHeader = document.querySelector('.admin-header');
+            
+            if (!adminHeader) return;
+            
+            // Check if sync controls already exist
+            if (document.querySelector('.sync-controls')) return;
+            
+            const syncControls = document.createElement('div');
+            syncControls.className = 'sync-controls';
+            syncControls.style.cssText = `
+                display: flex;
+                gap: 10px;
+                margin-left: 20px;
+                align-items: center;
+            `;
+            
+            syncControls.innerHTML = `
+                <button class="btn btn-info btn-sm" onclick="syncFromAllServers()" title="Sync from all servers" style="display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-sync-alt"></i> Multi-Server Sync
+                </button>
+                <button class="btn btn-warning btn-sm" onclick="checkAllServerStatus()" title="Check server status" style="display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-server"></i> Server Status
+                </button>
+                <div id="serverStatus" style="display: inline-block; padding: 5px 10px; border-radius: 5px; background: #f8f9fa; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                    <i class="fas fa-spinner fa-spin"></i> Checking...
+                </div>
+            `;
+            
+            // Add to header
+            const headerActions = adminHeader.querySelector('.admin-actions');
+            if (headerActions) {
+                headerActions.insertAdjacentElement('afterend', syncControls);
+            } else {
+                adminHeader.appendChild(syncControls);
+            }
+            
+            // Check server status initially
+            setTimeout(() => checkAllServerStatus(), 1000);
+        }
+
+        // ✅ Check all server status
+        async function checkAllServerStatus() {
+            const statusElement = document.getElementById('serverStatus');
+            if (!statusElement) return;
+            
+            let statusHTML = '';
+            
+            for (const [serverId, config] of Object.entries(SYNC_SERVERS)) {
+                try {
+                    const startTime = Date.now();
+                    
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 5000);
+                    
+                    const response = await fetch(`${config.url}/api/health`, {
+                        signal: controller.signal,
+                        mode: 'cors',
+                        cache: 'no-cache'
+                    }).catch(() => null);
+                    
+                    clearTimeout(timeoutId);
+                    
+                    const responseTime = Date.now() - startTime;
+                    
+                    if (response && response.ok) {
+                        statusHTML += `<span style="color: green; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
+                            <i class="fas fa-check-circle"></i> ${config.name}: ${responseTime}ms
+                        </span>`;
+                        SYNC_SERVERS[serverId].online = true;
+                    } else {
+                        statusHTML += `<span style="color: red; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
+                            <i class="fas fa-times-circle"></i> ${config.name}: Offline
+                        </span>`;
+                        SYNC_SERVERS[serverId].online = false;
+                    }
+                } catch (error) {
+                    statusHTML += `<span style="color: orange; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
+                        <i class="fas fa-exclamation-triangle"></i> ${config.name}: Error
+                    </span>`;
+                    SYNC_SERVERS[serverId].online = false;
+                }
+            }
+            
+            statusElement.innerHTML = statusHTML;
+        }
+
+        // ✅ Refresh current view
+        function refreshCurrentView() {
+            const adminHeader = document.querySelector('.admin-header h2');
+            if (!adminHeader) return;
+            
+            const headerText = adminHeader.textContent || adminHeader.innerText;
+            
+            if (headerText.includes('Users') || headerText.includes('Dashboard')) {
+                if (headerText.includes('Users')) {
+                    showUsers();
+                } else if (headerText.includes('Dashboard')) {
+                    showDashboard();
+                }
+            }
+        }
+
+        // ✅ Show loading
+        function showLoading() {
+            document.getElementById('adminContent').innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading...</p>
+                </div>
+            `;
+        }
+
+        // ✅ Close modal
+        function closeModal() {
+            document.getElementById('userModal').classList.remove('active');
+        }
+
+        // ✅ Refresh all data
+        async function refreshAllData() {
+            showOptimizedNotification('🔄 Refreshing all data...', 'info');
+            await optimizedLoadAdminData(true);
+            showOptimizedNotification('✅ Data refreshed successfully!', 'success');
+        }
+
+        // ✅ Export all data
+        function exportAllData() {
+            const data = {
+                users: adminData.users,
+                transactions: adminData.transactions,
+                serverStats: adminData.serverStats,
+                exportDate: new Date().toISOString()
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tapearn_admin_export_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showOptimizedNotification('✅ Data exported successfully!', 'success');
+        }
+
+        // ✅ Clear cache
+        function clearCache() {
+            if (confirm('Clear all cache? This will not delete user data.')) {
+                const keysToKeep = ['registeredUsers', 'allReferrals', 'currentUser', 'allUsersTransactions', 'deletedUsers'];
+                let cleared = 0;
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (!keysToKeep.includes(key)) {
+                        localStorage.removeItem(key);
+                        cleared++;
+                    }
+                }
+                showOptimizedNotification(`✅ Cleared ${cleared} cache items`, 'success');
+            }
+        }
+
+        // ========================
+        // ✅ MULTI-SERVER SYNC FUNCTIONS
+        // ========================
+
         // Initialize multi-server sync
         async function initializeMultiServerSync() {
             console.log('🔄 Initializing multi-server sync (Replit & Localhost only)...');
@@ -1296,14 +1967,6 @@
                 console.error(`Failed to connect to ${config.name}:`, error.message);
                 SYNC_SERVERS[serverId].online = false;
             }
-        }
-
-        // Get current server ID
-        function getCurrentServerId() {
-            const hostname = window.location.hostname;
-            if (hostname.includes('replit')) return 'replit';
-            if (hostname.includes('localhost') || hostname === '127.0.0.1') return 'localhost';
-            return 'unknown';
         }
 
         // Handle sync messages
@@ -1476,10 +2139,6 @@
             }
         }
 
-        // ========================
-        // ✅ SYNC OPERATIONS
-        // ========================
-
         // Full multi-server sync
         async function syncFromAllServers() {
             showOptimizedNotification('🔄 Starting multi-server sync...', 'info');
@@ -1536,47 +2195,13 @@
             }
             
             try {
-                // Try WebSocket first
-                if (config.ws && config.online) {
-                    return await syncViaWebSocket(serverId);
-                }
-                
-                // Fallback to HTTP
+                // Try HTTP sync
                 return await syncViaHTTP(serverId);
                 
             } catch (error) {
                 console.error(`Sync from ${serverId} failed:`, error);
                 return { success: false, error: error.message };
             }
-        }
-
-        // Sync via WebSocket
-        async function syncViaWebSocket(serverId) {
-            return new Promise((resolve) => {
-                const ws = SYNC_SERVERS[serverId].ws;
-                
-                if (!ws || ws.readyState !== WebSocket.OPEN) {
-                    resolve({ success: false, error: 'WebSocket not connected' });
-                    return;
-                }
-                
-                // Request sync
-                ws.send(JSON.stringify({
-                    type: 'sync_request',
-                    requestType: 'full_sync',
-                    timestamp: Date.now()
-                }));
-                
-                // In a real implementation, wait for response with timeout
-                setTimeout(() => {
-                    resolve({ 
-                        success: true, 
-                        users: 0, 
-                        transactions: 0,
-                        note: 'Sync initiated via WebSocket' 
-                    });
-                }, 1000);
-            });
         }
 
         // Sync via HTTP
@@ -1916,718 +2541,6 @@
             
             showOptimizedNotification('✅ Sync settings saved!', 'success');
             closeModal();
-        }
-
-        // ========================
-        // ✅ ORIGINAL ADMIN PANEL CODE
-        // ========================
-        
-        // Global variables
-        let adminData = {
-            users: [],
-            transactions: [],
-            miningPools: [],
-            serverStats: {},
-            lastUpdated: null
-        };
-
-        // Optimization config
-        const OPTIMIZATION_CONFIG = {
-            AUTO_REFRESH_INTERVAL: 30000,
-            SERVER_STATUS_INTERVAL: 60000,
-            FULL_SYNC_INTERVAL: 300000,
-            USER_SYNC_INTERVAL: 15000,
-            NOTIFICATION_COOLDOWN: 5000,
-            ERROR_NOTIFICATION_COOLDOWN: 10000,
-            SUCCESS_NOTIFICATION_COOLDOWN: 3000,
-            SEARCH_DEBOUNCE: 500,
-            RESIZE_DEBOUNCE: 250,
-            STORAGE_DEBOUNCE: 1000,
-            BATCH_SIZE: 50,
-            MAX_NOTIFICATIONS: 3,
-            MAX_RETRIES: 2
-        };
-
-        let refreshTimers = {
-            autoRefresh: null,
-            serverStatus: null,
-            fullSync: null,
-            userSync: null
-        };
-
-        let lastRefreshTime = 0;
-        let lastNotificationTime = 0;
-        let isRefreshing = false;
-        let refreshQueue = [];
-        let notificationQueue = [];
-        let userChangeCount = 0;
-
-        // ✅ Initialize admin panel
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Admin Panel Initializing with Multi-Server Sync...');
-            
-            checkAdminAuth();
-            initializeOptimizedAdminPanel();
-            
-            // Add sync controls after 2 seconds
-            setTimeout(() => {
-                addAdvancedSyncControls();
-                
-                // Auto-connect to other servers
-                if (getCurrentServerId() === 'replit') {
-                    setTimeout(() => initializeMultiServerSync(), 3000);
-                }
-            }, 2000);
-        });
-
-        // ✅ Check admin authentication
-        function checkAdminAuth() {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const ADMIN_AUTHORIZED_USERS = [
-                'admin@tapearn.com',
-                'admin@example.com',
-                'superuser@tapearn.com',
-                'system_admin',
-                'developer',
-                'admin'
-            ];
-
-            if (!currentUser.email && !currentUser.username) {
-                alert('❌ No user logged in! Redirecting to main app...');
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const userIdentifier = currentUser.email || currentUser.username || currentUser.id;
-            
-            if (!ADMIN_AUTHORIZED_USERS.some(authorized => 
-                userIdentifier.toLowerCase().includes(authorized.toLowerCase()))) {
-                alert('❌ Unauthorized access! Redirecting to main app...');
-                window.location.href = 'index.html';
-                return;
-            }
-
-            document.getElementById('adminUserName').textContent = userIdentifier;
-        }
-
-        // ✅ Get server base - PRIORITY: Replit > Localhost
-        function getServerBase() {
-            const currentHost = window.location.hostname;
-            
-            console.log('🌍 Current location:', window.location.href);
-            
-            // If we're on replit.com, use replit server (PRIORITY 1)
-            if (currentHost.includes('replit.com')) {
-                console.log('🟢 Using Replit server (Primary)');
-                return 'https://tapearn-native-app--fahimuddin786.replit.app';
-            }
-            
-            // If we're on localhost, use local server (PRIORITY 2)
-            if (currentHost === 'localhost' || currentHost === '127.0.0.1') {
-                console.log('🔵 Using local server (Secondary)');
-                return 'http://localhost:3000';
-            }
-            
-            // Fallback to current origin
-            console.log('⚠️ Using fallback server');
-            return window.location.origin || 'http://localhost:3000';
-        }
-
-        // ✅ Initialize optimized admin panel
-        function initializeOptimizedAdminPanel() {
-            console.log('🚀 Admin Panel Initializing (Optimized)...');
-            
-            // Load initial data (once)
-            optimizedLoadAdminData(true); // Force first load
-            
-            // Setup optimized sync
-            initializeDeletedUsersTracker();
-            setupOptimizedRealTimeSync();
-            
-            // Setup mobile listener
-            setupMobileUserListener();
-            
-            // Add sync controls
-            addSyncControlsToHeader();
-            
-            // Setup lazy loading
-            setTimeout(setupLazyLoading, 1000);
-            
-            // Setup performance monitoring
-            setupPerformanceMonitoring();
-            
-            console.log('✅ Optimized Admin Panel Initialized');
-        }
-
-        // ✅ Optimized load admin data
-        async function optimizedLoadAdminData(force = false) {
-            const now = Date.now();
-            const timeSinceLastRefresh = now - lastRefreshTime;
-            
-            // Rate limiting
-            if (!force && timeSinceLastRefresh < 10000) { // 10 seconds minimum
-                console.log('⏳ Skipping refresh (rate limited)');
-                return;
-            }
-            
-            // Check if already refreshing
-            if (isRefreshing) {
-                console.log('⏳ Already refreshing, queueing request');
-                if (!refreshQueue.includes('loadAdminData')) {
-                    refreshQueue.push('loadAdminData');
-                }
-                return;
-            }
-            
-            isRefreshing = true;
-            lastRefreshTime = now;
-            
-            try {
-                showLoading();
-                
-                const serverBase = getServerBase();
-                console.log('🔄 OPTIMIZED: Loading admin data from', serverBase);
-                
-                // Try Replit first, fallback to localhost if needed
-                let usersData = { success: false, users: [] };
-                let txData = { success: false, transactions: [] };
-                let statsData = { success: false, stats: {} };
-                
-                // Try Replit server first
-                try {
-                    const replitUrl = 'https://tapearn-native-app--fahimuddin786.replit.app';
-                    
-                    // Get users
-                    const usersResponse = await fetch(`${replitUrl}/api/get-all-users`, {
-                        signal: AbortSignal.timeout(5000)
-                    }).catch(() => null);
-                    
-                    if (usersResponse && usersResponse.ok) {
-                        usersData = await usersResponse.json();
-                    }
-                    
-                    // Get transactions
-                    const txResponse = await fetch(`${replitUrl}/api/get-all-transactions`, {
-                        signal: AbortSignal.timeout(5000)
-                    }).catch(() => null);
-                    
-                    if (txResponse && txResponse.ok) {
-                        txData = await txResponse.json();
-                    }
-                    
-                    // Get stats
-                    const statsResponse = await fetch(`${replitUrl}/api/admin/user-stats`, {
-                        signal: AbortSignal.timeout(5000)
-                    }).catch(() => null);
-                    
-                    if (statsResponse && statsResponse.ok) {
-                        statsData = await statsResponse.json();
-                    }
-                    
-                } catch (replitError) {
-                    console.log('❌ Replit server failed, trying localhost...');
-                    
-                    // Fallback to localhost
-                    try {
-                        const localhostUrl = 'http://localhost:3000';
-                        
-                        // Get users
-                        const localUsersResponse = await fetch(`${localhostUrl}/api/get-all-users`, {
-                            signal: AbortSignal.timeout(5000)
-                        }).catch(() => null);
-                        
-                        if (localUsersResponse && localUsersResponse.ok) {
-                            usersData = await localUsersResponse.json();
-                        }
-                        
-                        // Get transactions
-                        const localTxResponse = await fetch(`${localhostUrl}/api/get-all-transactions`, {
-                            signal: AbortSignal.timeout(5000)
-                        }).catch(() => null);
-                        
-                        if (localTxResponse && localTxResponse.ok) {
-                            txData = await localTxResponse.json();
-                        }
-                        
-                    } catch (localhostError) {
-                        console.log('❌ Both servers failed, using localStorage data');
-                    }
-                }
-                
-                // Process users
-                if (usersData.success) {
-                    const filteredUsers = filterDeletedUsers(usersData.users);
-                    const userCountChanged = filteredUsers.length !== adminData.users.length;
-                    
-                    adminData.users = filteredUsers;
-                    document.getElementById('userCountBadge').textContent = filteredUsers.length;
-                    
-                    if (userCountChanged && Math.abs(filteredUsers.length - adminData.users.length) > 5) {
-                        showOptimizedNotification(`🔄 Users updated: ${filteredUsers.length} total`, 'info');
-                    }
-                } else {
-                    // Fallback to localStorage
-                    const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                    const filteredUsers = filterDeletedUsers(localUsers);
-                    adminData.users = filteredUsers;
-                    document.getElementById('userCountBadge').textContent = filteredUsers.length;
-                }
-                
-                // Process transactions
-                if (txData.success) {
-                    adminData.transactions = txData.transactions;
-                    document.getElementById('txCountBadge').textContent = txData.transactions.length;
-                } else {
-                    // Fallback to localStorage
-                    const localTransactions = JSON.parse(localStorage.getItem('allUsersTransactions') || '[]');
-                    adminData.transactions = localTransactions;
-                    document.getElementById('txCountBadge').textContent = localTransactions.length;
-                }
-                
-                // Process stats
-                if (statsData.success) {
-                    adminData.serverStats = statsData.stats;
-                }
-                
-                adminData.lastUpdated = new Date();
-                
-                // Refresh view only if needed
-                const currentView = document.querySelector('.admin-header h2').textContent;
-                if (currentView.includes('Dashboard') || currentView.includes('Users')) {
-                    refreshCurrentView();
-                }
-                
-                if (!force) {
-                    showOptimizedNotification('✅ Data refreshed', 'success');
-                }
-                
-            } catch (error) {
-                console.error('❌ Error in optimized load:', error);
-                if (!force) {
-                    showOptimizedNotification('⚠️ Refresh failed, using cached data', 'warning');
-                }
-            } finally {
-                isRefreshing = false;
-                
-                // Process queued refreshes
-                if (refreshQueue.length > 0) {
-                    const nextRefresh = refreshQueue.shift();
-                    setTimeout(() => optimizedLoadAdminData(), 5000);
-                }
-            }
-        }
-
-        // ✅ Optimized notification system
-        function showOptimizedNotification(message, type = 'info', force = false) {
-            const now = Date.now();
-            
-            // Rate limiting
-            if (!force) {
-                if (type === 'info' && (now - lastNotificationTime < OPTIMIZATION_CONFIG.NOTIFICATION_COOLDOWN)) {
-                    if (!notificationQueue.some(n => n.message === message)) {
-                        notificationQueue.push({ message, type, timestamp: now });
-                    }
-                    return;
-                }
-                
-                if (type === 'success' && (now - lastNotificationTime < OPTIMIZATION_CONFIG.SUCCESS_NOTIFICATION_COOLDOWN)) {
-                    return;
-                }
-                
-                if (type === 'error' && (now - lastNotificationTime < OPTIMIZATION_CONFIG.ERROR_NOTIFICATION_COOLDOWN)) {
-                    return;
-                }
-            }
-            
-            lastNotificationTime = now;
-            
-            // Clear similar notifications
-            const existingNotifications = document.querySelectorAll('.admin-notification');
-            existingNotifications.forEach(notification => {
-                if (notification.textContent.includes(message.substring(0, 30))) {
-                    notification.remove();
-                }
-            });
-            
-            // Limit total notifications
-            if (existingNotifications.length >= OPTIMIZATION_CONFIG.MAX_NOTIFICATIONS) {
-                existingNotifications[0].remove();
-            }
-            
-            // Create notification
-            const notification = document.createElement('div');
-            notification.className = `admin-notification notification-${type}`;
-            notification.innerHTML = `
-                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
-                <span style="flex: 1;">${message}</span>
-                <button class="notification-close" onclick="this.parentElement.remove()" style="background: none; border: none; color: #666; cursor: pointer; font-size: 16px; padding: 0 5px;">
-                    ×
-                </button>
-            `;
-            
-            document.getElementById('notificationContainer').appendChild(notification);
-            
-            // Auto-remove after appropriate time
-            const removeTime = type === 'error' ? 8000 : type === 'info' ? 5000 : 4000;
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.style.animation = 'slideOut 0.3s ease-out forwards';
-                    setTimeout(() => notification.remove(), 300);
-                }
-            }, removeTime);
-            
-            // Process queued notifications
-            if (notificationQueue.length > 0) {
-                setTimeout(() => {
-                    const nextNotification = notificationQueue.shift();
-                    if (nextNotification) {
-                        showOptimizedNotification(nextNotification.message, nextNotification.type, true);
-                    }
-                }, OPTIMIZATION_CONFIG.NOTIFICATION_COOLDOWN);
-            }
-        }
-
-        // ✅ Debounce function
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // ✅ Setup optimized real-time sync
-        function setupOptimizedRealTimeSync() {
-            console.log('🔧 Setting up OPTIMIZED real-time sync...');
-            
-            // Clear existing timers
-            clearAllRefreshTimers();
-            
-            // Single auto-refresh timer
-            refreshTimers.autoRefresh = setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    optimizedLoadAdminData();
-                }
-            }, OPTIMIZATION_CONFIG.AUTO_REFRESH_INTERVAL);
-            
-            // Server status check (less frequent)
-            refreshTimers.serverStatus = setInterval(() => {
-                checkServerStatus();
-            }, OPTIMIZATION_CONFIG.SERVER_STATUS_INTERVAL);
-            
-            // Full sync (less frequent)
-            refreshTimers.fullSync = setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    syncFromAllServers();
-                }
-            }, OPTIMIZATION_CONFIG.FULL_SYNC_INTERVAL);
-            
-            // User sync (moderate frequency)
-            refreshTimers.userSync = setInterval(() => {
-                if (document.visibilityState === 'visible') {
-                    checkUserChanges();
-                }
-            }, OPTIMIZATION_CONFIG.USER_SYNC_INTERVAL);
-            
-            console.log('✅ Optimized sync setup complete');
-        }
-
-        // ✅ Clear all refresh timers
-        function clearAllRefreshTimers() {
-            Object.values(refreshTimers).forEach(timer => {
-                if (timer) clearInterval(timer);
-            });
-            refreshTimers = {
-                autoRefresh: null,
-                serverStatus: null,
-                fullSync: null,
-                userSync: null
-            };
-        }
-
-        // ✅ Check user changes
-        function checkUserChanges() {
-            const serverBase = getServerBase();
-            
-            fetch(`${serverBase}/api/admin/user-sync-check?since=${lastRefreshTime}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success && data.newUsers > 0) {
-                        console.log(`📈 ${data.newUsers} new users detected`);
-                        
-                        if (data.newUsers >= 5) {
-                            optimizedLoadAdminData();
-                        } else if (data.newUsers > 0) {
-                            const newCount = parseInt(document.getElementById('userCountBadge').textContent) + data.newUsers;
-                            document.getElementById('userCountBadge').textContent = newCount;
-                            showOptimizedNotification(`+${data.newUsers} new users`, 'info');
-                        }
-                    }
-                })
-                .catch(error => console.log('User check failed:', error.message));
-        }
-
-        // ✅ Deleted users tracker
-        function initializeDeletedUsersTracker() {
-            if (!localStorage.getItem('deletedUsers')) {
-                localStorage.setItem('deletedUsers', JSON.stringify([]));
-            }
-        }
-
-        // ✅ Add to deleted users
-        function addToDeletedUsers(userId) {
-            const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers') || '[]');
-            const idStr = userId?.toString()?.toLowerCase();
-            if (idStr && !deletedUsers.includes(idStr)) {
-                deletedUsers.push(idStr);
-                localStorage.setItem('deletedUsers', JSON.stringify(deletedUsers));
-            }
-        }
-
-        // ✅ Filter deleted users
-        function filterDeletedUsers(users) {
-            const deletedUsers = JSON.parse(localStorage.getItem('deletedUsers') || '[]');
-            const deletedUsersSet = new Set(deletedUsers.map(id => id?.toString()?.toLowerCase()));
-            
-            return users.filter(user => {
-                const userIdentifiers = [
-                    user.email,
-                    user.id?.toString(),
-                    user.username,
-                    user.email?.toLowerCase(),
-                    user.username?.toLowerCase()
-                ].filter(Boolean);
-                
-                return !userIdentifiers.some(id => 
-                    deletedUsersSet.has(id?.toString()?.toLowerCase())
-                );
-            });
-        }
-
-        // ✅ Setup mobile user listener
-        function setupMobileUserListener() {
-            window.addEventListener('storage', (event) => {
-                if (event.key === 'mobile_user_registered') {
-                    try {
-                        const data = JSON.parse(event.newValue || '{}');
-                        if (data.user) {
-                            handleMobileUserRegistration(data.user);
-                        }
-                    } catch (error) {
-                        console.error('Error processing mobile storage event:', error);
-                    }
-                }
-            });
-            
-            console.log('📱 Mobile user listener setup complete');
-        }
-
-        // ✅ Handle mobile user registration
-        function handleMobileUserRegistration(userData) {
-            const userExists = adminData.users.some(user => 
-                user.email === userData.email || 
-                (user.mobile && userData.mobile && user.mobile === userData.mobile)
-            );
-            
-            if (!userExists) {
-                const newUser = {
-                    ...userData,
-                    id: userData.id || `mobile_${Date.now()}`,
-                    points: userData.points || 100,
-                    usdtWallet: userData.usdtWallet || 0,
-                    inrWallet: userData.inrWallet || 0,
-                    status: 'active',
-                    emailVerified: false,
-                    mobileVerified: !!userData.mobile,
-                    registration_date: userData.registeredAt || new Date().toISOString(),
-                    source: 'mobile_app',
-                    registeredAt: new Date().toISOString()
-                };
-                
-                adminData.users.unshift(newUser);
-                document.getElementById('userCountBadge').textContent = adminData.users.length;
-                
-                // Update localStorage
-                const localUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                localUsers.unshift(newUser);
-                localStorage.setItem('registeredUsers', JSON.stringify(localUsers));
-                
-                // Refresh view
-                refreshCurrentView();
-                
-                showOptimizedNotification(`📱 Mobile user registered: ${userData.email || userData.mobile}`, 'success');
-            }
-        }
-
-        // ✅ Add sync controls to header
-        function addSyncControlsToHeader() {
-            const adminHeader = document.querySelector('.admin-header');
-            
-            if (!adminHeader) return;
-            
-            // Check if sync controls already exist
-            if (document.querySelector('.sync-controls')) return;
-            
-            const syncControls = document.createElement('div');
-            syncControls.className = 'sync-controls';
-            syncControls.style.cssText = `
-                display: flex;
-                gap: 10px;
-                margin-left: 20px;
-                align-items: center;
-            `;
-            
-            syncControls.innerHTML = `
-                <button class="btn btn-info btn-sm" onclick="syncFromAllServers()" title="Sync from all servers" style="display: flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-sync-alt"></i> Multi-Server Sync
-                </button>
-                <button class="btn btn-warning btn-sm" onclick="checkAllServerStatus()" title="Check server status" style="display: flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-server"></i> Server Status
-                </button>
-                <div id="serverStatus" style="display: inline-block; padding: 5px 10px; border-radius: 5px; background: #f8f9fa; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-                    <i class="fas fa-spinner fa-spin"></i> Checking...
-                </div>
-            `;
-            
-            // Add to header
-            const headerActions = adminHeader.querySelector('.admin-actions');
-            if (headerActions) {
-                headerActions.insertAdjacentElement('afterend', syncControls);
-            } else {
-                adminHeader.appendChild(syncControls);
-            }
-            
-            // Check server status initially
-            setTimeout(() => checkAllServerStatus(), 1000);
-        }
-
-        // ✅ Check all server status
-        async function checkAllServerStatus() {
-            const statusElement = document.getElementById('serverStatus');
-            if (!statusElement) return;
-            
-            let statusHTML = '';
-            
-            // Servers to check
-            const servers = [
-                { name: 'Replit', url: 'https://tapearn-native-app--fahimuddin786.replit.app' },
-                { name: 'Localhost', url: 'http://localhost:3000' }
-            ];
-            
-            for (const server of servers) {
-                try {
-                    const startTime = Date.now();
-                    
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 5000);
-                    
-                    const response = await fetch(`${server.url}/api/health`, {
-                        signal: controller.signal,
-                        mode: 'cors',
-                        cache: 'no-cache'
-                    }).catch(() => null);
-                    
-                    clearTimeout(timeoutId);
-                    
-                    const responseTime = Date.now() - startTime;
-                    
-                    if (response && response.ok) {
-                        statusHTML += `<span style="color: green; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
-                            <i class="fas fa-check-circle"></i> ${server.name}: ${responseTime}ms
-                        </span>`;
-                    } else {
-                        statusHTML += `<span style="color: red; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
-                            <i class="fas fa-times-circle"></i> ${server.name}: Offline
-                        </span>`;
-                    }
-                } catch (error) {
-                    statusHTML += `<span style="color: orange; margin-right: 10px; display: flex; align-items: center; gap: 3px;">
-                        <i class="fas fa-exclamation-triangle"></i> ${server.name}: Error
-                    </span>`;
-                }
-            }
-            
-            statusElement.innerHTML = statusHTML;
-        }
-
-        // ✅ Refresh current view
-        function refreshCurrentView() {
-            const adminHeader = document.querySelector('.admin-header h2');
-            if (!adminHeader) return;
-            
-            const headerText = adminHeader.textContent || adminHeader.innerText;
-            
-            if (headerText.includes('Users') || headerText.includes('Dashboard')) {
-                if (headerText.includes('Users')) {
-                    showUsers();
-                } else if (headerText.includes('Dashboard')) {
-                    showDashboard();
-                }
-            }
-        }
-
-        // ✅ Show loading
-        function showLoading() {
-            document.getElementById('adminContent').innerHTML = `
-                <div class="loading">
-                    <div class="spinner"></div>
-                    <p>Loading...</p>
-                </div>
-            `;
-        }
-
-        // ✅ Close modal
-        function closeModal() {
-            document.getElementById('userModal').classList.remove('active');
-        }
-
-        // ✅ Refresh all data
-        async function refreshAllData() {
-            showOptimizedNotification('🔄 Refreshing all data...', 'info');
-            await optimizedLoadAdminData(true);
-            showOptimizedNotification('✅ Data refreshed successfully!', 'success');
-        }
-
-        // ✅ Export all data
-        function exportAllData() {
-            const data = {
-                users: adminData.users,
-                transactions: adminData.transactions,
-                serverStats: adminData.serverStats,
-                exportDate: new Date().toISOString()
-            };
-
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `tapearn_admin_export_${new Date().toISOString().split('T')[0]}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            showOptimizedNotification('✅ Data exported successfully!', 'success');
-        }
-
-        // ✅ Clear cache
-        function clearCache() {
-            if (confirm('Clear all cache? This will not delete user data.')) {
-                const keysToKeep = ['registeredUsers', 'allReferrals', 'currentUser', 'allUsersTransactions', 'deletedUsers'];
-                let cleared = 0;
-                for (let i = 0; i < localStorage.length; i++) {
-                    const key = localStorage.key(i);
-                    if (!keysToKeep.includes(key)) {
-                        localStorage.removeItem(key);
-                        cleared++;
-                    }
-                }
-                showOptimizedNotification(`✅ Cleared ${cleared} cache items`, 'success');
-            }
         }
 
         // ========================
